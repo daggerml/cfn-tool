@@ -8,10 +8,12 @@
     "test": "test"
   },
   "dependencies": {
+    "chalk": "^4.1.0",
     "coffeescript": "2.5.1",
     "getopts": "2.2.5",
     "js-yaml": "showmethemodel/js-yaml#smtm",
-    "uuid": "8.3.0"
+    "uuid": "8.3.0",
+    "winston": "^3.3.3"
   },
   "devDependencies": {
     "mocha": "8.1.3"
