@@ -33,7 +33,7 @@
     ]
   },
   "bin": {
-    "cfn-tools": "bin/cfn-tools"
+    "stack-deploy": "bin/stack-deploy"
   },
   "keywords": [],
   "author": "",
