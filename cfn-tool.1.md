@@ -19,6 +19,12 @@ result YAML to stdout.
 
 Options:
 
+  * `-c`, `--config`=<file>:
+    Specify the config file to use. If this option is not specified `cfn-tool`
+    will look for a file named `.cfn-tool` in the current directory. This file
+    will be sourced in the `bash`(1) shell and can be used to configure the
+    various `CFN_TOOL_XXXX` environment variables.
+
   * `-q`, `--quiet`:
     Suppress all diagnostic output and warnings.
 
@@ -42,11 +48,19 @@ Options:
     the `CFN_TOOL_BUCKET` environment variable. (See the `ENVIRONMENT` section
     below.)
 
+  * `-c`, `--config`=<file>:
+    Specify the config file to use. If this option is not specified `cfn-tool`
+    will look for a file named `.cfn-tool` in the current directory. This file
+    will be sourced in the `bash`(1) shell and can be used to configure the
+    various `CFN_TOOL_XXXX` environment variables. This option overrides the
+    `CFN_TOOL_CONFIG` environment variable. (See the `ENVIRONMENT` section
+    below.)
+
   * `-l`, `--linter`=<command>:
     Run <command> on each processed template, aborting if the <command> fails.
     The template file path will be appended to the <command> and run in
     `bash`(1). Paths are relative to the directory in which the `cfn-tool`
-    program is run.
+    program is run. This
 
   * `-P`, `--parameters`=<key>=<value>[,<key>=<<value>,...]:
     Set template input parameter overrides. When updating an existing stack the

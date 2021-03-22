@@ -25,6 +25,10 @@ Given a \fItemplate\-file\fR, expands macros in the template and prints the resu
 Options:
 .
 .TP
+\fB\-c\fR, \fB\-\-config\fR=\fIfile\fR
+Specify the config file to use\. If this option is not specified \fBcfn\-tool\fR will look for a file named \fB\.cfn\-tool\fR in the current directory\. This file will be sourced in the \fBbash\fR(1) shell and can be used to configure the various \fBCFN_TOOL_XXXX\fR environment variables\.
+.
+.TP
 \fB\-q\fR, \fB\-\-quiet\fR
 Suppress all diagnostic output and warnings\.
 .
@@ -46,8 +50,12 @@ Options:
 Upload templates to the S3 bucket given by \fIname\fR\. This option overrides the \fBCFN_TOOL_BUCKET\fR environment variable\. (See the \fBENVIRONMENT\fR section below\.)
 .
 .TP
+\fB\-c\fR, \fB\-\-config\fR=\fIfile\fR
+Specify the config file to use\. If this option is not specified \fBcfn\-tool\fR will look for a file named \fB\.cfn\-tool\fR in the current directory\. This file will be sourced in the \fBbash\fR(1) shell and can be used to configure the various \fBCFN_TOOL_XXXX\fR environment variables\. This option overrides the \fBCFN_TOOL_CONFIG\fR environment variable\. (See the \fBENVIRONMENT\fR section below\.)
+.
+.TP
 \fB\-l\fR, \fB\-\-linter\fR=\fIcommand\fR
-Run \fIcommand\fR on each processed template, aborting if the \fIcommand\fR fails\. The template file path will be appended to the \fIcommand\fR and run in \fBbash\fR(1)\. Paths are relative to the directory in which the \fBcfn\-tool\fR program is run\.
+Run \fIcommand\fR on each processed template, aborting if the \fIcommand\fR fails\. The template file path will be appended to the \fIcommand\fR and run in \fBbash\fR(1)\. Paths are relative to the directory in which the \fBcfn\-tool\fR program is run\. This
 .
 .TP
 \fB\-P\fR, \fB\-\-parameters\fR=\fIkey\fR=\fIvalue\fR[,\fIkey\fR=\fI<value\fR,\.\.\.]

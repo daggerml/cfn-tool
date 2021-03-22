@@ -94,6 +94,10 @@ result YAML to stdout.</p>
 <p>Options:</p>
 
 <dl>
+<dt><code>-c</code>, <code>--config</code>=<var>file</var></dt><dd><p>Specify the config file to use. If this option is not specified <code>cfn-tool</code>
+will look for a file named <code>.cfn-tool</code> in the current directory. This file
+will be sourced in the <code>bash</code>(1) shell and can be used to configure the
+various <code>CFN_TOOL_XXXX</code> environment variables.</p></dd>
 <dt><code>-q</code>, <code>--quiet</code></dt><dd><p>Suppress all diagnostic output and warnings.</p></dd>
 <dt><code>-v</code>, <code>--verbose</code></dt><dd><p>Print diagnostic output while processing.</p></dd>
 </dl>
@@ -115,10 +119,16 @@ are uploaded to S3 and no stack is created or updated.</p>
 <dt><code>-b</code>, <code>--bucket</code>=<var>name</var></dt><dd><p>Upload templates to the S3 bucket given by <var>name</var>. This option overrides
 the <code>CFN_TOOL_BUCKET</code> environment variable. (See the <code>ENVIRONMENT</code> section
 below.)</p></dd>
+<dt><code>-c</code>, <code>--config</code>=<var>file</var></dt><dd><p>Specify the config file to use. If this option is not specified <code>cfn-tool</code>
+will look for a file named <code>.cfn-tool</code> in the current directory. This file
+will be sourced in the <code>bash</code>(1) shell and can be used to configure the
+various <code>CFN_TOOL_XXXX</code> environment variables. This option overrides the
+<code>CFN_TOOL_CONFIG</code> environment variable. (See the <code>ENVIRONMENT</code> section
+below.)</p></dd>
 <dt><code>-l</code>, <code>--linter</code>=<var>command</var></dt><dd><p>Run <var>command</var> on each processed template, aborting if the <var>command</var> fails.
 The template file path will be appended to the <var>command</var> and run in
 <code>bash</code>(1). Paths are relative to the directory in which the <code>cfn-tool</code>
-program is run.</p></dd>
+program is run. This</p></dd>
 <dt><code>-P</code>, <code>--parameters</code>=<var>key</var>=<var>value</var>[,<var>key</var>=<var>&lt;value</var>,...]</dt><dd><p>Set template input parameter overrides. When updating an existing stack the
 values of any unspecified parameters will be preserved.</p></dd>
 <dt><code>-p</code>, <code>--profile</code>=<var>name</var></dt><dd><p>Use the AWS profile given by <var>name</var>. This option overrides the <code>AWS_PROFILE</code>,
