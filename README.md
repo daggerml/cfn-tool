@@ -229,7 +229,7 @@ Foop: !Package foo/
 # OUTPUT
 Foop:
   S3Bucket: mybucket
-  S3Key: templates/6806d30eed132b19183a51be47264629.zip
+  S3Key: 6806d30eed132b19183a51be47264629.zip
 ```
 
 ### `!PackageURL`
@@ -242,7 +242,7 @@ Foop: !PackageURL foo/
 ```
 ```yaml
 # OUTPUT
-Foop: https://s3.amazonaws.com/mybucket/templates/6806d30eed132b19183a51be47264629.zip
+Foop: https://s3.amazonaws.com/mybucket/6806d30eed132b19183a51be47264629.zip
 ```
 
 ### `!PackageURI`
@@ -255,7 +255,7 @@ Foop: !PackageURI foo/
 ```
 ```yaml
 # OUTPUT
-Foop: s3://mybucket/templates/6806d30eed132b19183a51be47264629.zip
+Foop: s3://mybucket/6806d30eed132b19183a51be47264629.zip
 ```
 
 ### `!PackageTemplateURL`
@@ -268,7 +268,7 @@ Foop: !PackageTemplateURL infra/mytemplate.yml
 ```
 ```yaml
 # OUTPUT
-Foop: https://s3.amazonaws.com/mybucket/templates/6806d30eed132b19183a51be47264629.yaml
+Foop: https://s3.amazonaws.com/mybucket/6806d30eed132b19183a51be47264629.yaml
 ```
 
 ### `!TemplateFile`

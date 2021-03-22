@@ -273,7 +273,7 @@ expands Fn::Return macros:
     <<: !Return
       Foop: !Ref Foo
       Barp: !GetAtt Bar.ARN
-      Bazp Name=${$CFN_TOOLS_ZONE}-${$CFN_TOOLS_REGION}-bazp: 123
+      Bazp Name=${$ZONE}-${$REGION}-bazp: 123
 
   expected:
     Outputs:
@@ -310,11 +310,11 @@ packages regular files:
 
   expected:
     Foo:
-      Bar: https://s3.amazonaws.com/foop/templates/e414662072572cdc75dfebea50d5bf9b.txt
+      Bar: https://s3.amazonaws.com/foop/e414662072572cdc75dfebea50d5bf9b.txt
       Baz:
         S3Bucket: foop
-        S3Key: templates/6f5902ac237024bdd0c176cb93063dc4.txt
-      Baf: s3://foop/templates/6f5902ac237024bdd0c176cb93063dc4.txt
+        S3Key: 6f5902ac237024bdd0c176cb93063dc4.txt
+      Baf: s3://foop/6f5902ac237024bdd0c176cb93063dc4.txt
 
 expands Fn::Do macros:
 
@@ -337,7 +337,7 @@ the package map result can be transformed with a let binding:
   expected:
     Foo:
       MyBucket: foop
-      MyKey: templates/6f5902ac237024bdd0c176cb93063dc4.txt
+      MyKey: 6f5902ac237024bdd0c176cb93063dc4.txt
 
 runs build scripts before packaging:
 
@@ -347,7 +347,7 @@ runs build scripts before packaging:
 
   expected:
     Foo:
-      Bar: https://s3.amazonaws.com/foop/templates/f54a1fca2d39a6861ed89c203cbabe53.txt
+      Bar: https://s3.amazonaws.com/foop/f54a1fca2d39a6861ed89c203cbabe53.txt
 
 compresses directories before packaging:
 
@@ -357,7 +357,7 @@ compresses directories before packaging:
 
   expected:
     Foo:
-      Bar: https://s3.amazonaws.com/foop/templates/877df79d4664aca15df11a668fdfdf78.zip
+      Bar: https://s3.amazonaws.com/foop/877df79d4664aca15df11a668fdfdf78.zip
 
 recursively packages templates:
 
@@ -367,7 +367,7 @@ recursively packages templates:
 
   expected:
     Foo:
-      Bar: https://s3.amazonaws.com/foop/templates/733b9125e901078b974b3a3f217405fc.yaml
+      Bar: https://s3.amazonaws.com/foop/733b9125e901078b974b3a3f217405fc.yaml
 
 deep merges objects with Fn::DeepMerge:
 

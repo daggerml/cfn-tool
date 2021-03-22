@@ -164,7 +164,7 @@ module.exports = () ->
         log.info 'uploading templates to S3...'
         exec "#{cfn.aws} sync --size-only '#{opts.tmpdir}' 's3://#{opts.bucket}/cfn-tool/'"
 
-      bucketarg = "--s3-bucket '#{opts.bucket}' --s3-prefix cfn-tool/aws"   if opts.bucket
+      bucketarg = "--s3-bucket '#{opts.bucket}' --s3-prefix aws/"   if opts.bucket
       paramsarg = "--paramter-overrides #{parseKeyValArg(opts.parameters)}" if opts.parameters
       tagsarg   = "--tags #{parseKeyValArg(opts.tags)}"                     if opts.tags
 
