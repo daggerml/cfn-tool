@@ -5,7 +5,7 @@
 # INSTALL
 
 ```bash
-sudo npm install -g daggerml/cfn-tool
+sudo npm install -g daggerml/cfn-tool\#1.0.2
 ```
 
 # USAGE
