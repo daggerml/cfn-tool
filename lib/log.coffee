@@ -27,9 +27,11 @@ format = (
     color         = colors[info.level]
     verbose       = priority[module.exports.level] > priority.info or
                     priority[info.level] < priority.info
-    message       = color.bold("#{prog}: #{info.message}")
+    lines         = info.message.split('\n').map((x) -> x.trimRight()).filter((x) -> x)
+    message1      = color.bold("#{prog}: #{lines.shift()}")
+    message2      = color(lines.join('\n')) if lines.length
     body          = stderr.dim(info.body) if info.body and verbose
-    info[MESSAGE] = if body then [ message, body ].join('\n') else message
+    info[MESSAGE] = [message1, message2, body].filter((x) -> x).join('\n')
     info
 )()
 

@@ -466,12 +466,12 @@ class CfnTransformer extends YamlTransformer
     ret = @writeText(@transformTemplateFile(file), fileExt(file), key)
 
     if @linter and @dolint
-      log.verbose "linting #{@template}..."
+      log.verbose "linting #{@template}"
       cmd = "#{@linter} #{ret.tmpPath}"
       @withCwd @basedir, (() => @tryExecRaw(cmd, 'lint error'))
 
     if @dovalidate
-      log.verbose "validating #{@template}..."
+      log.verbose "validating #{@template}"
       cmd = """
         #{@aws} cloudformation validate-template \
           --template-body "$(cat '#{ret.tmpPath}')"
@@ -487,7 +487,7 @@ class CfnTransformer extends YamlTransformer
 
   writeDir: (dir, key) ->
     tmpZip = @tmpPath("#{encodeURIComponent(@userPath(dir))}.zip")
-    log.verbose("packaging: #{dir}...")
+    log.verbose("packaging: #{dir}")
     @execShell("zip -r #{tmpZip} .", {cwd: dir})
     ret = @writePaths(@canonicalHash(dir, key), '.zip')
     fs.renameSync(tmpZip, ret.tmpPath)
@@ -507,7 +507,7 @@ class CfnTransformer extends YamlTransformer
   pushFile: (file, f) ->
     @nested.push(file)
     [old, @template] = [@template, @userPath(file)]
-    log.verbose("transforming #{@template}...")
+    log.verbose("transforming #{@template}")
     ret = @withCwd path.dirname(file), (() -> f(path.basename(file)))
     @template = old
     ret

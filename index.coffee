@@ -216,17 +216,19 @@ module.exports = () ->
   opts  = setLogLevel parseArgv process.argv.slice(2)
   cfn   = new CfnTransformer opts
   exec  = cfn.execShell.bind cfn
-  cfg   = opts.config or '.cfn-tool'
+  cfg   = opts.config or (existsSync('.cfn-tool') and '.cfn-tool')
   uid   = uuid.v4()
 
-  if existsSync(cfg)
+  if cfg
+    log.verbose "using config file: #{cfg}"
     setVars opts
+    cfgscript = readFileSync(cfg)
     try
       setVars parseConfig exec """
         . '#{cfg}'
         echo
         echo #{uid}
-        for i in `compgen -A variable | grep '^\\(AWS_\\|CFN_TOOL_\\)'`; do
+        for i in $(compgen -A variable | grep '^\\(AWS_\\|CFN_TOOL_\\)'); do
           echo $i=$(echo -n "${!i}" |base64 -w0)
         done
       """
@@ -238,7 +240,7 @@ module.exports = () ->
 
   setVars opts, true
 
-  log.verbose "got configuration options", {body: inspect selectKeys(opts, allOpts)}
+  log.verbose "configuration options", {body: inspect selectKeys(opts, allOpts)}
 
   if opts.doaws
     assertOk exec 'which aws', 'aws CLI tool not found on $PATH' if opts.stackname
@@ -247,7 +249,7 @@ module.exports = () ->
     assertOk cfn.awsversion in AWS_VERSIONS,
       "unsupported aws CLI tool version: #{cfn.awsversion} (supported versions are #{AWS_VERSIONS})"
 
-  log.info 'preparing templates...'
+  log.info 'preparing templates'
 
   res = cfn.writeTemplate(opts.template)
   tpl = readFileSync(res.tmpPath).toString('utf-8')
@@ -260,14 +262,14 @@ module.exports = () ->
 
       if res.nested.length
         throw new CfnError('bucket required for nested stacks') unless opts.bucket
-        log.info 'uploading templates to S3...'
+        log.info 'uploading templates to S3'
         exec "#{cfn.aws} sync --size-only '#{opts.tmpdir}' 's3://#{opts.bucket}/cfn-tool/'"
 
       bucketarg = "--s3-bucket '#{opts.bucket}' --s3-prefix aws/"   if opts.bucket
       paramsarg = "--paramter-overrides #{parseKeyValArg(opts.parameters)}" if opts.parameters
       tagsarg   = "--tags #{parseKeyValArg(opts.tags)}"                     if opts.tags
 
-      log.info 'deploying stack...'
+      log.info 'deploying stack'
       exec """
         #{cfn.aws} cloudformation deploy \
           --template-file '#{res.tmpPath}' \
@@ -276,5 +278,5 @@ module.exports = () ->
           #{bucketarg or ''} #{paramsarg or ''} #{tagsarg or ''}
       """
 
-  log.info 'done'
+  log.info 'done -- no errors'
   process.exit(0)
