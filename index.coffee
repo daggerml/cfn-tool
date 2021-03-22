@@ -233,7 +233,8 @@ module.exports = () ->
         done
       """
     catch e
-      abort new CfnError e.message.split('\n').shift()
+      e.message = e.message.split('\n').shift()
+      throw e
     opts  = setLogLevel parseArgv process.argv.slice(2)
     cfn   = new CfnTransformer opts
     exec  = cfn.execShell.bind cfn
