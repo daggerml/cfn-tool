@@ -121,8 +121,8 @@ The template file path will be appended to the <var>command</var> and run in
 program is run.</p></dd>
 <dt><code>-P</code>, <code>--parameters</code>=<var>key</var>=<var>value</var>[,<var>key</var>=<var>&lt;value</var>,...]</dt><dd><p>Set template input parameter overrides. When updating an existing stack the
 values of any unspecified parameters will be preserved.</p></dd>
-<dt><code>-p</code>, <code>--profile</code>=<var>name</var></dt><dd><p>Use the AWS profile given by <var>name</var>. This option overrides the
-<code>AWS_ACCESS_KEY_ID</code> and <code>AWS_SECRET_ACCESS_KEY</code> environment variables.
+<dt><code>-p</code>, <code>--profile</code>=<var>name</var></dt><dd><p>Use the AWS profile given by <var>name</var>. This option overrides the <code>AWS_PROFILE</code>,
+<code>AWS_ACCESS_KEY_ID</code>, and <code>AWS_SECRET_ACCESS_KEY</code> environment variables.
 (See the <code>ENVIRONMENT</code> section below.)</p></dd>
 <dt><code>-q</code>, <code>--quiet</code></dt><dd><p>Suppress all diagnostic output and warnings.</p></dd>
 <dt><code>-r</code>, <code>--region</code>=<var>name</var></dt><dd><p>Use the AWS region given by <var>name</var>. This option overrides the <code>AWS_REGION</code>
@@ -141,6 +141,8 @@ resource supports it.</p></dd>
 and <code>--region</code> options to configure the AWS credentials provider chain.</p>
 
 <dl>
+<dt><code>AWS_PROFILE</code></dt><dd><p>The name of the AWS profile with credentials and options to use. This
+variable is set automatically when the <code>--profile</code> option is specified.</p></dd>
 <dt><code>AWS_DEFAULT_REGION</code>, <code>AWS_REGION</code></dt><dd><p>The AWS region. These variables are set automatically when the <code>--region</code>
 option is specified. Either of the above can be set in the environment
 when the <code>--region</code> option is not specified (there are two because of an
@@ -157,7 +159,7 @@ the program.</p>
 
 <dl>
 <dt><code>CFN_TOOL_BUCKET</code></dt><dd>The name of the S3 bucket to which template files and packages will be
-uploaded. Overridden by the <code>-b</code>, <code>--bucket</code> option (see <code>deploy</code> above).</dd>
+uploaded. Overridden by the <code>--bucket</code> option (see <code>deploy</code> above).</dd>
 </dl>
 
 

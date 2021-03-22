@@ -53,8 +53,8 @@ Options:
     values of any unspecified parameters will be preserved.
 
   * `-p`, `--profile`=<name>:
-    Use the AWS profile given by <name>. This option overrides the
-    `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables.
+    Use the AWS profile given by <name>. This option overrides the `AWS_PROFILE`,
+    `AWS_ACCESS_KEY_ID`, and `AWS_SECRET_ACCESS_KEY` environment variables.
     (See the `ENVIRONMENT` section below.)
 
   * `-q`, `--quiet`:
@@ -78,6 +78,10 @@ Options:
 The following environment variables may be used in lieu of the `--profile`
 and `--region` options to configure the AWS credentials provider chain.
 
+  * `AWS_PROFILE`:
+    The name of the AWS profile with credentials and options to use. This
+    variable is set automatically when the `--profile` option is specified.
+
   * `AWS_DEFAULT_REGION`, `AWS_REGION`:
     The AWS region. These variables are set automatically when the `--region`
     option is specified. Either of the above can be set in the environment
@@ -97,7 +101,7 @@ the program.
 
   * `CFN_TOOL_BUCKET`:
     The name of the S3 bucket to which template files and packages will be
-    uploaded. Overridden by the `-b`, `--bucket` option (see `deploy` above).
+    uploaded. Overridden by the `--bucket` option (see `deploy` above).
 
 ## EXIT STATUS
 

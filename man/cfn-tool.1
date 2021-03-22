@@ -55,7 +55,7 @@ Set template input parameter overrides\. When updating an existing stack the val
 .
 .TP
 \fB\-p\fR, \fB\-\-profile\fR=\fIname\fR
-Use the AWS profile given by \fIname\fR\. This option overrides the \fBAWS_ACCESS_KEY_ID\fR and \fBAWS_SECRET_ACCESS_KEY\fR environment variables\. (See the \fBENVIRONMENT\fR section below\.)
+Use the AWS profile given by \fIname\fR\. This option overrides the \fBAWS_PROFILE\fR, \fBAWS_ACCESS_KEY_ID\fR, and \fBAWS_SECRET_ACCESS_KEY\fR environment variables\. (See the \fBENVIRONMENT\fR section below\.)
 .
 .TP
 \fB\-q\fR, \fB\-\-quiet\fR
@@ -77,6 +77,10 @@ Print diagnostic output while processing\.
 The following environment variables may be used in lieu of the \fB\-\-profile\fR and \fB\-\-region\fR options to configure the AWS credentials provider chain\.
 .
 .TP
+\fBAWS_PROFILE\fR
+The name of the AWS profile with credentials and options to use\. This variable is set automatically when the \fB\-\-profile\fR option is specified\.
+.
+.TP
 \fBAWS_DEFAULT_REGION\fR, \fBAWS_REGION\fR
 The AWS region\. These variables are set automatically when the \fB\-\-region\fR option is specified\. Either of the above can be set in the environment when the \fB\-\-region\fR option is not specified (there are two because of an inconsistency between the AWS CLI tools and the provider chain in the AWS SDK, sometimes you need the one, sometimes the other \-\- the tool will copy whichever one you set to the other one)\.
 .
@@ -93,7 +97,7 @@ Additionally, the following environment variables may be used to configure the p
 .
 .TP
 \fBCFN_TOOL_BUCKET\fR
-The name of the S3 bucket to which template files and packages will be uploaded\. Overridden by the \fB\-b\fR, \fB\-\-bucket\fR option (see \fBdeploy\fR above)\.
+The name of the S3 bucket to which template files and packages will be uploaded\. Overridden by the \fB\-\-bucket\fR option (see \fBdeploy\fR above)\.
 .
 .SH "EXIT STATUS"
 Exits with a status of 1 if an error occurred, or 0 otherwise\.
