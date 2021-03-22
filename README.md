@@ -33,9 +33,7 @@ The `cfn-tool` program provides preprocessor macros and handles the packaging,
 compression, and upload of templates and zip files to S3 for use in
 CloudFormation stacks.
 
-### Examples
-
-The [tests][16] contain many examples of template macro usage.
+> *Note:* The [tests][16] contain many examples of template macro usage.
 
 ### Short vs. Full Tags
 
