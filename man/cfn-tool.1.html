@@ -174,8 +174,11 @@ or <code>false</code>.</p></dd>
 
 <dl>
 <dt><code>.cfn-tool</code></dt><dd>This file (if it exists in the project directory) is a <code>bash</code>(1) script
-that provides configuration settings as described in the <code>ENVIRONMENT</code>
-section above.</dd>
+sourced by <code>cfn-tool</code> to provide configuration settings as described in
+the <code>ENVIRONMENT</code> section above. This behavior is overridden by the
+<code>--config</code> command line option or the <code>CFN_TOOL_CONFIG</code> environment
+variable. Any <code>CFN_TOOL_XXXX</code> variables defined in this file will be
+applied as default configuration options.</dd>
 </dl>
 
 

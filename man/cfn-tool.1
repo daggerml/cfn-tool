@@ -133,7 +133,7 @@ The following files are used to configure the \fBcfn\-tool\fR program:
 .
 .TP
 \fB\.cfn\-tool\fR
-This file (if it exists in the project directory) is a \fBbash\fR(1) script that provides configuration settings as described in the \fBENVIRONMENT\fR section above\.
+This file (if it exists in the project directory) is a \fBbash\fR(1) script sourced by \fBcfn\-tool\fR to provide configuration settings as described in the \fBENVIRONMENT\fR section above\. This behavior is overridden by the \fB\-\-config\fR command line option or the \fBCFN_TOOL_CONFIG\fR environment variable\. Any \fBCFN_TOOL_XXXX\fR variables defined in this file will be applied as default configuration options\.
 .
 .SH "EXIT STATUS"
 Exits with a status of 1 if an error occurred, or 0 otherwise\.
