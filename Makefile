@@ -1,8 +1,11 @@
-.PHONY: all man
+.PHONY: all man test
 
-all: man
+all: man test
 
 man: man/cfn-tool.1 man/cfn-tool.1.html
+
+test: package-lock.json
+	npm test
 
 package-lock.json: package.json
 	npm install
