@@ -174,7 +174,7 @@ interpolateSub = (form) ->
 class CfnTransformer extends YamlTransformer
   constructor: ({
     @basedir, @tmpdir, @cache, @s3bucket, @s3prefix, @verbose, @linter,
-    @aws, @awsversion
+    @aws, @awsversion, @dolint, @dovalidate
   } = {}) ->
     super()
 
@@ -448,7 +448,7 @@ class CfnTransformer extends YamlTransformer
   transformTemplateFile: (file) ->
     xformer = new @.constructor({
       @basedir, @tmpdir, @cache, @s3bucket, @s3prefix, @verbose, @linter,
-      @aws, @awsversion
+      @aws, @awsversion, @dolint, @dovalidate
     })
     xformer.transformFile(file)
 
@@ -464,14 +464,18 @@ class CfnTransformer extends YamlTransformer
     @template = @userPath(file)
     ret = @writeText(@transformTemplateFile(file), fileExt(file), key)
 
-    if @linter
+    if @linter and @dolint
       log.verbose "linting #{@template}..."
       cmd = "#{@linter} #{ret.tmpPath}"
-      @tryExecRaw cmd, 'lint error'
+      @withCwd @basedir, (() => @tryExecRaw(cmd, 'lint error'))
 
-    log.verbose "validating #{@template}..."
-    cmd = "#{@aws} cloudformation validate-template --template-body \"$(cat '#{ret.tmpPath}')\""
-    @tryExecRaw cmd, 'aws cloudformation validation error'
+    if @dovalidate
+      log.verbose "validating #{@template}..."
+      cmd = """
+        #{@aws} cloudformation validate-template \
+          --template-body "$(cat '#{ret.tmpPath}')"
+      """
+      @tryExecRaw cmd, 'aws cloudformation validation error'
 
     ret
 
@@ -494,16 +498,17 @@ class CfnTransformer extends YamlTransformer
   tmpPath: (name) ->
     path.join(@tmpdir, name)
 
+  withCwd: (dir, f) ->
+    old = process.cwd()
+    process.chdir(dir)
+    try f() finally process.chdir(old)
+
   pushFile: (file, f) ->
     @nested.push(file)
-    tpl = @template
-    dir = process.cwd()
-    @template = @userPath(file)
+    [old, @template] = [@template, @userPath(file)]
     log.verbose("transforming #{@template}...")
-    process.chdir(path.dirname(file))
-    ret = f(path.basename(file))
-    process.chdir(dir)
-    @template = tpl
+    ret = @withCwd path.dirname(file), (() -> f(path.basename(file)))
+    @template = old
     ret
 
   pushFileCaching: (file, f) ->

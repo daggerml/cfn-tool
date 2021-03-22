@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv='content-type' value='text/html;charset=utf8'>
+  <meta name='generator' value='Ronn/v0.7.3 (http://github.com/rtomayko/ronn/tree/0.7.3)'>
+  <title>cfn-tool(1) - encoding: utf-8</title>
+  <style type='text/css' media='all'>
+  /* style: man */
+  body#manpage {margin:0}
+  .mp {max-width:100ex;padding:0 9ex 1ex 4ex}
+  .mp p,.mp pre,.mp ul,.mp ol,.mp dl {margin:0 0 20px 0}
+  .mp h2 {margin:10px 0 0 0}
+  .mp > p,.mp > pre,.mp > ul,.mp > ol,.mp > dl {margin-left:8ex}
+  .mp h3 {margin:0 0 0 4ex}
+  .mp dt {margin:0;clear:left}
+  .mp dt.flush {float:left;width:8ex}
+  .mp dd {margin:0 0 0 9ex}
+  .mp h1,.mp h2,.mp h3,.mp h4 {clear:left}
+  .mp pre {margin-bottom:20px}
+  .mp pre+h2,.mp pre+h3 {margin-top:22px}
+  .mp h2+pre,.mp h3+pre {margin-top:5px}
+  .mp img {display:block;margin:auto}
+  .mp h1.man-title {display:none}
+  .mp,.mp code,.mp pre,.mp tt,.mp kbd,.mp samp,.mp h3,.mp h4 {font-family:monospace;font-size:14px;line-height:1.42857142857143}
+  .mp h2 {font-size:16px;line-height:1.25}
+  .mp h1 {font-size:20px;line-height:2}
+  .mp {text-align:justify;background:#fff}
+  .mp,.mp code,.mp pre,.mp pre code,.mp tt,.mp kbd,.mp samp {color:#131211}
+  .mp h1,.mp h2,.mp h3,.mp h4 {color:#030201}
+  .mp u {text-decoration:underline}
+  .mp code,.mp strong,.mp b {font-weight:bold;color:#131211}
+  .mp em,.mp var {font-style:italic;color:#232221;text-decoration:none}
+  .mp a,.mp a:link,.mp a:hover,.mp a code,.mp a pre,.mp a tt,.mp a kbd,.mp a samp {color:#0000ff}
+  .mp b.man-ref {font-weight:normal;color:#434241}
+  .mp pre {padding:0 4ex}
+  .mp pre code {font-weight:normal;color:#434241}
+  .mp h2+pre,h3+pre {padding-left:0}
+  ol.man-decor,ol.man-decor li {margin:3px 0 10px 0;padding:0;float:left;width:33%;list-style-type:none;text-transform:uppercase;color:#999;letter-spacing:1px}
+  ol.man-decor {width:100%}
+  ol.man-decor li.tl {text-align:left}
+  ol.man-decor li.tc {text-align:center;letter-spacing:4px}
+  ol.man-decor li.tr {text-align:right;float:right}
+  </style>
+  <style type='text/css' media='all'>
+  /* style: cfn-tool.1 */
+  .mp {margin-left: auto;margin-right: auto}
+  </style>
+</head>
+<!--
+  The following styles are deprecated and will be removed at some point:
+  div#man, div#man ol.man, div#man ol.head, div#man ol.man.
+
+  The .man-page, .man-decor, .man-head, .man-foot, .man-title, and
+  .man-navigation should be used instead.
+-->
+<body id='manpage'>
+  <div class='mp' id='man'>
+
+  <div class='man-navigation' style='display:none'>
+    <a href="#SYNOPSIS">SYNOPSIS</a>
+    <a href="#COMMANDS">COMMANDS</a>
+    <a href="#ENVIRONMENT">ENVIRONMENT</a>
+    <a href="#EXIT-STATUS">EXIT STATUS</a>
+  </div>
+
+  <ol class='man-decor man-head man head'>
+    <li class='tl'>cfn-tool(1)</li>
+    <li class='tc'>CloudFormation Tools</li>
+    <li class='tr'>cfn-tool(1)</li>
+  </ol>
+
+  <h1>encoding: utf-8</h1>
+<h1>cfn-tool(1) -- cloudformation template process and stack deploy</h1>
+
+<h2 id="SYNOPSIS">SYNOPSIS</h2>
+
+<p><code>cfn-tool</code> [<code>-h</code>|<code>--help</code>]<br />
+<code>cfn-tool</code> <code>transform</code> [<var>options</var>...] <var>template-file</var><br />
+<code>cfn-tool</code> <code>deploy</code> [<var>options</var>...] <var>template-file</var> [<var>stack-name</var>]</p>
+
+<h2 id="COMMANDS">COMMANDS</h2>
+
+<p>Deploys cloudformation stack <var>stackname</var>, where <var>stackname</var> is of the format
+<var>zone</var>-<var>template</var>. The <var>zone</var> must correspond to a configuration file named
+config/<var>zone</var>.yml and the <var>template</var> must correspond to a cloudformation
+template named infra/<var>template</var>.yml.</p>
+
+<h3 id="transform">transform</h3>
+
+<p>Given a <var>template-file</var>, expands macros in the template and prints the
+result YAML to stdout.</p>
+
+<p>Options:</p>
+
+<dl>
+<dt><code>-q</code>, <code>--quiet</code></dt><dd><p>Suppress all diagnostic output and warnings.</p></dd>
+<dt><code>-v</code>, <code>--verbose</code></dt><dd><p>Print diagnostic output while processing.</p></dd>
+</dl>
+
+
+<h3 id="deploy">deploy</h3>
+
+<p>Deploys <var>template-file</var> to the cloudformation stack <var>stack-name</var>. If no stack
+named <var>stack-name</var> exists one is be created. Otherwise the existing stack is
+updated.</p>
+
+<p>When no <var>stack-name</var> is specified a dry run is performed, where all templates
+are transformed, packaged, linted, and validated, but no templates or packages
+are uploaded to S3 and no stack is created or updated.</p>
+
+<p>Options:</p>
+
+<dl>
+<dt><code>-b</code>, <code>--bucket</code>=<var>name</var></dt><dd><p>Upload templates to the S3 bucket given by <var>name</var>. This option overrides
+the <code>CFN_TOOL_BUCKET</code> environment variable. (See the <code>ENVIRONMENT</code> section
+below.)</p></dd>
+<dt><code>-l</code>, <code>--linter</code>=<var>command</var></dt><dd><p>Run <var>command</var> on each processed template, aborting if the <var>command</var> fails.
+The template file path will be appended to the <var>command</var> and run in
+<code>bash</code>(1). Paths are relative to the directory in which the <code>cfn-tool</code>
+program is run.</p></dd>
+<dt><code>-P</code>, <code>--parameters</code>=<var>key</var>=<var>value</var>[,<var>key</var>=<var>&lt;value</var>,...]</dt><dd><p>Set template input parameter overrides. When updating an existing stack the
+values of any unspecified parameters will be preserved.</p></dd>
+<dt><code>-p</code>, <code>--profile</code>=<var>name</var></dt><dd><p>Use the AWS profile given by <var>name</var>.</p></dd>
+<dt><code>-q</code>, <code>--quiet</code></dt><dd><p>Suppress all diagnostic output and warnings.</p></dd>
+<dt><code>-r</code>, <code>--region</code>=<var>name</var></dt><dd><p>Use the AWS region given by <var>name</var>. This option overrides the <code>AWS_REGION</code>
+and <code>AWS_DEFAULT_REGION</code> environment variables. (See the <code>ENVIRONMENT</code>
+section below.)</p></dd>
+<dt><code>-t</code>, <code>--tags</code>=<var>key</var>=<var>value</var>[,<var>key</var>=<var>&lt;value</var>,...]</dt><dd><p>A list of tags to associate with the stack that is created or updated. AWS
+CloudFormation also propagates these tags to resources in the stack if the
+resource supports it.</p></dd>
+<dt><code>-v</code>, <code>--verbose</code></dt><dd><p>Print diagnostic output while processing.</p></dd>
+</dl>
+
+
+<h2 id="ENVIRONMENT">ENVIRONMENT</h2>
+
+<p>The following environment variables may be used in lieu of profiles for the
+AWS credentials provider chain.</p>
+
+<dl>
+<dt><code>AWS_DEFAULT_REGION</code>, <code>AWS_REGION</code></dt><dd><p>The AWS region. These variables are set automatically when the <code>--region</code>
+option is specified. Either of the above can be set in the environment
+when the <code>--region</code> option is not specified (there are two because of an
+inconsistency between the AWS CLI tools and the provider chain in the AWS
+SDK, sometimes you need the one, sometimes the other -- the tool will copy
+whichever one you set to the other one).</p></dd>
+<dt><code>AWS_ACCESS_KEY_ID</code></dt><dd><p>The AWS access key identifier (ie. 'AKIAXXXXXXXXXXXXXXXX').</p></dd>
+<dt><code>AWS_SECRET_ACCESS_KEY</code></dt><dd><p>The AWS secret key.</p></dd>
+</dl>
+
+
+<p>Additionally, the following environment variables may be used to configure
+the program.</p>
+
+<dl>
+<dt><code>CFN_TOOL_BUCKET</code></dt><dd>The name of the S3 bucket to which template files and packages will be
+uploaded. Overridden by the <code>-b</code>, <code>--bucket</code> option (see <code>deploy</code> above).</dd>
+</dl>
+
+
+<h2 id="EXIT-STATUS">EXIT STATUS</h2>
+
+<p>Exits with a status of 1 if an error occurred, or 0 otherwise.</p>
+
+
+  <ol class='man-decor man-foot man foot'>
+    <li class='tl'></li>
+    <li class='tc'>March 2021</li>
+    <li class='tr'>cfn-tool(1)</li>
+  </ol>
+
+  </div>
+</body>
+</html>

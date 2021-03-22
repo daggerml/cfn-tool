@@ -1,0 +1,6 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Fn::Resources:
+  Foo Stack:
+    TemplateURL: !Template dir/template.yaml
+    Whoops: omg

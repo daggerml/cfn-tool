@@ -1,0 +1,4 @@
+us-west-2:
+  foo:
+    bar: 200
+    baz: 300

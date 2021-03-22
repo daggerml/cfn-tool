@@ -1,7 +1,7 @@
 {
-  "name": "template-package",
+  "name": "cfn-tool",
   "version": "1.0.0",
-  "description": "",
+  "description": "AWS CloudFormation template processing and stack deployment tool.",
   "main": "index.js",
   "directories": {
     "lib": "lib",
@@ -11,7 +11,7 @@
     "chalk": "^4.1.0",
     "coffeescript": "2.5.1",
     "getopts": "2.2.5",
-    "js-yaml": "showmethemodel/js-yaml#smtm",
+    "js-yaml": "daggerml/js-yaml#smtm",
     "uuid": "8.3.0",
     "winston": "^3.3.3"
   },
@@ -19,7 +19,9 @@
     "mocha": "8.1.3"
   },
   "scripts": {
-    "test": "mocha 'test/**/*.tests.coffee'"
+    "test": "mocha 'test/**/*.tests.coffee'",
+    "manroff": "docker run --rm -v $PWD:/app -w /app msoap/ruby-ronn ronn --manual 'CloudFormation Tools' --pipe -r cfn-tool.1.md > man/cfn-tool.1",
+    "manhtml": "docker run --rm -v $PWD:/app -w /app msoap/ruby-ronn ronn --manual 'CloudFormation Tools' --pipe -5 --style=/app/cfn-tool.1.css cfn-tool.1.md > man/cfn-tool.1.html"
   },
   "mocha": {
     "bail": true,
@@ -35,9 +37,18 @@
     ]
   },
   "bin": {
-    "stack-deploy": "bin/stack-deploy"
+    "cfn-tool": "bin/cfn-tool"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "man": [
+    "./man/cfn-tool.1"
+  ],
+  "keywords": [
+    "aws",
+    "cloudformation",
+    "yaml",
+    "template",
+    "deploy"
+  ],
+  "author": "micha.niskin@gmail.com",
+  "license": "MIT"
 }

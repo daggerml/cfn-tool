@@ -1,0 +1,65 @@
+###############################################################################
+
+example Fn::Parameters usage:
+
+  template:
+    Fn::Parameters:
+      - Foo
+      - Bar Type=CommaDelimitedList Default=FOO,BAR
+
+  expected:
+    Parameters:
+      Foo:
+        Type: String
+      Bar:
+        Type: CommaDelimitedList
+        Default: FOO,BAR
+
+###############################################################################
+
+example Fn::Let bindings as top level form:
+
+  template:
+    Fn::Let:
+      MyBucketName: my-bukkit
+
+    Resources:
+      MyBucket:
+        Type: AWS::S3::Bucket
+        BucketName: !Ref MyBucketName
+
+  expected:
+    Resources:
+      MyBucket:
+        Type: AWS::S3::Bucket
+        BucketName: my-bukkit
+
+###############################################################################
+
+example Fn::Let dynamic, late-binding template Refs:
+
+  template:
+    Fn::Let:
+      Foo: my-bukkit1
+      MyBucketTemplate:
+        Type: AWS::S3::Bucket
+        BucketName: !Ref MyBucketName
+
+    Resources:
+      Bucket1: !Let
+        - MyBucketName: !Ref Foo
+        - !Ref MyBucketTemplate
+
+      Bucket2: !Let
+        - MyBucketName: my-bukkit2
+        - !Ref MyBucketTemplate
+
+  expected:
+    Resources:
+      Bucket1:
+        Type: AWS::S3::Bucket
+        BucketName: my-bukkit1
+
+      Bucket2:
+        Type: AWS::S3::Bucket
+        BucketName: my-bukkit2

@@ -1,0 +1,7 @@
+!DeepMerge
+  - !TemplateFile ./config1.yaml
+  - !TemplateFile ./config2.yaml
+  - us-west-2:
+      foo:
+        bar: 400
+        baf: 500

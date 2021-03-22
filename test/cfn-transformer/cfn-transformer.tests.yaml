@@ -1,0 +1,424 @@
+round-trips simple yaml docs:
+
+  template:
+    Foo:
+      Bar: baz
+
+  expected:
+    Foo:
+      Bar: baz
+
+expands Fn::Parameters macros:
+
+  template:
+    <<: !Parameters
+      - Foo
+      - Bar Type=CommaDelimitedList
+
+  expected:
+    Parameters:
+      Foo:
+        Type: String
+      Bar:
+        Type: CommaDelimitedList
+
+creates dynamic bindings with Fn::Let:
+
+  template:
+    <<: !Let
+      MyName: nobody
+      MyAge: 0
+      Alice:
+        MyName: alice
+      Template:
+        MyNameIs: !Ref MyName
+        MyAgeIs: !Ref MyAge
+    Foo: !Let
+      - !Ref Alice
+      - !Ref Template
+    Bar: !Let
+      - MyName: bob
+        MyAge: 200
+      - !Ref Template
+    Baz:
+      Ref: Template
+      MyNameIs: charlie
+    Baf: !Ref Template
+
+  expected:
+    Foo:
+      MyNameIs: alice
+      MyAgeIs: 0
+    Bar:
+      MyNameIs: bob
+      MyAgeIs: 200
+    Baz:
+      MyNameIs: charlie
+      MyAgeIs: 0
+    Baf:
+      MyNameIs: nobody
+      MyAgeIs: 0
+
+substitites bindings in Refs and Subs:
+
+  template:
+    <<: !Let
+      Binding1: val1
+      Binding2: [val2, val3, val4]
+      Binding3:
+        Key1:
+          Key2: 100
+    Foo: !Ref Binding1
+    Bar: !Ref Binding2
+    Baz: !Ref Binding3.Key1.Key2
+    Baf: !Sub 'hello ${Binding1} world!'
+
+  expected:
+    Foo: val1
+    Bar:
+      - val2
+      - val3
+      - val4
+    Baz: 100
+    Baf: hello val1 world!
+
+substitutes env vars in Refs and Subs:
+
+  template:
+    Foo: !Ref '$MY_ENV_VAR'
+    Bar: !Sub 'hello ${$MY_ENV_VAR} world!'
+
+  expected:
+    Foo: myval
+    Bar: hello myval world!
+
+substitutes mapping lookups in Refs and Subs:
+
+  template:
+    Foo: !Ref '%key.subkey'
+    Bar: !Sub 'hello ${%key.subkey} world!'
+
+  expected:
+    Foo:
+      Fn::FindInMap:
+        - key
+        - subkey
+    Bar:
+      Fn::Join:
+        - ''
+        - - 'hello '
+          - Fn::FindInMap:
+            - key
+            - subkey
+          - ' world!'
+
+substitutes GetAtt lookups in Refs and Subs:
+
+  template:
+    Foo: !Ref '@Thing.ARN'
+    Bar: !Sub 'hello ${@Thing.ARN} world!'
+
+  expected:
+    Foo:
+      Fn::GetAtt:
+        - Thing
+        - ARN
+    Bar:
+      Fn::Join:
+        - ''
+        - - 'hello '
+          - Fn::GetAtt:
+            - Thing
+            - ARN
+          - ' world!'
+
+ignores Refs it cannot transform:
+
+  template:
+    Foo: !Ref Thing
+
+  expected:
+    Foo:
+      Ref: Thing
+
+expands Fn::Sub macros:
+
+  template:
+    <<: !Let
+      Test1: testval1
+    Foo: !Sub '${!Literal}One${Foo}Two${%${AWS::Region}.Vpc.CidrBlock}Three${@Bar.ARN}Four:${Test1}'
+
+  expected:
+    Foo:
+      Fn::Join:
+        - ''
+        - - ${!Literal}One
+          - Ref: Foo
+          - Two
+          - Fn::FindInMap:
+              - Ref: AWS::Region
+              - Vpc
+              - CidrBlock
+          - Three
+          - Fn::GetAtt:
+              - Bar
+              - ARN
+          - Four:testval1
+
+merges strings in Fn::Join:
+
+  template:
+    <<: !Let
+      Bind1: one
+      Bind2: two
+    Foo: !Sub '${Bind1}=1,${Bind2}=2,${$MY_ENV_VAR}=3'
+
+  expected:
+    Foo: 'one=1,two=2,myval=3'
+
+expands Fn::Resources macros:
+
+  template:
+    <<: !Let
+      Nonce: Foop
+      BucketTpl:
+        Type: AWS::S3::Bucket
+        Properties:
+          BucketName: !Ref Name
+    <<: !Resources
+      MyBucket${Nonce} AWS::S3::Bucket Condition=Prod DependsOn=[X,Y,Z]:
+        BucketName: mybucket
+      OtherBucket:
+        Type: AWS::S3::Bucket
+        Condition: Dev
+        Properties:
+          BucketName: otherbucket
+      TemplateBucket: !Let
+        - Name: templatebucket
+        - !Ref BucketTpl
+
+  expected:
+    Resources:
+      MyBucketFoop:
+        Condition: Prod
+        DependsOn:
+          - X
+          - 'Y'
+          - Z
+        Type: AWS::S3::Bucket
+        Properties:
+          BucketName: mybucket
+      OtherBucket:
+        Type: AWS::S3::Bucket
+        Condition: Dev
+        Properties:
+          BucketName: otherbucket
+      TemplateBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+          BucketName: templatebucket
+
+expands Stack resource macros:
+
+  template:
+    <<: !Resources
+      MyStack Stack:
+        TemplateURL: foop
+        Param1: hello world
+
+  expected:
+    Resources:
+      MyStack:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+          Parameters:
+            Param1: hello world
+          TemplateURL: foop
+
+expands bound templates:
+
+  template:
+    <<: !Let
+      Tpl:
+        Type: Stack
+        Properties:
+          TemplateURL: foop.yml
+          Param1: !Ref Param1
+    <<: !Resources
+      Thing1: !Let
+        - Param1: hello world
+        - !Ref Tpl
+      Thing2: !Let
+        - Param1: goodbye world
+        - !Ref Tpl
+
+  expected:
+    Resources:
+      Thing1:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+          TemplateURL: foop.yml
+          Parameters:
+            Param1: hello world
+      Thing2:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+          TemplateURL: foop.yml
+          Parameters:
+            Param1: goodbye world
+
+expands Fn::Return macros:
+
+  template:
+    <<: !Return
+      Foop: !Ref Foo
+      Barp: !GetAtt Bar.ARN
+      Bazp Name=${$CFN_TOOLS_ZONE}-${$CFN_TOOLS_REGION}-bazp: 123
+
+  expected:
+    Outputs:
+      Foop:
+        Value:
+          Ref: Foo
+      Barp:
+        Value:
+          Fn::GetAtt:
+            - Bar
+            - ARN
+      Bazp:
+        Value: 123
+        Export:
+          Name: test-us-east-1-bazp
+
+executes Fn::Shell commands:
+
+  template:
+    Foo: !Shell echo hello, world!
+
+  expected:
+    Foo: hello, world!
+
+packages regular files:
+
+  template:
+    Foo:
+      Bar: !PackageURL
+        CacheKey: foobar
+        Path: data/data1.txt
+      Baz: !Package data/data1.txt
+      Baf: !PackageURI data/data1.txt
+
+  expected:
+    Foo:
+      Bar: https://s3.amazonaws.com/foop/templates/e414662072572cdc75dfebea50d5bf9b.txt
+      Baz:
+        S3Bucket: foop
+        S3Key: templates/6f5902ac237024bdd0c176cb93063dc4.txt
+      Baf: s3://foop/templates/6f5902ac237024bdd0c176cb93063dc4.txt
+
+expands Fn::Do macros:
+
+  template:
+    Foo: !Do
+        - !Let { Greet: world }
+        - !Sub hello, ${Greet}!
+
+  expected:
+    Foo: hello, world!
+
+the package map result can be transformed with a let binding:
+
+  template:
+    Foo: !Let
+      - !Package data/data1.txt
+      - MyBucket: !Ref S3Bucket
+        MyKey: !Ref S3Key
+
+  expected:
+    Foo:
+      MyBucket: foop
+      MyKey: templates/6f5902ac237024bdd0c176cb93063dc4.txt
+
+runs build scripts before packaging:
+
+  template:
+    Foo:
+      Bar: !PackageURL [ !Shell 'make -C data data2.txt 1>&2 ; echo data/data2.txt' ]
+
+  expected:
+    Foo:
+      Bar: https://s3.amazonaws.com/foop/templates/f54a1fca2d39a6861ed89c203cbabe53.txt
+
+compresses directories before packaging:
+
+  template:
+    Foo:
+      Bar: !PackageURL data/dir
+
+  expected:
+    Foo:
+      Bar: https://s3.amazonaws.com/foop/templates/877df79d4664aca15df11a668fdfdf78.zip
+
+recursively packages templates:
+
+  template:
+    Foo:
+      Bar: !PackageTemplateURL data/template.yaml
+
+  expected:
+    Foo:
+      Bar: https://s3.amazonaws.com/foop/templates/733b9125e901078b974b3a3f217405fc.yaml
+
+deep merges objects with Fn::DeepMerge:
+
+  template:
+    Test1: !DeepMerge
+      - Foo:
+          Bar: 2
+      - Foo:
+          Baz: 3
+
+  expected:
+    Test1:
+      Foo:
+        Bar: 2
+        Baz: 3
+
+loads template files with Fn::TemplateFile:
+
+  template:
+    <<: !Let
+      Dir: data
+      Name: config
+
+    Foo: !TemplateFile data/config1.yaml
+    Bar: !DeepMerge [ !TemplateFile data/config1.yaml, !TemplateFile data/config2.yaml ]
+    Baz: !TemplateFile [ !Sub '${Dir}/${Name}3.yaml' ]
+
+  expected:
+    Foo:
+      us-west-2:
+        foo:
+          bar: 100
+    Bar:
+      us-west-2:
+        foo:
+          bar: 200
+          baz: 300
+    Baz:
+      us-west-2:
+        foo:
+          bar: 400
+          baz: 300
+          baf: 500
+
+adds macros with Fn::Require:
+
+  template:
+    <<: !Require ./lib/case-macros
+    Foo: !UpperCase AsDf
+    Bar: !LowerCase AsDf
+
+  expected:
+    Foo: ASDF
+    Bar: asdf
