@@ -73,8 +73,8 @@ Options:
 
 ## ENVIRONMENT
 
-The following environment variables may be used in lieu of the `-p`, `--profile`
-and `-r`, `--region` options to configure the AWS credentials provider chain.
+The following environment variables may be used in lieu of the `--profile`
+and `--region` options to configure the AWS credentials provider chain.
 
   * `AWS_DEFAULT_REGION`, `AWS_REGION`:
     The AWS region. These variables are set automatically when the `--region`
