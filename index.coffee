@@ -50,9 +50,11 @@ getoptsConfig =
 
   transform:
     alias:
+      config:     'c'
       quiet:      'q'
       verbose:    'v'
     boolean: [
+      'config'
       'quiet'
       'verbose'
     ]
@@ -62,6 +64,7 @@ getoptsConfig =
   deploy:
     alias:
       bucket:     'b'
+      config:     'c'
       linter:     'l'
       parameters: 'P'
       profile:    'p'
@@ -75,6 +78,7 @@ getoptsConfig =
     ]
     string: [
       'bucket'
+      'config'
       'linter'
       'parameters'
       'profile'

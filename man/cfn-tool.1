@@ -16,7 +16,7 @@
 \fBcfn\-tool\fR \fBdeploy\fR [\fIoptions\fR\.\.\.] \fItemplate\-file\fR [\fIstack\-name\fR]
 .
 .SH "COMMANDS"
-The first argument to \fBcfn\-tool\fR is the \fBcommand\fR \(em each command performs an operation and has its own set of options specified by subsequent arguments\.
+The first argument to \fBcfn\-tool\fR is the \fBcommand\fR \(em each command performs an operation and has its own set of options specified by subsequent arguments\. Default values for command line options may be provided via environment variables (see the \fBENVIRONMENT\fR section below)\.
 .
 .SS "transform"
 Given a \fItemplate\-file\fR, expands macros in the template and prints the result YAML to stdout\.
@@ -30,11 +30,11 @@ Specify the config file to use\. If this option is not specified \fBcfn\-tool\fR
 .
 .TP
 \fB\-q\fR, \fB\-\-quiet\fR
-Suppress all diagnostic output and warnings\.
+Suppress all informational, diagnostic, and warning output\.
 .
 .TP
 \fB\-v\fR, \fB\-\-verbose\fR
-Print diagnostic output while processing\.
+Print extra diagnostic output while processing\.
 .
 .SS "deploy"
 Deploys \fItemplate\-file\fR to the cloudformation stack \fIstack\-name\fR\. If no stack named \fIstack\-name\fR exists one is be created\. Otherwise the existing stack is updated\.
@@ -47,31 +47,31 @@ Options:
 .
 .TP
 \fB\-b\fR, \fB\-\-bucket\fR=\fIname\fR
-Upload templates to the S3 bucket given by \fIname\fR\. This option overrides the \fBCFN_TOOL_BUCKET\fR environment variable\. (See the \fBENVIRONMENT\fR section below\.)
+Upload templates to the S3 bucket given by \fIname\fR\. A bucket must be specified when nested stacks are used, or when the template specified by \fItemplate\-name\fR is more than 51KiB in size\.
 .
 .TP
 \fB\-c\fR, \fB\-\-config\fR=\fIfile\fR
-Specify the config file to use\. If this option is not specified \fBcfn\-tool\fR will look for a file named \fB\.cfn\-tool\fR in the current directory\. This file will be sourced in the \fBbash\fR(1) shell and can be used to configure the various \fBCFN_TOOL_XXXX\fR environment variables\. This option overrides the \fBCFN_TOOL_CONFIG\fR environment variable\. (See the \fBENVIRONMENT\fR section below\.)
+Specify the config file to use\. If this option is not specified \fBcfn\-tool\fR will look for a file named \fB\.cfn\-tool\fR in the current directory\. This file will be sourced in the \fBbash\fR(1) shell and can be used to configure the various \fBCFN_TOOL_XXXX\fR environment variables\.
 .
 .TP
 \fB\-l\fR, \fB\-\-linter\fR=\fIcommand\fR
 Run \fIcommand\fR on each processed template, aborting if the \fIcommand\fR fails\. The template file path will be appended to the \fIcommand\fR and run in \fBbash\fR(1)\. Paths are relative to the directory in which the \fBcfn\-tool\fR program is run\. This
 .
 .TP
-\fB\-P\fR, \fB\-\-parameters\fR=\fIkey\fR=\fIvalue\fR[,\fIkey\fR=\fI<value\fR,\.\.\.]
+\fB\-P\fR, \fB\-\-parameters\fR=\fIkey\fR=\fIvalue\fR[,\fIkey\fR=\fIvalue\fR,\.\.\.]
 Set template input parameter overrides\. When updating an existing stack the values of any unspecified parameters will be preserved\.
 .
 .TP
 \fB\-p\fR, \fB\-\-profile\fR=\fIname\fR
-Use the AWS profile given by \fIname\fR\. This option overrides the \fBAWS_PROFILE\fR, \fBAWS_ACCESS_KEY_ID\fR, and \fBAWS_SECRET_ACCESS_KEY\fR environment variables\. (See the \fBENVIRONMENT\fR section below\.)
+Use the AWS profile given by \fIname\fR to configure the AWS credentials provider chain\.
 .
 .TP
 \fB\-q\fR, \fB\-\-quiet\fR
-Suppress all diagnostic output and warnings\.
+Suppress all informational, diagnostic, and warning output\.
 .
 .TP
 \fB\-r\fR, \fB\-\-region\fR=\fIname\fR
-Use the AWS region given by \fIname\fR\. This option overrides the \fBAWS_REGION\fR and \fBAWS_DEFAULT_REGION\fR environment variables\. (See the \fBENVIRONMENT\fR section below\.)
+Use the AWS region given by \fIname\fR for all AWS API calls\.
 .
 .TP
 \fB\-t\fR, \fB\-\-tags\fR=\fIkey\fR=\fIvalue\fR[,\fIkey\fR=\fI<value\fR,\.\.\.]
@@ -79,33 +79,61 @@ A list of tags to associate with the stack that is created or updated\. AWS Clou
 .
 .TP
 \fB\-v\fR, \fB\-\-verbose\fR
-Print diagnostic output while processing\.
+Print extra diagnostic output while processing\.
 .
 .SH "ENVIRONMENT"
-The following environment variables may be used in lieu of the \fB\-\-profile\fR and \fB\-\-region\fR options to configure the AWS credentials provider chain\.
+The following environment variables provide default values for command line options\. Command line options override these variables and \fBcfn\-tools\fR sets or updates these variables when all command line options have been parsed\.
 .
 .TP
 \fBAWS_PROFILE\fR
-The name of the AWS profile with credentials and options to use\. This variable is set automatically when the \fB\-\-profile\fR option is specified\.
+Provides a default value for the \fB\-\-profile\fR option\.
 .
 .TP
-\fBAWS_DEFAULT_REGION\fR, \fBAWS_REGION\fR
-The AWS region\. These variables are set automatically when the \fB\-\-region\fR option is specified\. Either of the above can be set in the environment when the \fB\-\-region\fR option is not specified (there are two because of an inconsistency between the AWS CLI tools and the provider chain in the AWS SDK, sometimes you need the one, sometimes the other \-\- the tool will copy whichever one you set to the other one)\.
+\fBAWS_REGION\fR, \fBAWS_DEFAULT_REGION\fR
+Provides a default for the \fB\-\-region\fR option\. There are two region variables due to inconsistencies between various AWS APIs\. Only one of them needs to be set \(em \fBcfn\-tool\fR will set the other automatically\.
 .
 .TP
 \fBAWS_ACCESS_KEY_ID\fR
-The AWS access key identifier (ie\. \'AKIAXXXXXXXXXXXXXXXX\')\.
+The AWS access key\. Required when no profile is specified\.
 .
 .TP
 \fBAWS_SECRET_ACCESS_KEY\fR
-The AWS secret key\.
-.
-.P
-Additionally, the following environment variables may be used to configure the program\.
+The AWS secret key\. Required when no profile is specified\.
 .
 .TP
 \fBCFN_TOOL_BUCKET\fR
-The name of the S3 bucket to which template files and packages will be uploaded\. Overridden by the \fB\-\-bucket\fR option (see \fBdeploy\fR above)\.
+Provides a default value for the \fB\-\-bucket\fR option\.
+.
+.TP
+\fBCFN_TOOL_CONFIG\fR
+Provides a default value for the \fB\-\-config\fR option\.
+.
+.TP
+\fBCFN_TOOL_LINTER\fR
+Provides a default value for the \fB\-\-linter\fR option\.
+.
+.TP
+\fBCFN_TOOL_PARAMETERS\fR
+Provides a default value for the \fB\-\-parameters\fR option\.
+.
+.TP
+\fBCFN_TOOL_QUIET\fR
+Provides a default value for the \fB\-\-quiet\fR option\. Allowed values: \fBtrue\fR or \fBfalse\fR\.
+.
+.TP
+\fBCFN_TOOL_TAGS\fR
+Provides a default value for the \fB\-\-tags\fR option\.
+.
+.TP
+\fBCFN_TOOL_VERBOSE\fR
+Provides a default value for the \fB\-\-verbose\fR option\. Allowed values: \fBtrue\fR or \fBfalse\fR\.
+.
+.SH "FILES"
+The following files are used to configure the \fBcfn\-tool\fR program:
+.
+.TP
+\fB\.cfn\-tool\fR
+This file (if it exists in the project directory) is a \fBbash\fR(1) script that provides configuration settings as described in the \fBENVIRONMENT\fR section above\.
 .
 .SH "EXIT STATUS"
 Exits with a status of 1 if an error occurred, or 0 otherwise\.

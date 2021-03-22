@@ -61,6 +61,7 @@
     <a href="#SYNOPSIS">SYNOPSIS</a>
     <a href="#COMMANDS">COMMANDS</a>
     <a href="#ENVIRONMENT">ENVIRONMENT</a>
+    <a href="#FILES">FILES</a>
     <a href="#EXIT-STATUS">EXIT STATUS</a>
   </div>
 
@@ -84,7 +85,9 @@
 <h2 id="COMMANDS">COMMANDS</h2>
 
 <p>The first argument to <code>cfn-tool</code> is the <code>command</code> &mdash; each command performs
-an operation and has its own set of options specified by subsequent arguments.</p>
+an operation and has its own set of options specified by subsequent arguments.
+Default values for command line options may be provided via environment
+variables (see the <code>ENVIRONMENT</code> section below).</p>
 
 <h3 id="transform">transform</h3>
 
@@ -98,8 +101,8 @@ result YAML to stdout.</p>
 will look for a file named <code>.cfn-tool</code> in the current directory. This file
 will be sourced in the <code>bash</code>(1) shell and can be used to configure the
 various <code>CFN_TOOL_XXXX</code> environment variables.</p></dd>
-<dt><code>-q</code>, <code>--quiet</code></dt><dd><p>Suppress all diagnostic output and warnings.</p></dd>
-<dt><code>-v</code>, <code>--verbose</code></dt><dd><p>Print diagnostic output while processing.</p></dd>
+<dt><code>-q</code>, <code>--quiet</code></dt><dd><p>Suppress all informational, diagnostic, and warning output.</p></dd>
+<dt><code>-v</code>, <code>--verbose</code></dt><dd><p>Print extra diagnostic output while processing.</p></dd>
 </dl>
 
 
@@ -116,60 +119,63 @@ are uploaded to S3 and no stack is created or updated.</p>
 <p>Options:</p>
 
 <dl>
-<dt><code>-b</code>, <code>--bucket</code>=<var>name</var></dt><dd><p>Upload templates to the S3 bucket given by <var>name</var>. This option overrides
-the <code>CFN_TOOL_BUCKET</code> environment variable. (See the <code>ENVIRONMENT</code> section
-below.)</p></dd>
+<dt><code>-b</code>, <code>--bucket</code>=<var>name</var></dt><dd><p>Upload templates to the S3 bucket given by <var>name</var>. A bucket must be
+specified when nested stacks are used, or when the template specified by
+<var>template-name</var> is more than 51KiB in size.</p></dd>
 <dt><code>-c</code>, <code>--config</code>=<var>file</var></dt><dd><p>Specify the config file to use. If this option is not specified <code>cfn-tool</code>
 will look for a file named <code>.cfn-tool</code> in the current directory. This file
 will be sourced in the <code>bash</code>(1) shell and can be used to configure the
-various <code>CFN_TOOL_XXXX</code> environment variables. This option overrides the
-<code>CFN_TOOL_CONFIG</code> environment variable. (See the <code>ENVIRONMENT</code> section
-below.)</p></dd>
+various <code>CFN_TOOL_XXXX</code> environment variables.</p></dd>
 <dt><code>-l</code>, <code>--linter</code>=<var>command</var></dt><dd><p>Run <var>command</var> on each processed template, aborting if the <var>command</var> fails.
 The template file path will be appended to the <var>command</var> and run in
 <code>bash</code>(1). Paths are relative to the directory in which the <code>cfn-tool</code>
 program is run. This</p></dd>
-<dt><code>-P</code>, <code>--parameters</code>=<var>key</var>=<var>value</var>[,<var>key</var>=<var>&lt;value</var>,...]</dt><dd><p>Set template input parameter overrides. When updating an existing stack the
+<dt><code>-P</code>, <code>--parameters</code>=<var>key</var>=<var>value</var>[,<var>key</var>=<var>value</var>,...]</dt><dd><p>Set template input parameter overrides. When updating an existing stack the
 values of any unspecified parameters will be preserved.</p></dd>
-<dt><code>-p</code>, <code>--profile</code>=<var>name</var></dt><dd><p>Use the AWS profile given by <var>name</var>. This option overrides the <code>AWS_PROFILE</code>,
-<code>AWS_ACCESS_KEY_ID</code>, and <code>AWS_SECRET_ACCESS_KEY</code> environment variables.
-(See the <code>ENVIRONMENT</code> section below.)</p></dd>
-<dt><code>-q</code>, <code>--quiet</code></dt><dd><p>Suppress all diagnostic output and warnings.</p></dd>
-<dt><code>-r</code>, <code>--region</code>=<var>name</var></dt><dd><p>Use the AWS region given by <var>name</var>. This option overrides the <code>AWS_REGION</code>
-and <code>AWS_DEFAULT_REGION</code> environment variables. (See the <code>ENVIRONMENT</code>
-section below.)</p></dd>
+<dt><code>-p</code>, <code>--profile</code>=<var>name</var></dt><dd><p>Use the AWS profile given by <var>name</var> to configure the AWS credentials
+provider chain.</p></dd>
+<dt><code>-q</code>, <code>--quiet</code></dt><dd><p>Suppress all informational, diagnostic, and warning output.</p></dd>
+<dt><code>-r</code>, <code>--region</code>=<var>name</var></dt><dd><p>Use the AWS region given by <var>name</var> for all AWS API calls.</p></dd>
 <dt><code>-t</code>, <code>--tags</code>=<var>key</var>=<var>value</var>[,<var>key</var>=<var>&lt;value</var>,...]</dt><dd><p>A list of tags to associate with the stack that is created or updated. AWS
 CloudFormation also propagates these tags to resources in the stack if the
 resource supports it.</p></dd>
-<dt><code>-v</code>, <code>--verbose</code></dt><dd><p>Print diagnostic output while processing.</p></dd>
+<dt><code>-v</code>, <code>--verbose</code></dt><dd><p>Print extra diagnostic output while processing.</p></dd>
 </dl>
 
 
 <h2 id="ENVIRONMENT">ENVIRONMENT</h2>
 
-<p>The following environment variables may be used in lieu of the <code>--profile</code>
-and <code>--region</code> options to configure the AWS credentials provider chain.</p>
+<p>The following environment variables provide default values for command line
+options. Command line options override these variables and <code>cfn-tools</code> sets
+or updates these variables when all command line options have been parsed.</p>
 
 <dl>
-<dt><code>AWS_PROFILE</code></dt><dd><p>The name of the AWS profile with credentials and options to use. This
-variable is set automatically when the <code>--profile</code> option is specified.</p></dd>
-<dt><code>AWS_DEFAULT_REGION</code>, <code>AWS_REGION</code></dt><dd><p>The AWS region. These variables are set automatically when the <code>--region</code>
-option is specified. Either of the above can be set in the environment
-when the <code>--region</code> option is not specified (there are two because of an
-inconsistency between the AWS CLI tools and the provider chain in the AWS
-SDK, sometimes you need the one, sometimes the other -- the tool will copy
-whichever one you set to the other one).</p></dd>
-<dt><code>AWS_ACCESS_KEY_ID</code></dt><dd><p>The AWS access key identifier (ie. 'AKIAXXXXXXXXXXXXXXXX').</p></dd>
-<dt><code>AWS_SECRET_ACCESS_KEY</code></dt><dd><p>The AWS secret key.</p></dd>
+<dt><code>AWS_PROFILE</code></dt><dd><p>Provides a default value for the <code>--profile</code> option.</p></dd>
+<dt><code>AWS_REGION</code>, <code>AWS_DEFAULT_REGION</code></dt><dd><p>Provides a default for the <code>--region</code> option. There are two region
+variables due to inconsistencies between various AWS APIs. Only one of them
+needs to be set &mdash; <code>cfn-tool</code> will set the other automatically.</p></dd>
+<dt><code>AWS_ACCESS_KEY_ID</code></dt><dd><p>The AWS access key. Required when no profile is specified.</p></dd>
+<dt><code>AWS_SECRET_ACCESS_KEY</code></dt><dd><p>The AWS secret key. Required when no profile is specified.</p></dd>
+<dt><code>CFN_TOOL_BUCKET</code></dt><dd><p>Provides a default value for the <code>--bucket</code> option.</p></dd>
+<dt><code>CFN_TOOL_CONFIG</code></dt><dd><p>Provides a default value for the <code>--config</code> option.</p></dd>
+<dt><code>CFN_TOOL_LINTER</code></dt><dd><p>Provides a default value for the <code>--linter</code> option.</p></dd>
+<dt><code>CFN_TOOL_PARAMETERS</code></dt><dd><p>Provides a default value for the <code>--parameters</code> option.</p></dd>
+<dt><code>CFN_TOOL_QUIET</code></dt><dd><p>Provides a default value for the <code>--quiet</code> option. Allowed values: <code>true</code>
+or <code>false</code>.</p></dd>
+<dt><code>CFN_TOOL_TAGS</code></dt><dd><p>Provides a default value for the <code>--tags</code> option.</p></dd>
+<dt><code>CFN_TOOL_VERBOSE</code></dt><dd><p>Provides a default value for the <code>--verbose</code> option. Allowed values: <code>true</code>
+or <code>false</code>.</p></dd>
 </dl>
 
 
-<p>Additionally, the following environment variables may be used to configure
-the program.</p>
+<h2 id="FILES">FILES</h2>
+
+<p>The following files are used to configure the <code>cfn-tool</code> program:</p>
 
 <dl>
-<dt><code>CFN_TOOL_BUCKET</code></dt><dd>The name of the S3 bucket to which template files and packages will be
-uploaded. Overridden by the <code>--bucket</code> option (see <code>deploy</code> above).</dd>
+<dt><code>.cfn-tool</code></dt><dd>This file (if it exists in the project directory) is a <code>bash</code>(1) script
+that provides configuration settings as described in the <code>ENVIRONMENT</code>
+section above.</dd>
 </dl>
 
 
