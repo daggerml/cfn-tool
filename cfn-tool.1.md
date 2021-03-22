@@ -53,7 +53,9 @@ Options:
     values of any unspecified parameters will be preserved.
 
   * `-p`, `--profile`=<name>:
-    Use the AWS profile given by <name>.
+    Use the AWS profile given by <name>. This option overrides the
+    `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables.
+    (See the `ENVIRONMENT` section below.)
 
   * `-q`, `--quiet`:
     Suppress all diagnostic output and warnings.

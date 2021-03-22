@@ -121,7 +121,9 @@ The template file path will be appended to the <var>command</var> and run in
 program is run.</p></dd>
 <dt><code>-P</code>, <code>--parameters</code>=<var>key</var>=<var>value</var>[,<var>key</var>=<var>&lt;value</var>,...]</dt><dd><p>Set template input parameter overrides. When updating an existing stack the
 values of any unspecified parameters will be preserved.</p></dd>
-<dt><code>-p</code>, <code>--profile</code>=<var>name</var></dt><dd><p>Use the AWS profile given by <var>name</var>.</p></dd>
+<dt><code>-p</code>, <code>--profile</code>=<var>name</var></dt><dd><p>Use the AWS profile given by <var>name</var>. This option overrides the
+<code>AWS_ACCESS_KEY_ID</code> and <code>AWS_SECRET_ACCESS_KEY</code> environment variables.
+(See the <code>ENVIRONMENT</code> section below.)</p></dd>
 <dt><code>-q</code>, <code>--quiet</code></dt><dd><p>Suppress all diagnostic output and warnings.</p></dd>
 <dt><code>-r</code>, <code>--region</code>=<var>name</var></dt><dd><p>Use the AWS region given by <var>name</var>. This option overrides the <code>AWS_REGION</code>
 and <code>AWS_DEFAULT_REGION</code> environment variables. (See the <code>ENVIRONMENT</code>
