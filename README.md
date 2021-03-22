@@ -616,7 +616,7 @@ Resources:
 [3]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-importvalue.html
 [4]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-sub.html
 [5]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-stack.html
-[6]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/master/man/cfn-tool.1.html
+[6]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/master/man/cfn-tool.1.html?cachebust=1
 [7]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-ref.html
 [8]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-getatt.html
 [9]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-transform.html
