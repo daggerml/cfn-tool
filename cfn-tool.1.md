@@ -1,4 +1,3 @@
-# encoding: utf-8
 cfn-tool(1) -- cloudformation template process and stack deploy
 ===============================================================
 
