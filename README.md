@@ -1,13 +1,13 @@
 # cfn-tool
 Cloudformation template processing and stack deployment tool.
 
-# Install
+# INSTALL
 
 ```bash
 sudo npm install -g daggerml/cfn-tool
 ```
 
-# Usage
+# USAGE
 
 See [the manual page][6] (or `man cfn-tool`) for complete usage and options info.
 
@@ -26,7 +26,7 @@ cfn-tool deploy template.yml
 cfn-tool deploy template.yml my-stack
 ```
 
-# Template Macros
+# TEMPLATE MACROS
 
 The `cfn-tool` program provides preprocessor macros and handles the packaging,
 compression, and upload of templates and zip files to S3 for use in

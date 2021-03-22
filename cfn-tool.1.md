@@ -9,10 +9,8 @@ cfn-tool(1) -- cloudformation template process and stack deploy
 
 ## COMMANDS
 
-Deploys cloudformation stack <stackname>, where <stackname> is of the format
-<zone>-<template>. The <zone> must correspond to a configuration file named
-config/<zone>.yml and the <template> must correspond to a cloudformation
-template named infra/<template>.yml.
+The first argument to `cfn-tool` is the `command` &mdash; each command performs
+an operation and has its own set of options specified by subsequent arguments.
 
 ### transform
 
@@ -75,8 +73,8 @@ Options:
 
 ## ENVIRONMENT
 
-The following environment variables may be used in lieu of profiles for the
-AWS credentials provider chain.
+The following environment variables may be used in lieu of the `-p`, `--profile`
+and `-r`, `--region` options to configure the AWS credentials provider chain.
 
   * `AWS_DEFAULT_REGION`, `AWS_REGION`:
     The AWS region. These variables are set automatically when the `--region`

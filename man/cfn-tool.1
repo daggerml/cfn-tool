@@ -16,7 +16,7 @@
 \fBcfn\-tool\fR \fBdeploy\fR [\fIoptions\fR\.\.\.] \fItemplate\-file\fR [\fIstack\-name\fR]
 .
 .SH "COMMANDS"
-Deploys cloudformation stack \fIstackname\fR, where \fIstackname\fR is of the format \fIzone\fR\-\fItemplate\fR\. The \fIzone\fR must correspond to a configuration file named config/\fIzone\fR\.yml and the \fItemplate\fR must correspond to a cloudformation template named infra/\fItemplate\fR\.yml\.
+The first argument to \fBcfn\-tool\fR is the \fBcommand\fR \(em each command performs an operation and has its own set of options specified by subsequent arguments\.
 .
 .SS "transform"
 Given a \fItemplate\-file\fR, expands macros in the template and prints the result YAML to stdout\.
@@ -74,7 +74,7 @@ A list of tags to associate with the stack that is created or updated\. AWS Clou
 Print diagnostic output while processing\.
 .
 .SH "ENVIRONMENT"
-The following environment variables may be used in lieu of profiles for the AWS credentials provider chain\.
+The following environment variables may be used in lieu of the \fB\-p\fR, \fB\-\-profile\fR and \fB\-r\fR, \fB\-\-region\fR options to configure the AWS credentials provider chain\.
 .
 .TP
 \fBAWS_DEFAULT_REGION\fR, \fBAWS_REGION\fR
