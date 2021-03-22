@@ -135,8 +135,11 @@ The following files are used to configure the `cfn-tool` program:
 
   * `.cfn-tool`:
     This file (if it exists in the project directory) is a `bash`(1) script
-    that provides configuration settings as described in the `ENVIRONMENT`
-    section above.
+    sourced by `cfn-tool` to provide configuration settings as described in
+    the `ENVIRONMENT` section above. This behavior is overridden by the
+    `--config` command line option or the `CFN_TOOL_CONFIG` environment
+    variable. Any `CFN_TOOL_XXXX` variables defined in this file will be
+    applied as default configuration options.
 
 ## EXIT STATUS
 
