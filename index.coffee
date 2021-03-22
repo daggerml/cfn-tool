@@ -29,6 +29,10 @@ assertOk = (x, msg, body) ->
   throw new CfnError(msg, body) unless x
   x
 
+quit = (msg) ->
+  console.log msg if msg
+  process.exit 0
+
 abort = (e) ->
   e = new CfnError(e.message) if e.code is 'ENOENT'
   body = if e instanceof CfnError then e.body else e.body or e.stack
@@ -157,12 +161,10 @@ setVars = (opts, clobber=false) ->
   fixRegion()
 
 usage = () ->
-  console.log "See the manpage (man cfn-tool)."
-  process.exit(0)
+  quit "See the manpage (man cfn-tool)."
 
 version = () ->
-  console.log require('./package.json').version
-  process.exit(0)
+  quit require('./package.json').version
 
 parseArgv = (argv) ->
   unknown       = (x) -> abort new CfnError("unknown option: '#{x}'")
@@ -278,7 +280,7 @@ module.exports = () ->
         log.info 'uploading templates to S3'
         exec "#{cfn.aws} sync --size-only '#{opts.tmpdir}' 's3://#{opts.bucket}/cfn-tool/'"
 
-      bucketarg = "--s3-bucket '#{opts.bucket}' --s3-prefix aws/"   if opts.bucket
+      bucketarg = "--s3-bucket '#{opts.bucket}' --s3-prefix aws/"           if opts.bucket
       paramsarg = "--paramter-overrides #{parseKeyValArg(opts.parameters)}" if opts.parameters
       tagsarg   = "--tags #{parseKeyValArg(opts.tags)}"                     if opts.tags
 
@@ -292,4 +294,4 @@ module.exports = () ->
       """
 
   log.info 'done -- no errors'
-  process.exit(0)
+  quit()
