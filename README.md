@@ -1,5 +1,6 @@
-# cfn-tool
-Cloudformation template processing and stack deployment tool.
+# NAME
+
+`cfn-tool` &mdash; a cloudformation template processing and stack deployment tool.
 
 # INSTALL
 
