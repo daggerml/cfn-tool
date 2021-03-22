@@ -1,15 +1,16 @@
-fs                = require 'fs'
-os                = require 'os'
-path              = require 'path'
-uuid              = require 'uuid'
-{inspect}         = require 'util'
-getopts           = require 'getopts'
-yaml              = require 'js-yaml'
-log               = require './lib/log'
-CfnError          = require './lib/CfnError'
-CfnTransformer    = require './lib/cfn-transformer'
-tmpdir            = fs.mkdtempSync([os.tmpdir(), 'stack-deploy-'].join('/'))
-AWS_VERSIONS      = [1, 2]
+fs                  = require 'fs'
+os                  = require 'os'
+path                = require 'path'
+uuid                = require 'uuid'
+{inspect}           = require 'util'
+getopts             = require 'getopts'
+yaml                = require 'js-yaml'
+log                 = require './lib/log'
+CfnError            = require './lib/CfnError'
+CfnTransformer      = require './lib/cfn-transformer'
+{version: VERSION}  = require './package.json'
+tmpdir              = fs.mkdtempSync([os.tmpdir(), 'stack-deploy-'].join('/'))
+AWS_VERSIONS        = [1, 2]
 
 identity = (x) -> x
 
@@ -161,10 +162,14 @@ setVars = (opts, clobber=false) ->
   fixRegion()
 
 usage = () ->
-  quit "See the manpage (man cfn-tool)."
+  quit """
+    See the manpage:
+    * cmd: man cfn-tool
+    * url: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/#{VERSION}/man/cfn-tool.1.html
+  """
 
 version = () ->
-  quit require('./package.json').version
+  quit VERSION
 
 parseArgv = (argv) ->
   unknown       = (x) -> abort new CfnError("unknown option: '#{x}'")
