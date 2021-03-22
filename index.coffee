@@ -64,8 +64,13 @@ fixRegion = () ->
 fixRegion()
 
 getoptsBaseConfig =
-  alias:      {help: 'h'}
-  boolean:    ['help']
+  alias:
+    help:     'h'
+    version:  'V'
+  boolean:    [
+    'help'
+    'version'
+  ]
   string:     []
   default:    {}
   stopEarly:  true
@@ -155,13 +160,20 @@ usage = () ->
   console.log "See the manpage (man cfn-tool)."
   process.exit(0)
 
+version = () ->
+  console.log require('./package.json').version
+  process.exit(0)
+
 parseArgv = (argv) ->
-  usage() if argv[0] in ['-h', '--help']
   unknown       = (x) -> abort new CfnError("unknown option: '#{x}'")
   mkconfig      = (x, y) -> Object.assign({unknown, default: getVars()}, y or getoptsConfig[x])
   opts          = getopts argv, mkconfig(null, getoptsBaseConfig)
   argv          = opts._
-  opts          = if opts.help or not argv[0] then usage() else {command: argv.shift()}
+  opts          = switch
+    when opts.help then usage()
+    when opts.version then version()
+    when not argv.length then usage()
+    else {command: argv.shift()}
 
   assertOk opts.command in commands, "command required (one of: #{commands})"
   Object.assign opts, getopts(argv, mkconfig(opts.command))

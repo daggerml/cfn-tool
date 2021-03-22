@@ -3,7 +3,7 @@ cfn-tool(1) -- cloudformation template process and stack deploy
 
 ## SYNOPSIS
 
-`cfn-tool` [`-h`|`--help`]<br>
+`cfn-tool` [`-h`|`--help`|`-V`|`--version`]<br>
 `cfn-tool` `transform` [<options>...] <template-file><br>
 `cfn-tool` `deploy` [<options>...] <template-file> [<stack-name>]
 
