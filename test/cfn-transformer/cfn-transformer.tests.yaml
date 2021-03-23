@@ -367,7 +367,7 @@ recursively packages templates:
 
   expected:
     Foo:
-      Bar: https://s3.amazonaws.com/foop/733b9125e901078b974b3a3f217405fc.yaml
+      Bar: https://s3.amazonaws.com/foop/14108f8899cbb3dc6629d94c22b2119c.yaml
 
 deep merges objects with Fn::DeepMerge:
 

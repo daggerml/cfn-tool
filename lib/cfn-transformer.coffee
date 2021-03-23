@@ -174,7 +174,7 @@ interpolateSub = (form) ->
 class CfnTransformer extends YamlTransformer
   constructor: ({
     @basedir, @tmpdir, @cache, @s3bucket, @s3prefix, @verbose, @linter,
-    @aws, @awsversion, @dolint, @dovalidate
+    @dolint, @dovalidate
   } = {}) ->
     super()
 
@@ -463,7 +463,7 @@ class CfnTransformer extends YamlTransformer
   transformTemplateFile: (file) ->
     xformer = new @.constructor({
       @basedir, @tmpdir, @cache, @s3bucket, @s3prefix, @verbose, @linter,
-      @aws, @awsversion, @dolint, @dovalidate
+      @dolint, @dovalidate
     })
     xformer.transformFile(file)
 
@@ -483,7 +483,7 @@ class CfnTransformer extends YamlTransformer
   validate: (file) ->
     log.verbose "validating #{@template}"
     cmd = """
-      #{@aws} cloudformation validate-template \
+      aws cloudformation validate-template \
         --template-body "$(cat '#{file}')"
     """
     @tryExecRaw cmd, 'aws cloudformation validation error'

@@ -82,7 +82,6 @@ getoptsConfig =
 
   transform:
     alias:
-      bucket:     'b'
       config:     'c'
       keep:       'k'
       quiet:      'q'
@@ -94,7 +93,6 @@ getoptsConfig =
     ]
     string: [
       'config'
-      'bucket'
     ]
     default: {}
 
@@ -198,19 +196,15 @@ parseArgv = (argv) ->
 
   opts.s3bucket = opts.bucket
 
-  if opts.command is 'deploy'
-    Object.assign opts,
-      dolint:     true
-      dovalidate: true
-      doaws:      true
-      s3bucket:   opts.bucket
+  switch opts.command
+    when 'deploy'
+      Object.assign opts,
+        dolint:     true
+        dovalidate: true
+        doaws:      true
+        s3bucket:   opts.bucket
 
   opts
-
-generateAwsCommand = (profile, region) ->
-  parg = if profile then "--profile '#{profile}'" else ''
-  rarg = if region then "--region '#{region}'" else ''
-  "aws #{parg} #{rarg}".replace(/ +/g, ' ').trimRight()
 
 parseAwsVersion = (x) ->
   Number x?.match(/^aws-cli\/([0-9]+)\./)?[1]
@@ -267,6 +261,8 @@ module.exports = () ->
 
   setVars opts, true
 
+  cfn.s3bucket = 'fake-bucket' if opts.command is 'transform'
+
   opts.tmpdir = fs.mkdtempSync([os.tmpdir(), 'stack-deploy-'].join('/'))
   process.on 'exit', () -> fs.rmdirSync opts.tmpdir, {recursive: true} unless opts.keep
 
@@ -274,10 +270,9 @@ module.exports = () ->
 
   if opts.doaws
     assertOk exec 'which aws', 'aws CLI tool not found on $PATH' if opts.stackname
-    cfn.aws         = generateAwsCommand opts.profile, opts.region
-    cfn.awsversion  = parseAwsVersion exec 'aws --version'
-    assertOk cfn.awsversion in AWS_VERSIONS,
-      "unsupported aws CLI tool version: #{cfn.awsversion} (supported versions are #{AWS_VERSIONS})"
+    awsversion = parseAwsVersion(exec('aws --version'))
+    assertOk awsversion in AWS_VERSIONS,
+      "unsupported aws CLI tool version: #{awsversion} (supported versions are #{AWS_VERSIONS})"
 
   log.info 'preparing templates'
 
@@ -293,7 +288,7 @@ module.exports = () ->
       if res.nested.length
         throw new CfnError('bucket required for nested stacks') unless opts.bucket
         log.info 'uploading templates to S3'
-        exec "#{cfn.aws} sync --size-only '#{opts.tmpdir}' 's3://#{opts.bucket}/cfn-tool/'"
+        exec "aws sync --size-only '#{opts.tmpdir}' 's3://#{opts.bucket}/cfn-tool/'"
 
       bucketarg = "--s3-bucket '#{opts.bucket}' --s3-prefix aws/"           if opts.bucket
       paramsarg = "--paramter-overrides #{parseKeyValArg(opts.parameters)}" if opts.parameters
@@ -301,7 +296,7 @@ module.exports = () ->
 
       log.info 'deploying stack'
       exec """
-        #{cfn.aws} cloudformation deploy \
+        aws cloudformation deploy \
           --template-file '#{res.tmpPath}' \
           --stack-name '#{opts.stackname}' \
           --capabilities CAPABILITY_NAMED_IAM CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
