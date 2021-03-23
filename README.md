@@ -10,8 +10,6 @@ sudo npm install -g 'daggerml/cfn-tool#3.0.1'
 
 # USAGE
 
-See [the manual page][6] (or `man cfn-tool`) for complete usage and options info.
-
 Expand macros in `template.yml` and print resulting YAML to stdout:
 
 ```bash
@@ -25,6 +23,9 @@ to `my-stack`:
 ```bash
 cfn-tool template.yml my-stack
 ```
+
+> **Note:** See [the manual page][6] (or `man cfn-tool`) for complete usage and options info.
+
 
 # TEMPLATE MACROS
 
