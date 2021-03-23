@@ -125,7 +125,7 @@ defined are used as defaults. Here is an example configuration file:
 Note that environment variables associated with options specified on the
 command line, such as the `AWS_DEFAULT_REGION` variable above (associated with
 the `--region` command line option), are defined in the environment in which
-the configuration file is evaluated.
+the configuration file is evaluated when that command line option is specified.
 
 ## EXIT STATUS
 
@@ -140,7 +140,7 @@ Please open an issue: <https://github.com/daggerml/cfn-tool/issues>.
 Copyright © 2021 Micha Niskin `<micha.niskin@gmail.com>`, distributed under
 the following license:
 
-* <https://github.com/daggerml/cfn-tool/blob/3.0.2/LICENSE>
+* <https://github.com/daggerml/cfn-tool/blob/3.0.3/LICENSE>
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
