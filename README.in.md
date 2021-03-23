@@ -18,7 +18,7 @@ cfn-tool template.yml
 ```
 
 ```bash
-# create or update the my-stack stack from the template.yml template
+# expand macros in my-template and nested templates, upload packages and templates to S3, validate templates, and deploy to my-stack
 cfn-tool template.yml my-stack
 ```
 
