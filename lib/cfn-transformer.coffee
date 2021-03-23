@@ -405,7 +405,8 @@ class CfnTransformer extends YamlTransformer
     e.aborting = true
     throw e
 
-  handleShell: (command, res, raw) ->
+  handleShell: (cmd, res, raw) ->
+    cmd = prependLines cmd, 'cmd'
     stdout = res.stdout?.toString('utf-8')
     stderr = res.stderr?.toString('utf-8')
     res.out = prependLines(stdout, 'out')
@@ -415,18 +416,18 @@ class CfnTransformer extends YamlTransformer
       res
     else
       if res.status is 0
-        log.verbose "bash: status 0\n#{command}", {body: res.all}
+        log.verbose "bash: status 0", {body: "#{cmd}\n#{res.all}"}
         stdout
       else
-        throw new CfnError("bash: exit status #{res.status}\n#{command}", res.all)
+        throw new CfnError("bash: exit status #{res.status}", "#{cmd}\n#{res.all}")
 
-  execShell: (command, opts, raw=false) ->
-    res = spawnSync(command, merge({stdio: 'pipe', shell: '/bin/bash'}, opts))
-    @handleShell command, res, raw
+  execShell: (cmd, opts, raw=false) ->
+    res = spawnSync(cmd, merge({stdio: 'pipe', shell: '/bin/bash'}, opts))
+    @handleShell cmd, res, raw
 
-  execShellArgs: (command, args, opts, raw=false) ->
-    res = spawnSync(command, args, merge({stdio: 'pipe', shell: '/bin/bash'}, opts))
-    @handleShell command, res, raw
+  execShellArgs: (cmd, args, opts, raw=false) ->
+    res = spawnSync(cmd, args, merge({stdio: 'pipe', shell: '/bin/bash'}, opts))
+    @handleShell cmd, res, raw
 
   withCwd: (dir, f) ->
     old = process.cwd()
@@ -435,7 +436,9 @@ class CfnTransformer extends YamlTransformer
 
   withKeyStack: (ks, f) ->
     [@keystack, old] = [ks, @keystack]
-    try f() finally @keystack = old
+    ret = f()
+    @keystack = old
+    ret
 
   withBindings: (bindings, f) ->
     @bindstack.push(merge({}, peek(@bindstack), assertObject(bindings)))
@@ -469,10 +472,11 @@ class CfnTransformer extends YamlTransformer
 
   tryExecRaw: (cmd, msg) ->
     res = @execShell cmd, null, true
+    cmd = prependLines cmd, 'cmd'
     if res.status is 0
-      log.verbose "bash: status 0\n#{cmd}", {body: res.all}
+      log.verbose "bash: status 0", {body: "#{cmd}\n#{res.all}"}
     else
-      log.verbose "bash: exit status #{res.status}\n#{cmd}"
+      log.verbose "bash: exit status #{res.status}", {body: cmd}
       throw new CfnError msg, res.all
 
   lint: (file) ->
