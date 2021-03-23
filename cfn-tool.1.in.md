@@ -110,8 +110,22 @@ variable. See the `OPTIONS` section above.
 
 ## FILES
 
-  * `.cfn-tool`:
-    The default configuration file. See the `--config` option above.
+The `cfn-tool` program will look for a configuration file specified by the
+`--config` option, the `CFN_TOOL_CONFIG` environment variable, or the default
+`.cfn-tool` file in the current working directory. When this file exists it is
+sourced in the `bash`(1) shell and any configuration environment variables
+defined are used as defaults. Here is an example configuration file:
+
+    CFN_TOOL_BUCKET=my-infra-${AWS_DEFAULT_REGION:?}
+    CFN_TOOL_KEEP=true
+    CFN_TOOL_LINTER="cfn-lint -f pretty -i W1007 --"
+    CFN_TOOL_PARAMETERS="Zone=${ZONE:?} Service=RestAPI"
+    CFN_TOOL_TAGS="Zone=${ZONE:?} Service=RestAPI"
+
+Note that environment variables associated with options specified on the
+command line, such as the `AWS_DEFAULT_REGION` variable above (associated with
+the `--region` command line option), are defined in the environment in which
+the configuration file is evaluated.
 
 ## EXIT STATUS
 
