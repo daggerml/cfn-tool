@@ -84,7 +84,9 @@ getoptsConfig =
     alias:
       config:     'c'
       keep:       'k'
+      profile:    'p'
       quiet:      'q'
+      region:     'r'
       verbose:    'v'
     boolean: [
       'keep'
@@ -93,6 +95,8 @@ getoptsConfig =
     ]
     string: [
       'config'
+      'profile'
+      'region'
     ]
     default: {}
 

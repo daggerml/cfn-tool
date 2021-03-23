@@ -103,7 +103,10 @@ will be sourced in the <code>bash</code>(1) shell and can be used to configure t
 various <code>CFN_TOOL_XXXX</code> environment variables.</p></dd>
 <dt><code>-k</code>, <code>--keep</code></dt><dd><p>Don't delete the temporary directory to which processed templates are
 written when <code>cfn-tool</code> exits. This can be useful for debugging.</p></dd>
+<dt><code>-p</code>, <code>--profile</code>=<var>name</var></dt><dd><p>Use the AWS profile given by <var>name</var> to configure the AWS credentials
+provider chain.</p></dd>
 <dt><code>-q</code>, <code>--quiet</code></dt><dd><p>Suppress all informational, diagnostic, and warning output.</p></dd>
+<dt><code>-r</code>, <code>--region</code>=<var>name</var></dt><dd><p>Use the AWS region given by <var>name</var> for all AWS API calls.</p></dd>
 <dt><code>-v</code>, <code>--verbose</code></dt><dd><p>Print extra diagnostic output while processing.</p></dd>
 </dl>
 
@@ -192,7 +195,7 @@ applied as default configuration options.</dd>
 
 
   <ol class='man-decor man-foot man foot'>
-    <li class='tl'>CloudFormation Tools 1.0.9</li>
+    <li class='tl'>CloudFormation Tools 1.0.10</li>
     <li class='tc'>March 2021</li>
     <li class='tr'>cfn-tool(1)</li>
   </ol>

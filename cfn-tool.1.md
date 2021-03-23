@@ -31,9 +31,15 @@ Options:
     Don't delete the temporary directory to which processed templates are
     written when `cfn-tool` exits. This can be useful for debugging.
 
+  * `-p`, `--profile`=<name>:
+    Use the AWS profile given by <name> to configure the AWS credentials
+    provider chain.
+
   * `-q`, `--quiet`:
     Suppress all informational, diagnostic, and warning output.
 
+  * `-r`, `--region`=<name>:
+    Use the AWS region given by <name> for all AWS API calls.
 
   * `-v`, `--verbose`:
     Print extra diagnostic output while processing.
