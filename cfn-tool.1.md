@@ -85,7 +85,7 @@ Options:
   * `-r`, `--region`=<name>:
     Use the AWS region given by <name> for all AWS API calls.
 
-  * `-t`, `--tags`=<key>=<value>[,<key>=<<value>,...]:
+  * `-t`, `--tags`=<key>=<value>[,<key>=<value>,...]:
     A list of tags to associate with the stack that is created or updated. AWS
     CloudFormation also propagates these tags to resources in the stack if the
     resource supports it.
