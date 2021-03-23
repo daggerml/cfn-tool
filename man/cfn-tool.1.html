@@ -142,7 +142,7 @@ written when <code>cfn-tool</code> exits. This can be useful for debugging.</p><
 fails. The template file path is appended to the <var>command</var> string and the
 resulting command line is evaluated in the <code>bash</code>(1) shell. The working
 directory is set to the directory in which the <code>cfn-tool</code> program was run.</p></dd>
-<dt><code>-p</code>, <code>--paramters</code>="<var>key</var>=<var>value</var> [<var>key</var>=<var>value</var> ...]"</dt><dd><p>Set template input parameter overrides. When updating an existing stack the
+<dt><code>-p</code>, <code>--parameters</code>="<var>key</var>=<var>value</var> [<var>key</var>=<var>value</var> ...]"</dt><dd><p>Set template input parameter overrides. When updating an existing stack the
 values of any unspecified parameters will be preserved.</p></dd>
 <dt><code>-p</code>, <code>--profile</code>=<var>name</var></dt><dd><p>Use the AWS profile given by <var>name</var> to configure the AWS credentials
 provider chain.</p></dd>
@@ -162,10 +162,10 @@ resource supports it.</p></dd>
 <pre><code>$ cfn-tool --linter "cfn-lint -f pretty" my-template.yml my-stack
 </code></pre>
 
-<p>Specifying tags and paramters as key-value pairs:</p>
+<p>Specifying tags and parameters as key-value pairs:</p>
 
 <pre><code>$ cfn-tool --tags "Foo=bar Baz=baf" my-template.yml my-stack
-$ cfn-tool --paramters "Foo=bar Baz=baf" my-template.yml my-stack
+$ cfn-tool --parameters "Foo=bar Baz=baf" my-template.yml my-stack
 </code></pre>
 
 <h2 id="ENVIRONMENT">ENVIRONMENT</h2>
@@ -194,7 +194,7 @@ variable. See the <code>OPTIONS</code> section above.</p>
 the following license:</p>
 
 <ul>
-<li><a href="https://github.com/daggerml/cfn-tool/blob/3.0.0/LICENSE" data-bare-link="true">https://github.com/daggerml/cfn-tool/blob/3.0.0/LICENSE</a></li>
+<li><a href="https://github.com/daggerml/cfn-tool/blob/3.0.1/LICENSE" data-bare-link="true">https://github.com/daggerml/cfn-tool/blob/3.0.1/LICENSE</a></li>
 </ul>
 
 
@@ -208,7 +208,7 @@ THE SOFTWARE.</p>
 
 
   <ol class='man-decor man-foot man foot'>
-    <li class='tl'>CloudFormation Tools 3.0.0</li>
+    <li class='tl'>CloudFormation Tools 3.0.1</li>
     <li class='tc'>March 2021</li>
     <li class='tr'>cfn-tool(1)</li>
   </ol>

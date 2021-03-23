@@ -70,7 +70,7 @@ commands are executed.
     resulting command line is evaluated in the `bash`(1) shell. The working
     directory is set to the directory in which the `cfn-tool` program was run.
 
-  * `-p`, `--paramters`="<key>=<value> [<key>=<value> ...]":
+  * `-p`, `--parameters`="<key>=<value> [<key>=<value> ...]":
     Set template input parameter overrides. When updating an existing stack the
     values of any unspecified parameters will be preserved.
 
@@ -98,10 +98,10 @@ Using `cfn-lint`(1) to lint processed templates:
 
     $ cfn-tool --linter "cfn-lint -f pretty" my-template.yml my-stack
 
-Specifying tags and paramters as key-value pairs:
+Specifying tags and parameters as key-value pairs:
 
     $ cfn-tool --tags "Foo=bar Baz=baf" my-template.yml my-stack
-    $ cfn-tool --paramters "Foo=bar Baz=baf" my-template.yml my-stack
+    $ cfn-tool --parameters "Foo=bar Baz=baf" my-template.yml my-stack
 
 ## ENVIRONMENT
 
