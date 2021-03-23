@@ -1,7 +1,7 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "CFN\-TOOL" "1" "March 2021" "CloudFormation Tools 1.0.6" "CloudFormation Tools"
+.TH "CFN\-TOOL" "1" "March 2021" "CloudFormation Tools 1.0.7" "CloudFormation Tools"
 .
 .SH "NAME"
 \fBcfn\-tool\fR \- cloudformation template process and stack deploy
@@ -34,7 +34,7 @@ Specify the config file to use\. If this option is not specified \fBcfn\-tool\fR
 .
 .TP
 \fB\-k\fR, \fB\-\-keep\fR
-Don\'t delete the temporary directory to which processed templates are written when \fBcfn\-tool\fR exits\. This can be useful for debugging template\.
+Don\'t delete the temporary directory to which processed templates are written when \fBcfn\-tool\fR exits\. This can be useful for debugging\.
 .
 .TP
 \fB\-q\fR, \fB\-\-quiet\fR
@@ -63,11 +63,11 @@ Specify the config file to use\. If this option is not specified \fBcfn\-tool\fR
 .
 .TP
 \fB\-k\fR, \fB\-\-keep\fR
-Don\'t delete the temporary directory to which processed templates are written when \fBcfn\-tool\fR exits\. This can be useful for debugging template\.
+Don\'t delete the temporary directory to which processed templates are written when \fBcfn\-tool\fR exits\. This can be useful for debugging\.
 .
 .TP
 \fB\-l\fR, \fB\-\-linter\fR=\fIcommand\fR
-Run \fIcommand\fR on each processed template, aborting if the \fIcommand\fR fails\. The template file path will be appended to the \fIcommand\fR and run in \fBbash\fR(1)\. Paths are relative to the directory in which the \fBcfn\-tool\fR program is run\. This
+Run \fIcommand\fR on each processed template, aborting if the \fIcommand\fR fails\. The template file path will be appended to the \fIcommand\fR and run in \fBbash\fR(1)\. Paths are relative to the directory in which the \fBcfn\-tool\fR program is run\.
 .
 .TP
 \fB\-P\fR, \fB\-\-parameters\fR=\fIkey\fR=\fIvalue\fR[,\fIkey\fR=\fIvalue\fR,\.\.\.]

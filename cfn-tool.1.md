@@ -33,7 +33,7 @@ Options:
 
   * `-k`, `--keep`:
     Don't delete the temporary directory to which processed templates are
-    written when `cfn-tool` exits. This can be useful for debugging template.
+    written when `cfn-tool` exits. This can be useful for debugging.
 
   * `-q`, `--quiet`:
     Suppress all informational, diagnostic, and warning output.
@@ -67,13 +67,13 @@ Options:
 
   * `-k`, `--keep`:
     Don't delete the temporary directory to which processed templates are
-    written when `cfn-tool` exits. This can be useful for debugging template.
+    written when `cfn-tool` exits. This can be useful for debugging.
 
   * `-l`, `--linter`=<command>:
     Run <command> on each processed template, aborting if the <command> fails.
     The template file path will be appended to the <command> and run in
     `bash`(1). Paths are relative to the directory in which the `cfn-tool`
-    program is run. This
+    program is run.
 
   * `-P`, `--parameters`=<key>=<value>[,<key>=<value>,...]:
     Set template input parameter overrides. When updating an existing stack the
