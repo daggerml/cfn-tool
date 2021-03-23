@@ -182,7 +182,7 @@ parseAwsVersion = (x) ->
   Number x?.match(/^aws-cli\/([0-9]+)\./)?[1]
 
 parseKeyValArg = (x) ->
-  x.split(/,/).map((x) -> "'#{x}'").join(' ')
+  x.split(/ /).map((x) -> "'#{x}'").join(' ')
 
 parseConfig = (x, uid) ->
   lines = x.split('\n').map((x) -> x.trim()).filter(identity)

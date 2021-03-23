@@ -17,13 +17,13 @@ templates are recursively processed, packages are prepared for upload, and
 their S3 URIs are computed. The processed template is then linted (optionally)
 and validated with the AWS CloudFormation API.
 
-When all templates have been successfully processed they are uploaded to S3
-along with their associated packages, and the stack is deployed.
+When all templates have been successfully processed, any nested templates are
+uploaded to S3 with their associated packages and the stack is deployed.
 
-When no <stack-name> is specified macros in the <template-file> are expanded,
-the resulting YAML is printed to `stdout`, and the program exits. In this case
-no nested templates are processed, no packages are prepared, and no linting
-or validation is performed.
+When no <stack-name> is specified, macros in the <template-file> are expanded,
+the resulting YAML is printed to `stdout`, and the program exits. No nested
+templates are processed, no packages are prepared, no linting or validation is
+performed, and no stack is deployed. This can be useful for debugging.
 
 ## OPTIONS
 
@@ -37,10 +37,17 @@ environment variable. The `--profile` and `--region` options are special
 &mdash; they are associated with the AWS environment variables `AWS_PROFILE`
 and `AWS_DEFAULT_REGION`.
 
-
 Environment variables associated with boolean options must have a value of
 either `true` or `false`. String options are specified identically via the
 command line and environment variables.
+
+Options provided via the command line will be automatically exported as their
+corresponding environment variables, and will be in the environment of any
+shell commands executed during macro expansion. For example, when the
+`--profile` option is specified on the command line there is no need to use it
+in shell commands using the `aws`(1) CLI tool, as the `AWS_PROFILE` environment
+variable is exported by `cfn-tool` to the environment in which the shell
+commands are executed.
 
   * `-b`, `--bucket`=<name>:
     Upload templates to the S3 bucket given by <name>. A bucket must be
@@ -58,12 +65,12 @@ command line and environment variables.
     written when `cfn-tool` exits. This can be useful for debugging.
 
   * `-l`, `--linter`=<command>:
-    Run <command> on each processed template, aborting if the <command> fails.
-    The template file path will be appended to the <command> and run in
-    `bash`(1). Paths are relative to the directory in which the `cfn-tool`
-    program is run.
+    Run <command> on each processed template file, aborting if the <command>
+    fails. The template file path is appended to the <command> string and the
+    resulting command line is evaluated in the `bash`(1) shell. The working
+    directory is set to the directory in which the `cfn-tool` program was run.
 
-  * `-P`, `--parameters`=<key>=<value>[,<key>=<value>,...]:
+  * `-p`, `--paramters`="<key>=<value> [<key>=<value> ...]":
     Set template input parameter overrides. When updating an existing stack the
     values of any unspecified parameters will be preserved.
 
@@ -77,13 +84,24 @@ command line and environment variables.
   * `-r`, `--region`=<name>:
     Use the AWS region given by <name> for all AWS API calls.
 
-  * `-t`, `--tags`=<key>=<value>[,<key>=<value>,...]:
+  * `-t`, `--tags`="<key>=<value> [<key>=<value> ...]":
     A list of tags to associate with the stack that is created or updated. AWS
     CloudFormation also propagates these tags to resources in the stack if the
     resource supports it.
 
   * `-v`, `--verbose`:
     Print extra diagnostic output while processing.
+
+## EXAMPLES
+
+Using `cfn-lint`(1) to lint processed templates:
+
+    $ cfn-tool --linter "cfn-lint -f pretty" my-template.yml my-stack
+
+Specifying tags and paramters as key-value pairs:
+
+    $ cfn-tool --tags "Foo=bar Baz=baf" my-template.yml my-stack
+    $ cfn-tool --paramters "Foo=bar Baz=baf" my-template.yml my-stack
 
 ## ENVIRONMENT
 
