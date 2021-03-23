@@ -1,5 +1,5 @@
 class CfnError extends Error
-  constructor: (message, @body) ->
+  constructor: (message, @body, @aborting) ->
     super message
 
 module.exports = CfnError

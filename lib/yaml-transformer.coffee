@@ -96,7 +96,7 @@ class YamlTransformer
       namespace[long] = (args...) =>
         try
           emit.apply(null, args)
-        catch e then @abort(e.message)
+        catch e then @abort e
     @
 
   defspecial: (tag, long, emit) ->

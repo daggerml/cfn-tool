@@ -27,6 +27,10 @@ Options:
     will be sourced in the `bash`(1) shell and can be used to configure the
     various `CFN_TOOL_XXXX` environment variables.
 
+  * `-k`, `--keep`:
+    Don't delete the temporary directory to which processed templates are
+    written when `cfn-tool` exits. This can be useful for debugging template.
+
   * `-q`, `--quiet`:
     Suppress all informational, diagnostic, and warning output.
 
@@ -57,6 +61,9 @@ Options:
     will be sourced in the `bash`(1) shell and can be used to configure the
     various `CFN_TOOL_XXXX` environment variables.
 
+  * `-k`, `--keep`:
+    Don't delete the temporary directory to which processed templates are
+    written when `cfn-tool` exits. This can be useful for debugging template.
 
   * `-l`, `--linter`=<command>:
     Run <command> on each processed template, aborting if the <command> fails.
@@ -112,6 +119,9 @@ or updates these variables when all command line options have been parsed.
   * `CFN_TOOL_CONFIG`:
     Provides a default value for the `--config` option.
 
+  * `CFN_TOOL_KEEP`:
+    Provides a default value for the `--keep` option (`true` or `false`).
+
   * `CFN_TOOL_LINTER`:
     Provides a default value for the `--linter` option.
 
@@ -119,15 +129,14 @@ or updates these variables when all command line options have been parsed.
     Provides a default value for the `--parameters` option.
 
   * `CFN_TOOL_QUIET`:
-    Provides a default value for the `--quiet` option. Allowed values: `true`
+    Provides a default value for the `--quiet` option (`true` or `false`).
     or `false`.
 
   * `CFN_TOOL_TAGS`:
     Provides a default value for the `--tags` option.
 
   * `CFN_TOOL_VERBOSE`:
-    Provides a default value for the `--verbose` option. Allowed values: `true`
-    or `false`.
+    Provides a default value for the `--verbose` option (`true` or `false`).
 
 ## FILES
 

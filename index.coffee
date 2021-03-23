@@ -9,7 +9,6 @@ log                 = require './lib/log'
 CfnError            = require './lib/CfnError'
 CfnTransformer      = require './lib/cfn-transformer'
 {version: VERSION}  = require './package.json'
-tmpdir              = fs.mkdtempSync([os.tmpdir(), 'stack-deploy-'].join('/'))
 AWS_VERSIONS        = [1, 2]
 
 identity = (x) -> x
@@ -40,7 +39,6 @@ abort = (e) ->
   log.error(e.message, {body})
   process.exit 1
 
-process.on 'exit', () -> fs.rmdirSync tmpdir, {recursive: true}
 process.on 'uncaughtException', abort
 
 typeOf = (thing) ->
@@ -84,21 +82,27 @@ getoptsConfig =
 
   transform:
     alias:
+      bucket:     'b'
       config:     'c'
+      keep:       'k'
       quiet:      'q'
       verbose:    'v'
     boolean: [
-      'config'
+      'keep'
       'quiet'
       'verbose'
     ]
-    string: []
+    string: [
+      'config'
+      'bucket'
+    ]
     default: {}
 
   deploy:
     alias:
       bucket:     'b'
       config:     'c'
+      keep:       'k'
       linter:     'l'
       parameters: 'P'
       profile:    'p'
@@ -107,6 +111,7 @@ getoptsConfig =
       tags:       't'
       verbose:    'v'
     boolean: [
+      'keep'
       'quiet'
       'verbose'
     ]
@@ -125,6 +130,7 @@ commands = Object.keys(getoptsConfig)
 opt2var =
   bucket:     'CFN_TOOL_BUCKET'
   config:     'CFN_TOOL_CONFIG'
+  keep:       'CFN_TOOL_KEEP'
   linter:     'CFN_TOOL_LINTER'
   parameters: 'CFN_TOOL_PARAMETERS'
   profile:    'AWS_PROFILE'
@@ -190,9 +196,10 @@ parseArgv = (argv) ->
 
   assertOk opts.template, 'template argument required'
 
+  opts.s3bucket = opts.bucket
+
   if opts.command is 'deploy'
     Object.assign opts,
-      tmpdir:     tmpdir
       dolint:     true
       dovalidate: true
       doaws:      true
@@ -259,6 +266,9 @@ module.exports = () ->
     exec  = cfn.execShell.bind cfn
 
   setVars opts, true
+
+  opts.tmpdir = fs.mkdtempSync([os.tmpdir(), 'stack-deploy-'].join('/'))
+  process.on 'exit', () -> fs.rmdirSync opts.tmpdir, {recursive: true} unless opts.keep
 
   log.verbose "configuration options", {body: inspect selectKeys(opts, allOpts)}
 

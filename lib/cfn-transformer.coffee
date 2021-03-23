@@ -394,12 +394,16 @@ class CfnTransformer extends YamlTransformer
         (if k in stackProps then Properties else Parameters)[k] = v
       merge(form, {Type, Properties})
 
-  abort: (msg, body) ->
-    errmsg = []
-    errmsg.unshift(msg) if msg
-    errmsg.unshift("at #{@keystack.join('/')}:") if @keystack.length
-    errmsg.unshift("in #{@template}:") if @template
-    throw new CfnError(errmsg.join(' '), body)
+  abort: (e) ->
+    {message, body, aborting} = e
+    if not aborting
+      errmsg = []
+      errmsg.push(message) if message
+      errmsg.push("in #{@template}") if @template
+      errmsg.push("at #{@keystack.join('/')}") if @keystack.length
+      e.message = errmsg.join('\n')
+    e.aborting = true
+    throw e
 
   handleShell: (command, res, raw) ->
     stdout = res.stdout?.toString('utf-8')
@@ -411,10 +415,10 @@ class CfnTransformer extends YamlTransformer
       res
     else
       if res.status is 0
-        log.verbose "bash: #{command}", {body: res.all}
+        log.verbose "bash: status 0\n#{command}", {body: res.all}
         stdout
       else
-        throw new CfnError("bash: exit status #{res.status}: #{command}", res.all)
+        throw new CfnError("bash: exit status #{res.status}\n#{command}", res.all)
 
   execShell: (command, opts, raw=false) ->
     res = spawnSync(command, merge({stdio: 'pipe', shell: '/bin/bash'}, opts))
@@ -423,6 +427,15 @@ class CfnTransformer extends YamlTransformer
   execShellArgs: (command, args, opts, raw=false) ->
     res = spawnSync(command, args, merge({stdio: 'pipe', shell: '/bin/bash'}, opts))
     @handleShell command, res, raw
+
+  withCwd: (dir, f) ->
+    old = process.cwd()
+    process.chdir(dir)
+    try f() finally process.chdir(old)
+
+  withKeyStack: (ks, f) ->
+    [@keystack, old] = [ks, @keystack]
+    try f() finally @keystack = old
 
   withBindings: (bindings, f) ->
     @bindstack.push(merge({}, peek(@bindstack), assertObject(bindings)))
@@ -436,6 +449,7 @@ class CfnTransformer extends YamlTransformer
     if key then md5(JSON.stringify([@canonicalKeyPath(),key])) else md5Path(fileOrDir)
 
   writePaths: (fileName, ext = '') ->
+    throw new CfnError("can't generate S3 URL: no S3 bucket configured") unless @s3bucket
     fileName = "#{fileName}#{ext}"
     nested:   @nested
     tmpPath:  @tmpPath(fileName),
@@ -456,29 +470,33 @@ class CfnTransformer extends YamlTransformer
   tryExecRaw: (cmd, msg) ->
     res = @execShell cmd, null, true
     if res.status is 0
-      log.verbose "bash: #{cmd}", {body: res.all}
+      log.verbose "bash: status 0\n#{cmd}", {body: res.all}
     else
-      log.verbose "bash: exit status #{res.status}: #{cmd}"
-      @abort msg, res.all
+      log.verbose "bash: exit status #{res.status}\n#{cmd}"
+      throw new CfnError msg, res.all
+
+  lint: (file) ->
+    log.verbose "linting #{@template}"
+    cmd = "#{@linter} #{file}"
+    @withCwd @basedir, (() => @tryExecRaw(cmd, 'lint error'))
+
+  validate: (file) ->
+    log.verbose "validating #{@template}"
+    cmd = """
+      #{@aws} cloudformation validate-template \
+        --template-body "$(cat '#{file}')"
+    """
+    @tryExecRaw cmd, 'aws cloudformation validation error'
 
   writeTemplate: (file, key) ->
-    @template = @userPath(file)
-    ret = @writeText(@transformTemplateFile(file), fileExt(file), key)
-
-    if @linter and @dolint
-      log.verbose "linting #{@template}"
-      cmd = "#{@linter} #{ret.tmpPath}"
-      @withCwd @basedir, (() => @tryExecRaw(cmd, 'lint error'))
-
-    if @dovalidate
-      log.verbose "validating #{@template}"
-      cmd = """
-        #{@aws} cloudformation validate-template \
-          --template-body "$(cat '#{ret.tmpPath}')"
-      """
-      @tryExecRaw cmd, 'aws cloudformation validation error'
-
-    ret
+    try
+      @template = @userPath(file)
+      @withKeyStack [], () =>
+        ret = @writeText(@transformTemplateFile(file), fileExt(file), key)
+        @lint ret.tmpPath if @linter and @dolint
+        @validate ret.tmpPath if @dovalidate
+        ret
+    catch e then @abort e
 
   writeFile: (file, key) ->
     ret = @writePaths(@canonicalHash(file, key), fileExt(file))
@@ -498,11 +516,6 @@ class CfnTransformer extends YamlTransformer
 
   tmpPath: (name) ->
     path.join(@tmpdir, name)
-
-  withCwd: (dir, f) ->
-    old = process.cwd()
-    process.chdir(dir)
-    try f() finally process.chdir(old)
 
   pushFile: (file, f) ->
     @nested.push(file)
@@ -526,7 +539,9 @@ class CfnTransformer extends YamlTransformer
     super(text)
 
   transformFile: (templateFile, doc) ->
-    doc = doc or fs.readFileSync(templateFile).toString('utf-8')
-    @pushFileCaching templateFile, (file) => @transform(doc)
+    try
+      doc = doc or fs.readFileSync(templateFile).toString('utf-8')
+      @pushFileCaching templateFile, (file) => @transform(doc)
+    catch e then @abort e
 
 module.exports = CfnTransformer

@@ -101,6 +101,8 @@ result YAML to stdout.</p>
 will look for a file named <code>.cfn-tool</code> in the current directory. This file
 will be sourced in the <code>bash</code>(1) shell and can be used to configure the
 various <code>CFN_TOOL_XXXX</code> environment variables.</p></dd>
+<dt><code>-k</code>, <code>--keep</code></dt><dd><p>Don't delete the temporary directory to which processed templates are
+written when <code>cfn-tool</code> exits. This can be useful for debugging template.</p></dd>
 <dt><code>-q</code>, <code>--quiet</code></dt><dd><p>Suppress all informational, diagnostic, and warning output.</p></dd>
 <dt><code>-v</code>, <code>--verbose</code></dt><dd><p>Print extra diagnostic output while processing.</p></dd>
 </dl>
@@ -126,6 +128,8 @@ specified when nested stacks are used, or when the template specified by
 will look for a file named <code>.cfn-tool</code> in the current directory. This file
 will be sourced in the <code>bash</code>(1) shell and can be used to configure the
 various <code>CFN_TOOL_XXXX</code> environment variables.</p></dd>
+<dt><code>-k</code>, <code>--keep</code></dt><dd><p>Don't delete the temporary directory to which processed templates are
+written when <code>cfn-tool</code> exits. This can be useful for debugging template.</p></dd>
 <dt><code>-l</code>, <code>--linter</code>=<var>command</var></dt><dd><p>Run <var>command</var> on each processed template, aborting if the <var>command</var> fails.
 The template file path will be appended to the <var>command</var> and run in
 <code>bash</code>(1). Paths are relative to the directory in which the <code>cfn-tool</code>
@@ -158,13 +162,13 @@ needs to be set &mdash; <code>cfn-tool</code> will set the other automatically.<
 <dt><code>AWS_SECRET_ACCESS_KEY</code></dt><dd><p>The AWS secret key. Required when no profile is specified.</p></dd>
 <dt><code>CFN_TOOL_BUCKET</code></dt><dd><p>Provides a default value for the <code>--bucket</code> option.</p></dd>
 <dt><code>CFN_TOOL_CONFIG</code></dt><dd><p>Provides a default value for the <code>--config</code> option.</p></dd>
+<dt><code>CFN_TOOL_KEEP</code></dt><dd><p>Provides a default value for the <code>--keep</code> option (<code>true</code> or <code>false</code>).</p></dd>
 <dt><code>CFN_TOOL_LINTER</code></dt><dd><p>Provides a default value for the <code>--linter</code> option.</p></dd>
 <dt><code>CFN_TOOL_PARAMETERS</code></dt><dd><p>Provides a default value for the <code>--parameters</code> option.</p></dd>
-<dt><code>CFN_TOOL_QUIET</code></dt><dd><p>Provides a default value for the <code>--quiet</code> option. Allowed values: <code>true</code>
+<dt><code>CFN_TOOL_QUIET</code></dt><dd><p>Provides a default value for the <code>--quiet</code> option (<code>true</code> or <code>false</code>).
 or <code>false</code>.</p></dd>
 <dt><code>CFN_TOOL_TAGS</code></dt><dd><p>Provides a default value for the <code>--tags</code> option.</p></dd>
-<dt><code>CFN_TOOL_VERBOSE</code></dt><dd><p>Provides a default value for the <code>--verbose</code> option. Allowed values: <code>true</code>
-or <code>false</code>.</p></dd>
+<dt><code>CFN_TOOL_VERBOSE</code></dt><dd><p>Provides a default value for the <code>--verbose</code> option (<code>true</code> or <code>false</code>).</p></dd>
 </dl>
 
 
@@ -188,7 +192,7 @@ applied as default configuration options.</dd>
 
 
   <ol class='man-decor man-foot man foot'>
-    <li class='tl'>CloudFormation Tools 1.0.4</li>
+    <li class='tl'>CloudFormation Tools 1.0.5</li>
     <li class='tc'>March 2021</li>
     <li class='tr'>cfn-tool(1)</li>
   </ol>

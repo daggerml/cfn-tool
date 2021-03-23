@@ -1,7 +1,7 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "CFN\-TOOL" "1" "March 2021" "CloudFormation Tools 1.0.4" "CloudFormation Tools"
+.TH "CFN\-TOOL" "1" "March 2021" "CloudFormation Tools 1.0.5" "CloudFormation Tools"
 .
 .SH "NAME"
 \fBcfn\-tool\fR \- cloudformation template process and stack deploy
@@ -29,6 +29,10 @@ Options:
 Specify the config file to use\. If this option is not specified \fBcfn\-tool\fR will look for a file named \fB\.cfn\-tool\fR in the current directory\. This file will be sourced in the \fBbash\fR(1) shell and can be used to configure the various \fBCFN_TOOL_XXXX\fR environment variables\.
 .
 .TP
+\fB\-k\fR, \fB\-\-keep\fR
+Don\'t delete the temporary directory to which processed templates are written when \fBcfn\-tool\fR exits\. This can be useful for debugging template\.
+.
+.TP
 \fB\-q\fR, \fB\-\-quiet\fR
 Suppress all informational, diagnostic, and warning output\.
 .
@@ -52,6 +56,10 @@ Upload templates to the S3 bucket given by \fIname\fR\. A bucket must be specifi
 .TP
 \fB\-c\fR, \fB\-\-config\fR=\fIfile\fR
 Specify the config file to use\. If this option is not specified \fBcfn\-tool\fR will look for a file named \fB\.cfn\-tool\fR in the current directory\. This file will be sourced in the \fBbash\fR(1) shell and can be used to configure the various \fBCFN_TOOL_XXXX\fR environment variables\.
+.
+.TP
+\fB\-k\fR, \fB\-\-keep\fR
+Don\'t delete the temporary directory to which processed templates are written when \fBcfn\-tool\fR exits\. This can be useful for debugging template\.
 .
 .TP
 \fB\-l\fR, \fB\-\-linter\fR=\fIcommand\fR
@@ -109,6 +117,10 @@ Provides a default value for the \fB\-\-bucket\fR option\.
 Provides a default value for the \fB\-\-config\fR option\.
 .
 .TP
+\fBCFN_TOOL_KEEP\fR
+Provides a default value for the \fB\-\-keep\fR option (\fBtrue\fR or \fBfalse\fR)\.
+.
+.TP
 \fBCFN_TOOL_LINTER\fR
 Provides a default value for the \fB\-\-linter\fR option\.
 .
@@ -118,7 +130,7 @@ Provides a default value for the \fB\-\-parameters\fR option\.
 .
 .TP
 \fBCFN_TOOL_QUIET\fR
-Provides a default value for the \fB\-\-quiet\fR option\. Allowed values: \fBtrue\fR or \fBfalse\fR\.
+Provides a default value for the \fB\-\-quiet\fR option (\fBtrue\fR or \fBfalse\fR)\. or \fBfalse\fR\.
 .
 .TP
 \fBCFN_TOOL_TAGS\fR
@@ -126,7 +138,7 @@ Provides a default value for the \fB\-\-tags\fR option\.
 .
 .TP
 \fBCFN_TOOL_VERBOSE\fR
-Provides a default value for the \fB\-\-verbose\fR option\. Allowed values: \fBtrue\fR or \fBfalse\fR\.
+Provides a default value for the \fB\-\-verbose\fR option (\fBtrue\fR or \fBfalse\fR)\.
 .
 .SH "FILES"
 The following files are used to configure the \fBcfn\-tool\fR program:
