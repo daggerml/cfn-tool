@@ -13,12 +13,13 @@ sudo npm install -g 'daggerml/cfn-tool#${VERSION}'
 See [the manual page][6] (or `man cfn-tool`) for complete usage and options info.
 
 ```bash
-# expand macros in template.yml and print resulting YAML to stdout
+# Expand macros in template.yml and print resulting YAML to stdout.
 cfn-tool template.yml
 ```
 
 ```bash
-# expand macros in my-template and nested templates, upload packages and templates to S3, validate templates, and deploy to my-stack
+# Expand macros in my-template.yml and nested templates, lint and validate templates,
+# upload packages and templates to S3, and deploy my-template.yml to my-stack.
 cfn-tool template.yml my-stack
 ```
 
