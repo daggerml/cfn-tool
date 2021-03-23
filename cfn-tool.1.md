@@ -21,6 +21,10 @@ result YAML to stdout.
 
 Options:
 
+  * `-b`, `--bucket`=<name>:
+    Upload templates to the S3 bucket given by <name>. A bucket must be
+    specified when nested stacks are used.
+
   * `-c`, `--config`=<file>:
     Specify the config file to use. If this option is not specified `cfn-tool`
     will look for a file named `.cfn-tool` in the current directory. This file
