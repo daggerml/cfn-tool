@@ -59,10 +59,13 @@
   <div class='man-navigation' style='display:none'>
     <a href="#NAME">NAME</a>
     <a href="#SYNOPSIS">SYNOPSIS</a>
-    <a href="#COMMANDS">COMMANDS</a>
+    <a href="#DESCRIPTION">DESCRIPTION</a>
+    <a href="#OPTIONS">OPTIONS</a>
     <a href="#ENVIRONMENT">ENVIRONMENT</a>
     <a href="#FILES">FILES</a>
     <a href="#EXIT-STATUS">EXIT STATUS</a>
+    <a href="#BUGS">BUGS</a>
+    <a href="#COPYRIGHT">COPYRIGHT</a>
   </div>
 
   <ol class='man-decor man-head man head'>
@@ -79,49 +82,42 @@
 <h2 id="SYNOPSIS">SYNOPSIS</h2>
 
 <p><code>cfn-tool</code> [<code>-h</code>|<code>--help</code>|<code>-V</code>|<code>--version</code>]<br />
-<code>cfn-tool</code> <code>transform</code> [<var>options</var>...] <var>template-file</var><br />
-<code>cfn-tool</code> <code>deploy</code> [<var>options</var>...] <var>template-file</var> [<var>stack-name</var>]</p>
+<code>cfn-tool</code> [<var>options</var>...] <var>template-file</var> [<var>stack-name</var>]</p>
 
-<h2 id="COMMANDS">COMMANDS</h2>
+<h2 id="DESCRIPTION">DESCRIPTION</h2>
 
-<p>The first argument to <code>cfn-tool</code> is the <code>command</code> &mdash; each command performs
-an operation and has its own set of options specified by subsequent arguments.
-Default values for command line options may be provided via environment
-variables (see the <code>ENVIRONMENT</code> section below).</p>
+<p>When a <var>stack-name</var> is specified <code>cfn-tool</code> deploys the template <var>template-file</var>
+to the cloudformation stack <var>stack-name</var>. If no stack named <var>stack-name</var> exists
+one is created. Otherwise, the existing stack is updated.</p>
 
-<h3 id="transform">transform</h3>
+<p>Each raw template file is processed as follows: macros are expanded, nested
+templates are recursively processed, packages are prepared for upload, and
+their S3 URIs are computed. The processed template is then linted (optionally)
+and validated with the AWS CloudFormation API.</p>
 
-<p>Given a <var>template-file</var>, expands macros in the template and prints the
-result YAML to stdout.</p>
+<p>When all templates have been successfully processed they are uploaded to S3
+along with their associated packages, and the stack is deployed.</p>
 
-<p>Options:</p>
+<p>When no <var>stack-name</var> is specified macros in the <var>template-file</var> are expanded,
+the resulting YAML is printed to <code>stdout</code>, and the program exits. In this case
+no nested templates are processed, no packages are prepared, and no linting
+or validation is performed.</p>
 
-<dl>
-<dt><code>-c</code>, <code>--config</code>=<var>file</var></dt><dd><p>Specify the config file to use. If this option is not specified <code>cfn-tool</code>
-will look for a file named <code>.cfn-tool</code> in the current directory. This file
-will be sourced in the <code>bash</code>(1) shell and can be used to configure the
-various <code>CFN_TOOL_XXXX</code> environment variables.</p></dd>
-<dt><code>-k</code>, <code>--keep</code></dt><dd><p>Don't delete the temporary directory to which processed templates are
-written when <code>cfn-tool</code> exits. This can be useful for debugging.</p></dd>
-<dt><code>-p</code>, <code>--profile</code>=<var>name</var></dt><dd><p>Use the AWS profile given by <var>name</var> to configure the AWS credentials
-provider chain.</p></dd>
-<dt><code>-q</code>, <code>--quiet</code></dt><dd><p>Suppress all informational, diagnostic, and warning output.</p></dd>
-<dt><code>-r</code>, <code>--region</code>=<var>name</var></dt><dd><p>Use the AWS region given by <var>name</var> for all AWS API calls.</p></dd>
-<dt><code>-v</code>, <code>--verbose</code></dt><dd><p>Print extra diagnostic output while processing.</p></dd>
-</dl>
+<h2 id="OPTIONS">OPTIONS</h2>
 
+<p>Options are configured in the following ways (from lowest to highest priority):
+configuration file, environment variables, and command line options.</p>
 
-<h3 id="deploy">deploy</h3>
+<p>Each command line option (except for <code>--profile</code> and <code>--region</code>) is associated
+with a corresponding environment variable according to the following pattern:
+the <code>--bucket</code> option, for example, is associated with the <code>CFN_TOOL_BUCKET</code>
+environment variable. The <code>--profile</code> and <code>--region</code> options are special
+&mdash; they are associated with the AWS environment variables <code>AWS_PROFILE</code>
+and <code>AWS_DEFAULT_REGION</code>.</p>
 
-<p>Deploys <var>template-file</var> to the cloudformation stack <var>stack-name</var>. If no stack
-named <var>stack-name</var> exists one is be created. Otherwise the existing stack is
-updated.</p>
-
-<p>When no <var>stack-name</var> is specified a dry run is performed, where all templates
-are transformed, packaged, linted, and validated, but no templates or packages
-are uploaded to S3 and no stack is created or updated.</p>
-
-<p>Options:</p>
+<p>Environment variables associated with boolean options must have a value of
+either <code>true</code> or <code>false</code>. String options are specified identically via the
+command line and environment variables.</p>
 
 <dl>
 <dt><code>-b</code>, <code>--bucket</code>=<var>name</var></dt><dd><p>Upload templates to the S3 bucket given by <var>name</var>. A bucket must be
@@ -129,8 +125,8 @@ specified when nested stacks are used, or when the template specified by
 <var>template-name</var> is more than 51KiB in size.</p></dd>
 <dt><code>-c</code>, <code>--config</code>=<var>file</var></dt><dd><p>Specify the config file to use. If this option is not specified <code>cfn-tool</code>
 will look for a file named <code>.cfn-tool</code> in the current directory. This file
-will be sourced in the <code>bash</code>(1) shell and can be used to configure the
-various <code>CFN_TOOL_XXXX</code> environment variables.</p></dd>
+will be sourced in the <code>bash</code>(1) shell. Environment variables defined here
+will be applied as default options.</p></dd>
 <dt><code>-k</code>, <code>--keep</code></dt><dd><p>Don't delete the temporary directory to which processed templates are
 written when <code>cfn-tool</code> exits. This can be useful for debugging.</p></dd>
 <dt><code>-l</code>, <code>--linter</code>=<var>command</var></dt><dd><p>Run <var>command</var> on each processed template, aborting if the <var>command</var> fails.
@@ -152,40 +148,13 @@ resource supports it.</p></dd>
 
 <h2 id="ENVIRONMENT">ENVIRONMENT</h2>
 
-<p>The following environment variables provide default values for command line
-options. Command line options override these variables and <code>cfn-tools</code> sets
-or updates these variables when all command line options have been parsed.</p>
-
-<dl>
-<dt><code>AWS_PROFILE</code></dt><dd><p>Provides a default value for the <code>--profile</code> option.</p></dd>
-<dt><code>AWS_REGION</code>, <code>AWS_DEFAULT_REGION</code></dt><dd><p>Provides a default for the <code>--region</code> option. There are two region
-variables due to inconsistencies between various AWS APIs. Only one of them
-needs to be set &mdash; <code>cfn-tool</code> will set the other automatically.</p></dd>
-<dt><code>AWS_ACCESS_KEY_ID</code></dt><dd><p>The AWS access key. Required when no profile is specified.</p></dd>
-<dt><code>AWS_SECRET_ACCESS_KEY</code></dt><dd><p>The AWS secret key. Required when no profile is specified.</p></dd>
-<dt><code>CFN_TOOL_BUCKET</code></dt><dd><p>Provides a default value for the <code>--bucket</code> option.</p></dd>
-<dt><code>CFN_TOOL_CONFIG</code></dt><dd><p>Provides a default value for the <code>--config</code> option.</p></dd>
-<dt><code>CFN_TOOL_KEEP</code></dt><dd><p>Provides a default value for the <code>--keep</code> option (<code>true</code> or <code>false</code>).</p></dd>
-<dt><code>CFN_TOOL_LINTER</code></dt><dd><p>Provides a default value for the <code>--linter</code> option.</p></dd>
-<dt><code>CFN_TOOL_PARAMETERS</code></dt><dd><p>Provides a default value for the <code>--parameters</code> option.</p></dd>
-<dt><code>CFN_TOOL_QUIET</code></dt><dd><p>Provides a default value for the <code>--quiet</code> option (<code>true</code> or <code>false</code>).
-or <code>false</code>.</p></dd>
-<dt><code>CFN_TOOL_TAGS</code></dt><dd><p>Provides a default value for the <code>--tags</code> option.</p></dd>
-<dt><code>CFN_TOOL_VERBOSE</code></dt><dd><p>Provides a default value for the <code>--verbose</code> option (<code>true</code> or <code>false</code>).</p></dd>
-</dl>
-
+<p>Each command line option is associated with a corresponding environment
+variable. See the <code>OPTIONS</code> section above.</p>
 
 <h2 id="FILES">FILES</h2>
 
-<p>The following files are used to configure the <code>cfn-tool</code> program:</p>
-
 <dl>
-<dt><code>.cfn-tool</code></dt><dd>This file (if it exists in the project directory) is a <code>bash</code>(1) script
-sourced by <code>cfn-tool</code> to provide configuration settings as described in
-the <code>ENVIRONMENT</code> section above. This behavior is overridden by the
-<code>--config</code> command line option or the <code>CFN_TOOL_CONFIG</code> environment
-variable. Any <code>CFN_TOOL_XXXX</code> variables defined in this file will be
-applied as default configuration options.</dd>
+<dt><code>.cfn-tool</code></dt><dd>The default configuration file. See the <code>--config</code> option above.</dd>
 </dl>
 
 
@@ -193,9 +162,29 @@ applied as default configuration options.</dd>
 
 <p>Exits with a status of 1 if an error occurred, or 0 otherwise.</p>
 
+<h2 id="BUGS">BUGS</h2>
+
+<p>Please open an issue: <a href="https://github.com/daggerml/cfn-tool/issues" data-bare-link="true">https://github.com/daggerml/cfn-tool/issues</a>.</p>
+
+<h2 id="COPYRIGHT">COPYRIGHT</h2>
+
+<p>Copyright © 2021 Micha Niskin <code>&lt;micha.niskin@gmail.com&gt;</code>, distributed under
+the following license:</p>
+
+<pre><code>https://github.com/daggerml/cfn-tool/blob/2.0.0/LICENSE
+</code></pre>
+
+<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.</p>
+
 
   <ol class='man-decor man-foot man foot'>
-    <li class='tl'>CloudFormation Tools 1.0.11</li>
+    <li class='tl'>CloudFormation Tools 2.0.0</li>
     <li class='tc'>March 2021</li>
     <li class='tr'>cfn-tool(1)</li>
   </ol>

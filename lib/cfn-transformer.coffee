@@ -174,7 +174,7 @@ interpolateSub = (form) ->
 class CfnTransformer extends YamlTransformer
   constructor: ({
     @basedir, @tmpdir, @cache, @s3bucket, @s3prefix, @verbose, @linter,
-    @dolint, @dovalidate
+    @dolint, @dovalidate, @dopackage
   } = {}) ->
     super()
 
@@ -319,17 +319,22 @@ class CfnTransformer extends YamlTransformer
       form = if isArray(form) then form[0] else form
       form = {Path: form} if isString(form)
       {Path, CacheKey, Parse} = form
-      key  = JSON.stringify {package: [@userPath(Path), CacheKey, Parse]}
-      if not @cache[key]?
-        @cache[key] = (
-          if isDirectory(Path)
-            @writeDir(Path, CacheKey)
-          else if Parse
-            @writeTemplate(Path, CacheKey)
-          else
-            @writeFile(Path, CacheKey)
-        ).code
-      @cache[key]
+      if @dopackage
+        key  = JSON.stringify {package: [@userPath(Path), CacheKey, Parse]}
+        if not @cache[key]?
+          @cache[key] = (
+            if isDirectory(Path)
+              @writeDir(Path, CacheKey)
+            else if Parse
+              @writeTemplate(Path, CacheKey)
+            else
+              @writeFile(Path, CacheKey)
+          ).code
+        @cache[key]
+      else
+        ext = if isDirectory(Path) then '.zip' else fileExt(Path)
+        S3Bucket: @s3bucket or 'bucket'
+        S3Key:    "example-key#{ext}"
 
     @defmacro 'PackageURL', (form) =>
       form = if isArray(form) then form[0] else form
@@ -466,7 +471,7 @@ class CfnTransformer extends YamlTransformer
   transformTemplateFile: (file) ->
     xformer = new @.constructor({
       @basedir, @tmpdir, @cache, @s3bucket, @s3prefix, @verbose, @linter,
-      @dolint, @dovalidate
+      @dolint, @dovalidate, @dopackage
     })
     xformer.transformFile(file)
 

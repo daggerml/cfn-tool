@@ -1,7 +1,7 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "CFN\-TOOL" "1" "March 2021" "CloudFormation Tools 1.0.11" "CloudFormation Tools"
+.TH "CFN\-TOOL" "1" "March 2021" "CloudFormation Tools 2.0.0" "CloudFormation Tools"
 .
 .SH "NAME"
 \fBcfn\-tool\fR \- cloudformation template process and stack deploy
@@ -10,52 +10,28 @@
 \fBcfn\-tool\fR [\fB\-h\fR|\fB\-\-help\fR|\fB\-V\fR|\fB\-\-version\fR]
 .
 .br
-\fBcfn\-tool\fR \fBtransform\fR [\fIoptions\fR\.\.\.] \fItemplate\-file\fR
+\fBcfn\-tool\fR [\fIoptions\fR\.\.\.] \fItemplate\-file\fR [\fIstack\-name\fR]
 .
-.br
-\fBcfn\-tool\fR \fBdeploy\fR [\fIoptions\fR\.\.\.] \fItemplate\-file\fR [\fIstack\-name\fR]
-.
-.SH "COMMANDS"
-The first argument to \fBcfn\-tool\fR is the \fBcommand\fR \(em each command performs an operation and has its own set of options specified by subsequent arguments\. Default values for command line options may be provided via environment variables (see the \fBENVIRONMENT\fR section below)\.
-.
-.SS "transform"
-Given a \fItemplate\-file\fR, expands macros in the template and prints the result YAML to stdout\.
+.SH "DESCRIPTION"
+When a \fIstack\-name\fR is specified \fBcfn\-tool\fR deploys the template \fItemplate\-file\fR to the cloudformation stack \fIstack\-name\fR\. If no stack named \fIstack\-name\fR exists one is created\. Otherwise, the existing stack is updated\.
 .
 .P
-Options:
-.
-.TP
-\fB\-c\fR, \fB\-\-config\fR=\fIfile\fR
-Specify the config file to use\. If this option is not specified \fBcfn\-tool\fR will look for a file named \fB\.cfn\-tool\fR in the current directory\. This file will be sourced in the \fBbash\fR(1) shell and can be used to configure the various \fBCFN_TOOL_XXXX\fR environment variables\.
-.
-.TP
-\fB\-k\fR, \fB\-\-keep\fR
-Don\'t delete the temporary directory to which processed templates are written when \fBcfn\-tool\fR exits\. This can be useful for debugging\.
-.
-.TP
-\fB\-p\fR, \fB\-\-profile\fR=\fIname\fR
-Use the AWS profile given by \fIname\fR to configure the AWS credentials provider chain\.
-.
-.TP
-\fB\-q\fR, \fB\-\-quiet\fR
-Suppress all informational, diagnostic, and warning output\.
-.
-.TP
-\fB\-r\fR, \fB\-\-region\fR=\fIname\fR
-Use the AWS region given by \fIname\fR for all AWS API calls\.
-.
-.TP
-\fB\-v\fR, \fB\-\-verbose\fR
-Print extra diagnostic output while processing\.
-.
-.SS "deploy"
-Deploys \fItemplate\-file\fR to the cloudformation stack \fIstack\-name\fR\. If no stack named \fIstack\-name\fR exists one is be created\. Otherwise the existing stack is updated\.
+Each raw template file is processed as follows: macros are expanded, nested templates are recursively processed, packages are prepared for upload, and their S3 URIs are computed\. The processed template is then linted (optionally) and validated with the AWS CloudFormation API\.
 .
 .P
-When no \fIstack\-name\fR is specified a dry run is performed, where all templates are transformed, packaged, linted, and validated, but no templates or packages are uploaded to S3 and no stack is created or updated\.
+When all templates have been successfully processed they are uploaded to S3 along with their associated packages, and the stack is deployed\.
 .
 .P
-Options:
+When no \fIstack\-name\fR is specified macros in the \fItemplate\-file\fR are expanded, the resulting YAML is printed to \fBstdout\fR, and the program exits\. In this case no nested templates are processed, no packages are prepared, and no linting or validation is performed\.
+.
+.SH "OPTIONS"
+Options are configured in the following ways (from lowest to highest priority): configuration file, environment variables, and command line options\.
+.
+.P
+Each command line option (except for \fB\-\-profile\fR and \fB\-\-region\fR) is associated with a corresponding environment variable according to the following pattern: the \fB\-\-bucket\fR option, for example, is associated with the \fBCFN_TOOL_BUCKET\fR environment variable\. The \fB\-\-profile\fR and \fB\-\-region\fR options are special \(em they are associated with the AWS environment variables \fBAWS_PROFILE\fR and \fBAWS_DEFAULT_REGION\fR\.
+.
+.P
+Environment variables associated with boolean options must have a value of either \fBtrue\fR or \fBfalse\fR\. String options are specified identically via the command line and environment variables\.
 .
 .TP
 \fB\-b\fR, \fB\-\-bucket\fR=\fIname\fR
@@ -63,7 +39,7 @@ Upload templates to the S3 bucket given by \fIname\fR\. A bucket must be specifi
 .
 .TP
 \fB\-c\fR, \fB\-\-config\fR=\fIfile\fR
-Specify the config file to use\. If this option is not specified \fBcfn\-tool\fR will look for a file named \fB\.cfn\-tool\fR in the current directory\. This file will be sourced in the \fBbash\fR(1) shell and can be used to configure the various \fBCFN_TOOL_XXXX\fR environment variables\.
+Specify the config file to use\. If this option is not specified \fBcfn\-tool\fR will look for a file named \fB\.cfn\-tool\fR in the current directory\. This file will be sourced in the \fBbash\fR(1) shell\. Environment variables defined here will be applied as default options\.
 .
 .TP
 \fB\-k\fR, \fB\-\-keep\fR
@@ -98,62 +74,32 @@ A list of tags to associate with the stack that is created or updated\. AWS Clou
 Print extra diagnostic output while processing\.
 .
 .SH "ENVIRONMENT"
-The following environment variables provide default values for command line options\. Command line options override these variables and \fBcfn\-tools\fR sets or updates these variables when all command line options have been parsed\.
-.
-.TP
-\fBAWS_PROFILE\fR
-Provides a default value for the \fB\-\-profile\fR option\.
-.
-.TP
-\fBAWS_REGION\fR, \fBAWS_DEFAULT_REGION\fR
-Provides a default for the \fB\-\-region\fR option\. There are two region variables due to inconsistencies between various AWS APIs\. Only one of them needs to be set \(em \fBcfn\-tool\fR will set the other automatically\.
-.
-.TP
-\fBAWS_ACCESS_KEY_ID\fR
-The AWS access key\. Required when no profile is specified\.
-.
-.TP
-\fBAWS_SECRET_ACCESS_KEY\fR
-The AWS secret key\. Required when no profile is specified\.
-.
-.TP
-\fBCFN_TOOL_BUCKET\fR
-Provides a default value for the \fB\-\-bucket\fR option\.
-.
-.TP
-\fBCFN_TOOL_CONFIG\fR
-Provides a default value for the \fB\-\-config\fR option\.
-.
-.TP
-\fBCFN_TOOL_KEEP\fR
-Provides a default value for the \fB\-\-keep\fR option (\fBtrue\fR or \fBfalse\fR)\.
-.
-.TP
-\fBCFN_TOOL_LINTER\fR
-Provides a default value for the \fB\-\-linter\fR option\.
-.
-.TP
-\fBCFN_TOOL_PARAMETERS\fR
-Provides a default value for the \fB\-\-parameters\fR option\.
-.
-.TP
-\fBCFN_TOOL_QUIET\fR
-Provides a default value for the \fB\-\-quiet\fR option (\fBtrue\fR or \fBfalse\fR)\. or \fBfalse\fR\.
-.
-.TP
-\fBCFN_TOOL_TAGS\fR
-Provides a default value for the \fB\-\-tags\fR option\.
-.
-.TP
-\fBCFN_TOOL_VERBOSE\fR
-Provides a default value for the \fB\-\-verbose\fR option (\fBtrue\fR or \fBfalse\fR)\.
+Each command line option is associated with a corresponding environment variable\. See the \fBOPTIONS\fR section above\.
 .
 .SH "FILES"
-The following files are used to configure the \fBcfn\-tool\fR program:
 .
 .TP
 \fB\.cfn\-tool\fR
-This file (if it exists in the project directory) is a \fBbash\fR(1) script sourced by \fBcfn\-tool\fR to provide configuration settings as described in the \fBENVIRONMENT\fR section above\. This behavior is overridden by the \fB\-\-config\fR command line option or the \fBCFN_TOOL_CONFIG\fR environment variable\. Any \fBCFN_TOOL_XXXX\fR variables defined in this file will be applied as default configuration options\.
+The default configuration file\. See the \fB\-\-config\fR option above\.
 .
 .SH "EXIT STATUS"
 Exits with a status of 1 if an error occurred, or 0 otherwise\.
+.
+.SH "BUGS"
+Please open an issue: \fIhttps://github\.com/daggerml/cfn\-tool/issues\fR\.
+.
+.SH "COPYRIGHT"
+Copyright © 2021 Micha Niskin \fB<micha\.niskin@gmail\.com>\fR, distributed under the following license:
+.
+.IP "" 4
+.
+.nf
+
+https://github\.com/daggerml/cfn\-tool/blob/2\.0\.0/LICENSE
+.
+.fi
+.
+.IP "" 0
+.
+.P
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT\. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE\.

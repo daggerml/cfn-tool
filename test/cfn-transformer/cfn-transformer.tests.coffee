@@ -13,21 +13,23 @@ execShell = (command, opts) ->
     err = e.stderr.toString('utf-8')
     assert.fail(if err? then "#{msg}\n#{err}" else msg)
 
-s3bucket = 'foop'
-
 process.env.ZONE            = 'test'
 process.env.REGION          = 'us-east-1'
 process.env.MY_ENV_VAR      = 'myval'
 process.env.CFN_TOOL_BUCKET = 'test-bucket'
 
+opts =
+  s3bucket:   'foop'
+  dopackage:  true
+
 testCase = (file) ->
   #cases     = yaml.safeLoad(xf.transformFile(file))
   text      = fs.readFileSync(file).toString('utf-8')
-  cases     = new CfnTransformer({s3bucket}).parse(text)
+  cases     = new CfnTransformer(opts).parse(text)
   for k, v of cases
     do (k = k, v = v) ->
       it k, ->
-        xf = new CfnTransformer({s3bucket})
+        xf = new CfnTransformer(opts)
         v  = yaml.safeLoad(xf.transformFile(file, v))
         assert(v.template and v.expected, JSON.stringify(v))
         assert.deepEqual(v.template, v.expected)

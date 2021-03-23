@@ -5,6 +5,7 @@ uuid                = require 'uuid'
 {inspect}           = require 'util'
 getopts             = require 'getopts'
 yaml                = require 'js-yaml'
+{strict: assert}    = require 'assert'
 log                 = require './lib/log'
 CfnError            = require './lib/CfnError'
 CfnTransformer      = require './lib/cfn-transformer'
@@ -66,72 +67,42 @@ fixRegion = () ->
 
 fixRegion()
 
-getoptsBaseConfig =
+getoptsConfig =
   alias:
-    help:     'h'
-    version:  'V'
-  boolean:    [
+    bucket:     'b'
+    config:     'c'
+    help:       'h'
+    keep:       'k'
+    linter:     'l'
+    parameters: 'P'
+    profile:    'p'
+    quiet:      'q'
+    region:     'r'
+    tags:       't'
+    verbose:    'v'
+    version:    'V'
+  boolean: [
     'help'
+    'keep'
+    'quiet'
+    'verbose'
     'version'
   ]
-  string:     []
-  default:    {}
-  stopEarly:  true
-
-getoptsConfig =
-
-  transform:
-    alias:
-      config:     'c'
-      keep:       'k'
-      profile:    'p'
-      quiet:      'q'
-      region:     'r'
-      verbose:    'v'
-    boolean: [
-      'keep'
-      'quiet'
-      'verbose'
-    ]
-    string: [
-      'config'
-      'profile'
-      'region'
-    ]
-    default: {}
-
-  deploy:
-    alias:
-      bucket:     'b'
-      config:     'c'
-      keep:       'k'
-      linter:     'l'
-      parameters: 'P'
-      profile:    'p'
-      quiet:      'q'
-      region:     'r'
-      tags:       't'
-      verbose:    'v'
-    boolean: [
-      'keep'
-      'quiet'
-      'verbose'
-    ]
-    string: [
-      'bucket'
-      'config'
-      'linter'
-      'parameters'
-      'profile'
-      'region'
-      'tags'
-    ]
-
-commands = Object.keys(getoptsConfig)
+  string: [
+    'bucket'
+    'config'
+    'linter'
+    'parameters'
+    'profile'
+    'region'
+    'tags'
+  ]
+  unknown: (x) -> abort new CfnError("unknown option: '#{x}'")
 
 opt2var =
   bucket:     'CFN_TOOL_BUCKET'
   config:     'CFN_TOOL_CONFIG'
+  help:       'CFN_TOOL_HELP'
   keep:       'CFN_TOOL_KEEP'
   linter:     'CFN_TOOL_LINTER'
   parameters: 'CFN_TOOL_PARAMETERS'
@@ -140,6 +111,11 @@ opt2var =
   region:     'AWS_REGION'
   tags:       'CFN_TOOL_TAGS'
   verbose:    'CFN_TOOL_VERBOSE'
+  version:    'CFN_TOOL_VERSION'
+
+assert.deepEqual new Set(Object.keys(opt2var)),
+  new Set(getoptsConfig.boolean.concat(getoptsConfig.string)),
+  "option->variable name mapping out of sync"
 
 var2opt = Object.keys(opt2var).reduce(((xs, x) -> assoc xs, opt2var[x], x), {})
 allOpts = Object.keys(opt2var)
@@ -148,13 +124,9 @@ useVars = Object.keys(var2opt).reduce(
   (xs, x) -> if process.env[x]? then xs.concat [x] else xs
   []
 )
-boolOpt = Object.keys(getoptsConfig).reduce(
-  (xs, x) -> xs.concat(getoptsConfig[x].boolean or [])
-  []
-).flat()
 
 config2opt = (k, v) ->
-  if not (k in boolOpt) then v else (v is 'true')
+  if not (k in getoptsConfig.boolean) then v else (v is 'true')
 
 getVars = () ->
   allOpts.reduce(
@@ -180,33 +152,29 @@ version = () ->
   quit VERSION
 
 parseArgv = (argv) ->
-  unknown       = (x) -> abort new CfnError("unknown option: '#{x}'")
-  mkconfig      = (x, y) -> Object.assign({unknown, default: getVars()}, y or getoptsConfig[x])
-  opts          = getopts argv, mkconfig(null, getoptsBaseConfig)
-  argv          = opts._
-  opts          = switch
+  opts  = getopts argv, assoc getoptsConfig, 'default', getVars()
+
+  switch
     when opts.help then usage()
     when opts.version then version()
     when not argv.length then usage()
-    else {command: argv.shift()}
-
-  assertOk opts.command in commands, "command required (one of: #{commands})"
-  Object.assign opts, getopts(argv, mkconfig(opts.command))
 
   opts.template   = opts._[0]
   opts.stackname  = opts._[1]
 
   assertOk opts.template, 'template argument required'
 
-  opts.s3bucket = opts.bucket
-
-  switch opts.command
-    when 'deploy'
-      Object.assign opts,
-        dolint:     true
-        dovalidate: true
-        doaws:      true
-        s3bucket:   opts.bucket
+  if not opts.stackname
+    Object.assign opts,
+      debug:      true
+      bucket:     'example-bucket'
+      s3bucket:   'example-bucket'
+  else
+    Object.assign opts,
+      dolint:     true
+      dovalidate: true
+      dopackage:  true
+      s3bucket:   opts.bucket
 
   opts
 
@@ -230,10 +198,10 @@ parseConfig = (x, uid) ->
 
 setLogLevel = (opts) ->
   log.level = switch
-    when opts.verbose                 then 'verbose'
-    when opts.quiet                   then 'error'
-    when opts.command is 'transform'  then 'warn'
-    else                              'info'
+    when opts.verbose then 'verbose'
+    when opts.quiet   then 'error'
+    when opts.debug   then 'warn'
+    else              'info'
   opts
 
 module.exports = () ->
@@ -272,40 +240,36 @@ module.exports = () ->
 
   log.verbose "configuration options", {body: inspect selectKeys(opts, allOpts)}
 
-  if opts.doaws
-    assertOk exec 'which aws', 'aws CLI tool not found on $PATH' if opts.stackname
-    awsversion = parseAwsVersion(exec('aws --version'))
-    assertOk awsversion in AWS_VERSIONS,
-      "unsupported aws CLI tool version: #{awsversion} (supported versions are #{AWS_VERSIONS})"
+  assertOk exec 'which aws', 'aws CLI tool not found on $PATH' if opts.stackname
+  awsversion = parseAwsVersion(exec('aws --version'))
+  assertOk awsversion in AWS_VERSIONS,
+    "unsupported aws CLI tool version: #{awsversion} (supported versions are #{AWS_VERSIONS})"
 
   log.info 'preparing templates'
 
   res = cfn.writeTemplate(opts.template)
   tpl = readFileSync(res.tmpPath).toString('utf-8')
 
-  switch opts.command
-    when 'transform'
-      console.log tpl.trimRight()
-    when 'deploy'
-      break unless opts.stackname
+  if opts.debug
+    console.log tpl.trimRight()
+  else if opts.stackname
+    if res.nested.length
+      throw new CfnError('bucket required for nested stacks') unless opts.bucket
+      log.info 'uploading templates to S3'
+      exec "aws sync --size-only '#{opts.tmpdir}' 's3://#{opts.bucket}/cfn-tool/'"
 
-      if res.nested.length
-        throw new CfnError('bucket required for nested stacks') unless opts.bucket
-        log.info 'uploading templates to S3'
-        exec "aws sync --size-only '#{opts.tmpdir}' 's3://#{opts.bucket}/cfn-tool/'"
+    bucketarg = "--s3-bucket '#{opts.bucket}' --s3-prefix aws/"           if opts.bucket
+    paramsarg = "--paramter-overrides #{parseKeyValArg(opts.parameters)}" if opts.parameters
+    tagsarg   = "--tags #{parseKeyValArg(opts.tags)}"                     if opts.tags
 
-      bucketarg = "--s3-bucket '#{opts.bucket}' --s3-prefix aws/"           if opts.bucket
-      paramsarg = "--paramter-overrides #{parseKeyValArg(opts.parameters)}" if opts.parameters
-      tagsarg   = "--tags #{parseKeyValArg(opts.tags)}"                     if opts.tags
-
-      log.info 'deploying stack'
-      exec """
-        aws cloudformation deploy \
-          --template-file '#{res.tmpPath}' \
-          --stack-name '#{opts.stackname}' \
-          --capabilities CAPABILITY_NAMED_IAM CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
-          #{bucketarg or ''} #{paramsarg or ''} #{tagsarg or ''}
-      """
+    log.info 'deploying stack'
+    exec """
+      aws cloudformation deploy \
+        --template-file '#{res.tmpPath}' \
+        --stack-name '#{opts.stackname}' \
+        --capabilities CAPABILITY_NAMED_IAM CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
+        #{bucketarg or ''} #{paramsarg or ''} #{tagsarg or ''}
+    """
 
   log.info 'done -- no errors'
   quit()
