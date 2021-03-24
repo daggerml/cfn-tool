@@ -127,6 +127,7 @@ parseKeyOpts = (opts) ->
 
 mergeStrings = (toks, sep = '') ->
   reducer = (xs, x) ->
+    x = "#{x}" unless isObject(x)
     y = xs.pop()
     xs.concat(if isString(x) and isString(y) then [[y,x].join(sep)] else [y,x])
   toks.reduce(reducer, []).filter((x) -> x? and x isnt '')
