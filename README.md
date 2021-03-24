@@ -28,11 +28,11 @@ Simple macro example:
 
 ```bash
 cat <<EOT |cfn-tool /dev/stdin
-Foo: !Shell 'echo hello, world!'
+Foo: !Shell uuidgen -t
 EOT
 ```
 ```yaml
-Foo: 'hello, world!'
+Foo: 53480aea-8c46-11eb-a4b0-61c2b0470324
 ```
 
 > **Note:** See [the manual page][6] (or `man cfn-tool`) for complete usage and options info.
