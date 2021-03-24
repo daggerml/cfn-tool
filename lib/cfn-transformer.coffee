@@ -505,7 +505,12 @@ class CfnTransformer extends YamlTransformer
         @lint ret.tmpPath if @linter and @dolint
         @validate ret.tmpPath if @dovalidate
         ret
-    catch e then @abort e
+    catch e
+      @abort switch
+        when e instanceof CfnError then e
+        when e instanceof yaml.YAMLException
+          new CfnError "#{e.name}: #{e.message.split('\n').slice(0, -1).join('\n')}"
+        else new CfnError "#{e.name}: #{e.message}"
 
   writeFile: (file, key) ->
     ret = @writePaths(@canonicalHash(file, key), fileExt(file))

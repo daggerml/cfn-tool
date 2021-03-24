@@ -24,8 +24,18 @@ to `my-stack`:
 cfn-tool template.yml my-stack
 ```
 
-> **Note:** See [the manual page][6] (or `man cfn-tool`) for complete usage and options info.
+Simple macro example:
 
+```bash
+cat <<EOT |cfn-tool /dev/stdin
+Foo: !Shell 'echo hello, world!'
+EOT
+```
+```yaml
+Foo: 'hello, world!'
+```
+
+> **Note:** See [the manual page][6] (or `man cfn-tool`) for complete usage and options info.
 
 # TEMPLATE MACROS
 
