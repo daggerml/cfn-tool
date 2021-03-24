@@ -61,7 +61,7 @@ class YamlTransformer
   walkArray: (xs) ->
     @withObj xs, =>
       xs.map (v, i) =>
-        @withKey(i, => @walk(v))
+        @withKey("#{i}", => @walk(v))
 
   walk: (thing) ->
     ret = switch typeOf(thing)
@@ -77,7 +77,7 @@ class YamlTransformer
     ret
 
   withKey: (key, f) ->
-    @keystack.push(key?.split?(/ +/).shift())
+    @keystack.push(key?.split?(/ +/).shift().replace(/^Fn::/, '!'))
     ret = f()
     @keystack.pop()
     ret

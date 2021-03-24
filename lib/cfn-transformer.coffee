@@ -316,46 +316,19 @@ class CfnTransformer extends YamlTransformer
       @cache[key]
 
     @defmacro 'Package', (form) =>
-      form = if isArray(form) then form[0] else form
-      form = {Path: form} if isString(form)
-      {Path, CacheKey, Parse} = form
-      if @dopackage
-        key  = JSON.stringify {package: [@userPath(Path), CacheKey, Parse]}
-        if not @cache[key]?
-          @cache[key] = (
-            if isDirectory(Path)
-              @writeDir(Path, CacheKey)
-            else if Parse
-              @writeTemplate(Path, CacheKey)
-            else
-              @writeFile(Path, CacheKey)
-          ).code
-        @cache[key]
-      else
-        ext = if isDirectory(Path) then '.zip' else fileExt(Path)
-        S3Bucket: @s3bucket or 'bucket'
-        S3Key:    "example-key#{ext}"
+      @packageMacro form
 
     @defmacro 'PackageURL', (form) =>
-      form = if isArray(form) then form[0] else form
-      @walk
-        'Fn::Let': [
-          {'Fn::Package': form}
-          {'Fn::Sub': 'https://s3.amazonaws.com/${S3Bucket}/${S3Key}'}
-        ]
+      {S3Bucket, S3Key} = @packageMacro form
+      "https://s3.amazonaws.com/#{S3Bucket}/#{S3Key}"
 
     @defmacro 'PackageURI', (form) =>
-      form = if isArray(form) then form[0] else form
-      @walk
-        'Fn::Let': [
-          {'Fn::Package': form}
-          {'Fn::Sub': 's3://${S3Bucket}/${S3Key}'}
-        ]
+      {S3Bucket, S3Key} = @packageMacro form
+      "s3://#{S3Bucket}/#{S3Key}"
 
     @defmacro 'PackageTemplateURL', (form) =>
-      form = if isArray(form) then form[0] else form
-      form = {Path: form} if isString(form)
-      @walk {'Fn::PackageURL': Object.assign({Parse: true}, form)}
+      {S3Bucket, S3Key} = @packageMacro form, {Parse: true}
+      "https://s3.amazonaws.com/#{S3Bucket}/#{S3Key}"
 
     @defmacro 'YamlParse', (form) =>
       form = if isArray(form) then form[0] else form
@@ -399,8 +372,36 @@ class CfnTransformer extends YamlTransformer
         (if k in stackProps then Properties else Parameters)[k] = v
       merge(form, {Type, Properties})
 
+  packageMacro: (form, opts) ->
+    form = if isArray(form) then form[0] else form
+    form = {Path: form} if isString(form)
+    form = Object.assign(form, opts)
+    {Path, CacheKey, Parse} = form
+    if @dopackage
+      key  = JSON.stringify {package: [@userPath(Path), CacheKey, Parse]}
+      if not @cache[key]?
+        @cache[key] = (
+          if isDirectory(Path)
+            @writeDir(Path, CacheKey)
+          else if Parse
+            @writeTemplate(Path, CacheKey)
+          else
+            @writeFile(Path, CacheKey)
+        ).code
+      @cache[key]
+    else
+      ext = if isDirectory(Path) then '.zip' else fileExt(Path)
+      S3Bucket: @s3bucket or 'bucket'
+      S3Key:    "example-key#{ext}"
+
+  wrapError: (e) ->
+    switch
+      when e.name is 'CfnError' then e
+      when e.name is 'Error' then new CfnError(e.message)
+      else new CfnError "#{e.name}: #{e.message}"
+
   abort: (e) ->
-    {message, body, aborting} = e
+    {message, body, aborting} = e = @wrapError(e)
     if not aborting
       errmsg = []
       errmsg.push(message) if message
@@ -505,12 +506,7 @@ class CfnTransformer extends YamlTransformer
         @lint ret.tmpPath if @linter and @dolint
         @validate ret.tmpPath if @dovalidate
         ret
-    catch e
-      @abort switch
-        when e instanceof CfnError then e
-        when e instanceof yaml.YAMLException
-          new CfnError "#{e.name}: #{e.message.split('\n').slice(0, -1).join('\n')}"
-        else new CfnError "#{e.name}: #{e.message}"
+    catch e then @abort e
 
   writeFile: (file, key) ->
     ret = @writePaths(@canonicalHash(file, key), fileExt(file))

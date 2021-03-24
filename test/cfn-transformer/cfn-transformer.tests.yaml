@@ -310,7 +310,7 @@ packages regular files:
 
   expected:
     Foo:
-      Bar: https://s3.amazonaws.com/foop/e414662072572cdc75dfebea50d5bf9b.txt
+      Bar: https://s3.amazonaws.com/foop/184f0b4349405c9f9ed61df4b23434b2.txt
       Baz:
         S3Bucket: foop
         S3Key: 6f5902ac237024bdd0c176cb93063dc4.txt
