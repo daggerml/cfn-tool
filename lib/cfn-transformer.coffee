@@ -390,9 +390,8 @@ class CfnTransformer extends YamlTransformer
         ).code
       @cache[key]
     else
-      ext = if isDirectory(Path) then '.zip' else fileExt(Path)
-      S3Bucket: @s3bucket or 'bucket'
-      S3Key:    "example-key#{ext}"
+      S3Bucket: 'example-bucket'
+      S3Key:    "#{@s3prefix}example-key"
 
   wrapError: (e) ->
     switch
