@@ -1,16 +1,19 @@
 SHELL      = /bin/bash -o pipefail
-VERSION    = $(shell cat package.json |jt version %)
+VERSION    = $(shell node version.js)
 BRANCH     = $(shell git symbolic-ref -q HEAD |grep ^refs/heads/ |cut -d/ -f3-)
 DIRTY      = $(shell git status --untracked-files=no --porcelain)
 TAG_EXISTS = $(shell git ls-remote --tags |awk '{print $$2}' |grep ^refs/tags/ |cut -d/ -f3- |grep $(VERSION))
+OBJS       = index.js $(shell find lib/ -name '*.coffee' |sed 's@coffee$$@js@')
 
-.PHONY: all test docs push
+.PHONY: all compile docs test push
 
-all: docs test
+all: compile docs test
+
+compile: $(OBJS)
 
 docs: README.md man/cfn-tool.1 man/cfn-tool.1.html
 
-test: package-lock.json
+test: compile package-lock.json
 	npm test
 
 push: all
@@ -21,6 +24,9 @@ push: all
 	git tag $(VERSION)
 	git push
 	git push --tags
+
+%.js: %.coffee
+	node_modules/.bin/coffee --compile $<
 
 package-lock.json: package.json
 	npm install
