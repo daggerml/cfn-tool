@@ -1,7 +1,7 @@
 SHELL      = /bin/bash -o pipefail
 VERSION    = $(shell node version.js)
 BRANCH     = $(shell git symbolic-ref -q HEAD |grep ^refs/heads/ |cut -d/ -f3-)
-DIRTY      = $(shell git status --untracked-files=no --porcelain)
+DIRTY      = $(shell git status --porcelain)
 TAG_EXISTS = $(shell git ls-remote --tags |awk '{print $$2}' |grep ^refs/tags/ |cut -d/ -f3- |grep $(VERSION))
 OBJS       = index.js $(shell find lib/ -name '*.coffee' |sed 's@coffee$$@js@')
 
