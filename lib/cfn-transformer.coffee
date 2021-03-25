@@ -168,6 +168,13 @@ interpolateSub = (form) ->
         form = form[i..]
   ret
 
+rmCR = (x='') ->
+  lines = []
+  for v in x.split(/\r/)
+    if v[0] is '\n' then v = v.slice(1) else lines.pop()
+    lines.push(w) for w in v.split(/\n/)
+  lines.join('\n')
+
 #=============================================================================#
 # AWS CLOUDFORMATION YAML TRANSFORMER BASE CLASS                              #
 #=============================================================================#
@@ -182,7 +189,6 @@ class CfnTransformer extends YamlTransformer
     @cache          ?= {}
     @basedir        ?= process.cwd()
     @s3prefix       ?= ''
-    @tmpdir         ?= fs.mkdtempSync("#{os.tmpdir()}/")
     @template       = null
     @resourceMacros = []
     @bindstack      = []
@@ -413,8 +419,8 @@ class CfnTransformer extends YamlTransformer
 
   handleShell: (cmd, res, raw) ->
     cmd = prependLines cmd, 'cmd'
-    stdout = res.stdout?.toString('utf-8')
-    stderr = res.stderr?.toString('utf-8')
+    stdout = rmCR res.stdout?.toString('utf-8')
+    stderr = rmCR res.stderr?.toString('utf-8')
     res.out = prependLines(stdout, 'out')
     res.err = prependLines(stderr, 'err')
     res.all = [res.out, res.err].filter(identity).join('\n')

@@ -1,12 +1,15 @@
 yaml            = require 'js-yaml'
 assert          = require 'assert'
 fs              = require 'fs'
+os              = require 'os'
 path            = require 'path'
 {execSync}      = require 'child_process'
 log             = require '../../lib/log'
 CfnTransformer  = require '../../lib/cfn-transformer'
+tmpdir          = fs.mkdtempSync([os.tmpdir(), 'cfn-tool-'].join('/'))
 
 try fs.unlinkSync "#{__dirname}/data/data2.txt" catch e
+process.on 'exit', () -> fs.rmdirSync opts.tmpdir, {recursive: true}
 
 execShell = (command, opts) ->
   try
@@ -22,6 +25,7 @@ process.env.MY_ENV_VAR      = 'myval'
 process.env.CFN_TOOL_BUCKET = 'test-bucket'
 
 opts =
+  tmpdir:     tmpdir
   s3bucket:   'foop'
   dopackage:  true
 

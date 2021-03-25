@@ -311,7 +311,7 @@
         setVars(parseConfig(exec(`. '${cfg}'
 echo
 echo ${uid}
-for i in $(compgen -A variable | grep '^\\(AWS_\\|CFN_TOOL_\\)'); do
+for i in $(compgen -A variable |grep '^\\(AWS_\\|CFN_TOOL_\\)'); do
   echo $i=$(echo -n "\${!i}" |base64 -w0)
 done`)));
       } catch (error) {
@@ -324,13 +324,10 @@ done`)));
       exec = cfn.execShell.bind(cfn);
     }
     setVars(opts, true);
-    if (opts.command === 'transform') {
-      cfn.s3bucket = 'fake-bucket';
-    }
-    opts.tmpdir = cfn.tmpdir = fs.mkdtempSync([os.tmpdir(), 'stack-deploy-'].join('/'));
+    cfn.tmpdir = fs.mkdtempSync([os.tmpdir(), 'cfn-tool-'].join('/'));
     process.on('exit', function() {
       if (!opts.keep) {
-        return fs.rmdirSync(opts.tmpdir, {
+        return fs.rmdirSync(cfn.tmpdir, {
           recursive: true
         });
       }
@@ -354,7 +351,7 @@ done`)));
           throw new CfnError('bucket required for nested stacks');
         }
         log.info('uploading templates to S3');
-        exec(`aws s3 sync --size-only '${opts.tmpdir}' 's3://${opts.bucket}/'`);
+        exec(`aws s3 sync --size-only '${cfn.tmpdir}' 's3://${opts.bucket}/'`);
       }
       if (opts.bucket) {
         bucketarg = `--s3-bucket '${opts.bucket}' --s3-prefix aws/`;
