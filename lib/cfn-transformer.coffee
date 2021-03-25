@@ -318,9 +318,8 @@ class CfnTransformer extends YamlTransformer
 
     @defmacro 'Shell', (form) =>
       form = if isArray(form) then form[0] else form
-      key  = JSON.stringify {shell: [@template, form]}
-      @cache[key] = (@execShell(form) or '').replace(/\n$/, '') unless @cache[key]?
-      @cache[key]
+      @withCache {shell: [@template, form]}, () =>
+        (@execShell(form) or '').replace(/\n$/, '')
 
     @defmacro 'Package', (form) =>
       @packageMacro form
@@ -379,23 +378,23 @@ class CfnTransformer extends YamlTransformer
         (if k in stackProps then Properties else Parameters)[k] = v
       merge(form, {Type, Properties})
 
+  withCache: (key, f) ->
+    key = JSON.stringify key
+    (@cache[key] or (@cache[key] = [f()]))[0]
+
   packageMacro: (form, opts) ->
     form = if isArray(form) then form[0] else form
     form = {Path: form} if isString(form)
     form = Object.assign(form, opts)
     {Path, CacheKey, Parse} = form
     if @dopackage
-      key  = JSON.stringify {package: [@userPath(Path), CacheKey, Parse]}
-      if not @cache[key]?
-        @cache[key] = (
-          if isDirectory(Path)
-            @writeDir(Path, CacheKey)
-          else if Parse
-            @writeTemplate(Path, CacheKey)
-          else
-            @writeFile(Path, CacheKey)
+      @withCache {package: [@userPath(Path), CacheKey, Parse]}, () =>
+        (
+          switch
+            when isDirectory(Path) then @writeDir(Path, CacheKey)
+            when Parse then @writeTemplate(Path, CacheKey)
+            else @writeFile(Path, CacheKey)
         ).code
-      @cache[key]
     else
       S3Bucket: 'example-bucket'
       S3Key:    "#{@s3prefix}example-key"
@@ -547,9 +546,7 @@ class CfnTransformer extends YamlTransformer
     ret
 
   pushFileCaching: (file, f) ->
-    key = JSON.stringify {pushFileCaching: @userPath(file)}
-    @cache[key] = @pushFile(file, f) unless @cache[key]
-    @cache[key]
+    @withCache {pushFileCaching: @userPath(file)}, () => @pushFile(file, f)
 
   defresource: (type, emit) ->
     @resourceMacros[type] = emit

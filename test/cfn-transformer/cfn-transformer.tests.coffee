@@ -40,7 +40,7 @@ testCase = (file) ->
         v  = yaml.safeLoad(xf.transformFile(file, v))
         assert(v.template and v.expected, JSON.stringify(v))
         assert.deepEqual(v.template, v.expected)
-        assert.deepEqual(xf.nested.slice(1), v.nested or [])
+        assert.deepEqual(v.nested or [], xf.nested.slice(1))
 
 for f in fs.readdirSync(__dirname, {withFileTypes: true})
   if f.isFile() and f.name.match(/\.(yml|yaml)$/)
