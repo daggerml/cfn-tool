@@ -140,7 +140,7 @@ Please open an issue: <https://github.com/daggerml/cfn-tool/issues>.
 Copyright © 2021 Micha Niskin `<micha.niskin@gmail.com>`, distributed under
 the following license:
 
-* <https://github.com/daggerml/cfn-tool/blob/3.0.8/LICENSE>
+* <https://github.com/daggerml/cfn-tool/blob/3.0.9/LICENSE>
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,

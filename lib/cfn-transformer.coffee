@@ -464,8 +464,9 @@ class CfnTransformer extends YamlTransformer
     tmpPath:  @tmpPath(fileName),
     code:     { S3Bucket: @s3bucket, S3Key: "#{@s3prefix}#{fileName}" }
 
-  writeText: (text, ext, key) ->
+  writeText: (text, ext, key, source='none') ->
     ret = @writePaths(md5(key or text), ext)
+    log.verbose "wrote #{@userPath source} -> #{ret.tmpPath}"
     fs.writeFileSync(ret.tmpPath, text)
     ret
 
@@ -502,7 +503,8 @@ class CfnTransformer extends YamlTransformer
     try
       @template = @userPath(file)
       @withKeyStack [], () =>
-        ret = @writeText(@transformTemplateFile(file), fileExt(file), key)
+        ret = @writeText(@transformTemplateFile(file), fileExt(file), key, file)
+        log.verbose("wrote #{@userPath file} -> #{ret.tmpPath}")
         @lint ret.tmpPath if @linter and @dolint
         @validate ret.tmpPath if @dovalidate
         ret
@@ -510,14 +512,16 @@ class CfnTransformer extends YamlTransformer
 
   writeFile: (file, key) ->
     ret = @writePaths(@canonicalHash(file, key), fileExt(file))
+    log.verbose("wrote #{@userPath file} -> #{ret.tmpPath}")
     fs.copyFileSync(file, ret.tmpPath)
     ret
 
   writeDir: (dir, key) ->
     tmpZip = @tmpPath("#{encodeURIComponent(@userPath(dir))}.zip")
     log.verbose("packaging: #{dir}")
-    @execShell("zip -r #{tmpZip} .", {cwd: dir})
+    @execShell("zip -qr #{tmpZip} .", {cwd: dir})
     ret = @writePaths(@canonicalHash(dir, key), '.zip')
+    log.verbose("wrote #{@userPath dir} -> #{ret.tmpPath}")
     fs.renameSync(tmpZip, ret.tmpPath)
     ret
 

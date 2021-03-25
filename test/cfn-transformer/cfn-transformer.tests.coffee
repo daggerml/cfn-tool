@@ -3,7 +3,10 @@ assert          = require 'assert'
 fs              = require 'fs'
 path            = require 'path'
 {execSync}      = require 'child_process'
+log             = require '../../lib/log'
 CfnTransformer  = require '../../lib/cfn-transformer'
+
+try fs.unlinkSync "#{__dirname}/data/data2.txt" catch e
 
 execShell = (command, opts) ->
   try
