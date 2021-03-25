@@ -182,7 +182,7 @@ class CfnTransformer extends YamlTransformer
     @cache          ?= {}
     @basedir        ?= process.cwd()
     @s3prefix       ?= ''
-    @tmpdir         = path.resolve(@tmpdir ? fs.mkdtempSync("#{os.tmpdir()}/"))
+    @tmpdir         ?= fs.mkdtempSync("#{os.tmpdir()}/")
     @template       = null
     @resourceMacros = []
     @bindstack      = []

@@ -327,7 +327,7 @@ done`)));
     if (opts.command === 'transform') {
       cfn.s3bucket = 'fake-bucket';
     }
-    opts.tmpdir = fs.mkdtempSync([os.tmpdir(), 'stack-deploy-'].join('/'));
+    opts.tmpdir = cfn.tmpdir = fs.mkdtempSync([os.tmpdir(), 'stack-deploy-'].join('/'));
     process.on('exit', function() {
       if (!opts.keep) {
         return fs.rmdirSync(opts.tmpdir, {

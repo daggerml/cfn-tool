@@ -235,7 +235,7 @@ module.exports = () ->
 
   cfn.s3bucket = 'fake-bucket' if opts.command is 'transform'
 
-  opts.tmpdir = fs.mkdtempSync([os.tmpdir(), 'stack-deploy-'].join('/'))
+  opts.tmpdir = cfn.tmpdir = fs.mkdtempSync([os.tmpdir(), 'stack-deploy-'].join('/'))
   process.on 'exit', () -> fs.rmdirSync opts.tmpdir, {recursive: true} unless opts.keep
 
   log.verbose "configuration options", {body: inspect selectKeys(opts, allOpts)}
