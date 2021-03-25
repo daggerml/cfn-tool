@@ -361,6 +361,10 @@ compresses directories before packaging:
 
 recursively packages templates:
 
+  nested:
+    - test/cfn-transformer/data/template.yaml
+    - test/cfn-transformer/data/dir/template.yaml
+
   template:
     Foo:
       Bar: !PackageTemplateURL data/template.yaml
@@ -385,6 +389,11 @@ deep merges objects with Fn::DeepMerge:
         Baz: 3
 
 loads template files with Fn::TemplateFile:
+
+  nested:
+    -  test/cfn-transformer/data/config1.yaml
+    -  test/cfn-transformer/data/config2.yaml
+    -  test/cfn-transformer/data/config3.yaml
 
   template:
     <<: !Let

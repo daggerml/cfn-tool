@@ -475,7 +475,9 @@ class CfnTransformer extends YamlTransformer
       @basedir, @tmpdir, @cache, @s3bucket, @s3prefix, @verbose, @linter,
       @dolint, @dovalidate, @dopackage
     })
-    xformer.transformFile(file)
+    ret = xformer.transformFile(file)
+    @nested = @nested.concat xformer.nested
+    ret
 
   tryExecRaw: (cmd, msg) ->
     res = @execShell cmd, null, true
@@ -532,7 +534,7 @@ class CfnTransformer extends YamlTransformer
     path.join(@tmpdir, name)
 
   pushFile: (file, f) ->
-    @nested.push(file)
+    @nested.push(@userPath file)
     [old, @template] = [@template, @userPath(file)]
     log.verbose("transforming #{@template}")
     ret = @withCwd path.dirname(file), (() -> f(path.basename(file)))
