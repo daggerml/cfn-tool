@@ -349,12 +349,12 @@ done`)));
     if (opts.debug) {
       console.log(tpl.trimRight());
     } else if (opts.stackname) {
-      if (res.nested.length) {
+      if (res.nested.length > 1) {
         if (!opts.bucket) {
           throw new CfnError('bucket required for nested stacks');
         }
         log.info('uploading templates to S3');
-        exec(`aws sync --size-only '${opts.tmpdir}' 's3://${opts.bucket}/cfn-tool/'`);
+        exec(`aws s3 sync --size-only '${opts.tmpdir}' 's3://${opts.bucket}/'`);
       }
       if (opts.bucket) {
         bucketarg = `--s3-bucket '${opts.bucket}' --s3-prefix aws/`;

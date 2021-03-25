@@ -253,10 +253,10 @@ module.exports = () ->
   if opts.debug
     console.log tpl.trimRight()
   else if opts.stackname
-    if res.nested.length
+    if res.nested.length > 1
       throw new CfnError('bucket required for nested stacks') unless opts.bucket
       log.info 'uploading templates to S3'
-      exec "aws sync --size-only '#{opts.tmpdir}' 's3://#{opts.bucket}/cfn-tool/'"
+      exec "aws s3 sync --size-only '#{opts.tmpdir}' 's3://#{opts.bucket}/'"
 
     bucketarg = "--s3-bucket '#{opts.bucket}' --s3-prefix aws/"           if opts.bucket
     paramsarg = "--paramter-overrides #{parseKeyValArg(opts.parameters)}" if opts.parameters
