@@ -506,7 +506,6 @@ class CfnTransformer extends YamlTransformer
       @template = @userPath(file)
       @withKeyStack [], () =>
         ret = @writeText(@transformTemplateFile(file), fileExt(file), key, file)
-        log.verbose("wrote #{@userPath file} -> #{ret.tmpPath}")
         @lint ret.tmpPath if @linter and @dolint
         @validate ret.tmpPath if @dovalidate
         ret
