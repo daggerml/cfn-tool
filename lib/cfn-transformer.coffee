@@ -14,6 +14,10 @@ YamlTransformer = require './yaml-transformer'
 # Helper functions.                                                           #
 #=============================================================================#
 
+dbg = (x) ->
+  console.log require('util').inspect {dbg: x}, {depth: null}
+  x
+
 topLevelResourceProperties = [
   'Type'
   'Condition'
@@ -190,6 +194,7 @@ class CfnTransformer extends YamlTransformer
     @basedir        ?= process.cwd()
     @s3prefix       ?= ''
     @template       = null
+    @needBucket     = false
     @resourceMacros = []
     @bindstack      = []
     @nested         = []
@@ -236,7 +241,7 @@ class CfnTransformer extends YamlTransformer
           when form.startsWith('$')     then {'Fn::Env': form[1..]}
           when form.startsWith('%')     then {'Fn::Get': form[1..]}
           when form.startsWith('@')     then {'Fn::Attr': form[1..]}
-          when peek(@bindstack)[ref]?   then getIn(peek(@bindstack)[ref], ks)
+          when peek(@bindstack)[ref]?   then getIn(@walk(peek(@bindstack)[ref]), ks)
           else {Ref: form}
       else form
 
@@ -321,6 +326,9 @@ class CfnTransformer extends YamlTransformer
       @withCache {shell: [@template, form]}, () =>
         (@execShell(form) or '').replace(/\n$/, '')
 
+    @defmacro 'Js', (form) =>
+      @walk(new Function(form).call(@))
+
     @defmacro 'Package', (form) =>
       @packageMacro form
 
@@ -378,6 +386,8 @@ class CfnTransformer extends YamlTransformer
         (if k in stackProps then Properties else Parameters)[k] = v
       merge(form, {Type, Properties})
 
+  macroexpand: (form) -> @walk(form)
+
   withCache: (key, f) ->
     key = JSON.stringify key
     (@cache[key] or (@cache[key] = [f()]))[0]
@@ -388,6 +398,7 @@ class CfnTransformer extends YamlTransformer
     form = Object.assign(form, opts)
     {Path, CacheKey, Parse} = form
     if @dopackage
+      @needBucket = true
       @withCache {package: [@userPath(Path), CacheKey, Parse]}, () =>
         (
           switch
@@ -463,7 +474,8 @@ class CfnTransformer extends YamlTransformer
     if key then md5(JSON.stringify([@canonicalKeyPath(),key])) else md5Path(fileOrDir)
 
   writePaths: (fileName, ext = '') ->
-    throw new CfnError("can't generate S3 URL: no S3 bucket configured") unless @s3bucket
+    if @needBucket and not @s3bucket
+      throw new CfnError("can't generate S3 URL: no S3 bucket configured")
     fileName = "#{fileName}#{ext}"
     nested:   @nested
     tmpPath:  @tmpPath(fileName),

@@ -16,7 +16,7 @@ Expand macros in `template.yml` and print resulting YAML to stdout:
 cfn-tool template.yml
 ```
 
-Expand macros in my-template.yml and nested templates, lint and validate
+Expand macros in `my-template.yml` and nested templates, lint and validate
 templates, upload packages and templates to S3, and deploy `my-template.yml`
 to `my-stack`:
 
@@ -336,53 +336,6 @@ Mappings:
 
 These macros reduce the boilerplate associated with references of various kinds
 in CloudFormation templates.
-
-### `!Attr`
-
-Expands to a [`Fn::GetAtt`][8] expression with [`Fn::Sub`][4] interpolation on
-the dot path segments.
-
-```yaml
-# INPUT
-Foo: !Attr Thing.${Bar}
-```
-```yaml
-# OUTPUT
-Foo: { Fn::GetAtt: [ Thing, { Ref: Bar } ] }
-```
-
-### `!Env`
-
-Expands to the value of an environment variable in the environment of the
-preprocessor process. An exception is thrown if the variable is unset.
-
-```yaml
-# INPUT
-Foo: !Env EDITOR
-```
-```yaml
-# OUTPUT
-Foo: vim
-```
-
-### `!Get`
-
-Expands to an expression using [`Fn::FindInMap`][11] to look up a value from a
-[template mapping structure][12]. References are interpolated in the argument
-and dots are used to separate segments of the path (similar to [`Fn::GetAtt`][8]).
-
-```yaml
-# INPUT
-Foo: !Get Config.${AWS::Region}.ImageId
-```
-```yaml
-# OUTPUT
-Foo:
-  Fn::FindInMap:
-    - Config
-    - Ref: AWS::Region
-    - ImageId
-```
 
 ### `!Var`
 

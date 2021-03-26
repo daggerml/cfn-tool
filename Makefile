@@ -26,16 +26,16 @@ push: all
 	git push --tags
 
 %.js: %.coffee
-	node_modules/.bin/coffee --compile $<
+	npm run coffee -- --compile $<
 
 package-lock.json: package.json
 	npm install
 
 README.md: README.in.md package-lock.json
-	cat $< |VERSION=$(VERSION) envsubst '$${VERSION}' > $@
+	VERSION=$(VERSION) envsubst '$${VERSION}' < $< > $@
 
 cfn-tool.1.md: cfn-tool.1.in.md package-lock.json
-	cat $< |VERSION=$(VERSION) envsubst '$${VERSION}' > $@
+	VERSION=$(VERSION) envsubst '$${VERSION}' < $< > $@
 
 man/cfn-tool.1: cfn-tool.1.md
 	docker run --rm -v $(PWD):/app -w /app msoap/ruby-ronn \
