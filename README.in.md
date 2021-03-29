@@ -450,6 +450,45 @@ Foo: !Shell echo hello, world!
 Foo: hello, world!
 ```
 
+Environment variables can be set:
+
+```yaml
+# INPUT
+Foo: !Shell
+  - echo "hello, $NAME!"
+  - NAME: world
+```
+```yaml
+# OUTPUT
+Foo: hello, world!
+```
+
+### `!Js`
+
+Given a JavaScript function body string, evaluates it, returning the result.
+
+```yaml
+# INPUT
+Foo: !Js "return 'hello, world!'"
+```
+```yaml
+# OUTPUT
+Foo: hello, world!
+```
+
+Variables can be set:
+
+```yaml
+# INPUT
+Foo: !Js
+  - "return `hello, ${NAME}!`"
+  - NAME: world
+```
+```yaml
+# OUTPUT
+Foo: hello, world!
+```
+
 ### `!Merge`
 
 Performs a shallow merge of two or more maps, at compile time:

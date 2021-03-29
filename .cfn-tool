@@ -1,2 +1,0 @@
-CFN_TOOL_LINTER='cfn-lint -f pretty'
-CFN_TOOL_BUCKET=infra-${AWS_REGION:?}

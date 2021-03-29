@@ -302,9 +302,25 @@ executes Fn::Shell commands:
 
   template:
     Foo: !Shell echo hello, world!
+    Bar: !Shell
+      - echo $ZOOP
+      - ZOOP: floop
 
   expected:
     Foo: hello, world!
+    Bar: floop
+
+executes Fn::Js commands:
+
+  template:
+    Foo: !Js "return 'hello, world!'"
+    Bar: !Js
+      - return ZOOP
+      - ZOOP: floop
+
+  expected:
+    Foo: hello, world!
+    Bar: floop
 
 packages regular files:
 

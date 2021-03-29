@@ -322,12 +322,19 @@ class CfnTransformer extends YamlTransformer
       {'Fn::ImportValue': {'Fn::Sub': form}}
 
     @defmacro 'Shell', (form) =>
-      form = if isArray(form) then form[0] else form
+      [form='', vars={}] = if isArray(form) then form else [form]
+      env = Object.assign({}, process.env, vars)
       @withCache {shell: [@template, form]}, () =>
-        (@execShell(form) or '').replace(/\n$/, '')
+        (@execShell(form, {env}) or '').replace(/\n$/, '')
 
     @defmacro 'Js', (form) =>
-      @walk(new Function(form).call(@))
+      [form='', vars={}] = if isArray(form) then form else [form]
+      args = Object.keys(vars)
+      vals = args.reduce(((xs, x) -> xs.concat(["(#{JSON.stringify(vars[x])})"])), [])
+      form = "return (function(#{args.join ','}){#{form}})(#{vals.join ','})"
+      ret = @walk(new Function(form).call(@))
+      throw new CfnError('!Js must not return null', form) if not ret?
+      ret
 
     @defmacro 'Package', (form) =>
       @packageMacro form
