@@ -256,9 +256,7 @@
   };
 
   parseKeyValArg = function(x) {
-    return x.split(/ /).map(function(x) {
-      return `'${x}'`;
-    }).join(' ');
+    return x.split(/ +/).join(',');
   };
 
   parseConfig = function(x, uid) {
