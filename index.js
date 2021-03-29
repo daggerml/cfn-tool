@@ -355,7 +355,7 @@ done`)));
         bucketarg = `--s3-bucket '${opts.bucket}' --s3-prefix aws/`;
       }
       if (opts.parameters) {
-        paramsarg = `--paramter-overrides ${parseKeyValArg(opts.parameters)}`;
+        paramsarg = `--parameter-overrides ${parseKeyValArg(opts.parameters)}`;
       }
       if (opts.tags) {
         tagsarg = `--tags ${parseKeyValArg(opts.tags)}`;

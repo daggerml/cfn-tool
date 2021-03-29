@@ -256,9 +256,9 @@ module.exports = () ->
       log.info 'uploading templates to S3'
       exec "aws s3 sync --size-only '#{cfn.tmpdir}' 's3://#{opts.bucket}/'"
 
-    bucketarg = "--s3-bucket '#{opts.bucket}' --s3-prefix aws/"           if opts.bucket
-    paramsarg = "--paramter-overrides #{parseKeyValArg(opts.parameters)}" if opts.parameters
-    tagsarg   = "--tags #{parseKeyValArg(opts.tags)}"                     if opts.tags
+    bucketarg = "--s3-bucket '#{opts.bucket}' --s3-prefix aws/"             if opts.bucket
+    paramsarg = "--parameter-overrides #{parseKeyValArg(opts.parameters)}"  if opts.parameters
+    tagsarg   = "--tags #{parseKeyValArg(opts.tags)}"                       if opts.tags
 
     log.info 'deploying stack'
     exec """
