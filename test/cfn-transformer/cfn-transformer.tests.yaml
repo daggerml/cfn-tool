@@ -8,6 +8,14 @@ round-trips simple yaml docs:
     Foo:
       Bar: baz
 
+does not expand strings that look like dates implicitly:
+
+  template:
+    Foo: 2021-03-29
+
+  expected:
+    Foo: 2021-03-29
+
 expands Fn::Parameters macros:
 
   template:
