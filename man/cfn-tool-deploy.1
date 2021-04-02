@@ -1,0 +1,138 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "CFN\-TOOL\-DEPLOY" "1" "April 2021" "CloudFormation Tools 4.0.0" "CloudFormation Tools"
+.
+.SH "NAME"
+\fBcfn\-tool\-deploy\fR \- deploy cloudformation stacks
+.
+.SH "SYNOPSIS"
+\fBcfn\-tool\fR \fBdeploy\fR [\fIoption\fR\.\.\.] \fItemplate\-file\fR \fIstack\-name\fR
+.
+.SH "DESCRIPTION"
+Deploys the template \fItemplate\-file\fR to the cloudformation stack named \fIstack\-name\fR\. If a stack named \fIstack\-name\fR already exists it is updated, otherwise a new stack is created\.
+.
+.P
+Each raw template file is processed as follows: macros are expanded, nested templates are recursively processed, packages are prepared for upload, and their S3 URIs are computed\. The processed template is then linted (optionally) and validated with the AWS CloudFormation API\.
+.
+.P
+When all templates have been successfully processed, any nested templates are uploaded to S3 with their associated packages and the stack is deployed\.
+.
+.SH "OPTIONS"
+Options are configured in the following ways (from lowest to highest priority): configuration file, environment variables, and command line options\.
+.
+.P
+Each command line option (except for \fB\-\-profile\fR and \fB\-\-region\fR) is associated with a corresponding environment variable according to the following pattern: the \fB\-\-bucket\fR option, for example, is associated with the \fBCFN_TOOL_BUCKET\fR environment variable\. The \fB\-\-profile\fR and \fB\-\-region\fR options are special \(em they are associated with the AWS environment variables \fBAWS_PROFILE\fR and \fBAWS_DEFAULT_REGION\fR\.
+.
+.P
+Environment variables associated with boolean options must have a value of either \fBtrue\fR or \fBfalse\fR\. String options are specified identically via the command line and environment variables\.
+.
+.P
+Options provided via the command line will be automatically exported as their corresponding environment variables, and will be in the environment of any shell commands executed during macro expansion\. For example, when the \fB\-\-profile\fR option is specified on the command line there is no need to use it in shell commands using the \fBaws\fR(1) CLI tool, as the \fBAWS_PROFILE\fR environment variable is exported by \fBcfn\-tool\fR to the environment in which the shell commands are executed\.
+.
+.TP
+\fB\-b\fR, \fB\-\-bucket\fR=\fIname\fR
+Upload templates to the S3 bucket given by \fIname\fR\. A bucket must be specified when nested stacks are used, or when the template specified by \fItemplate\-name\fR is more than 51KiB in size\.
+.
+.TP
+\fB\-c\fR, \fB\-\-config\fR=\fIfile\fR
+Specify the config file to use\. If this option is not specified \fBcfn\-tool\fR will look for a file named \fB\.cfn\-tool\fR in the current directory\. This file will be sourced in the \fBbash\fR(1) shell\. Environment variables defined here will be applied as default options\.
+.
+.TP
+\fB\-k\fR, \fB\-\-keep\fR
+Don\'t delete the temporary directory to which processed templates are written when \fBcfn\-tool\fR exits\. This can be useful for debugging\.
+.
+.TP
+\fB\-l\fR, \fB\-\-linter\fR=\fIcommand\fR
+Run \fIcommand\fR on each processed template file, aborting if the \fIcommand\fR fails\. The template file path is appended to the \fIcommand\fR string and the resulting command line is evaluated in the \fBbash\fR(1) shell\. The working directory is set to the directory in which the \fBcfn\-tool\fR program was run\.
+.
+.TP
+\fB\-p\fR, \fB\-\-parameters\fR="\fIkey\fR=\fIvalue\fR [\fIkey\fR=\fIvalue\fR \.\.\.]"
+Set template input parameter overrides\. When updating an existing stack the values of any unspecified parameters will be preserved\.
+.
+.TP
+\fB\-p\fR, \fB\-\-profile\fR=\fIname\fR
+Use the AWS profile given by \fIname\fR to configure the AWS credentials provider chain\.
+.
+.TP
+\fB\-q\fR, \fB\-\-quiet\fR
+Suppress all informational, diagnostic, and warning output\.
+.
+.TP
+\fB\-r\fR, \fB\-\-region\fR=\fIname\fR
+Use the AWS region given by \fIname\fR for all AWS API calls\.
+.
+.TP
+\fB\-t\fR, \fB\-\-tags\fR="\fIkey\fR=\fIvalue\fR [\fIkey\fR=\fIvalue\fR \.\.\.]"
+A list of tags to associate with the stack that is created or updated\. AWS CloudFormation also propagates these tags to resources in the stack if the resource supports it\.
+.
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Print extra diagnostic output while processing\.
+.
+.SH "EXAMPLES"
+Using \fBcfn\-lint\fR(1) to lint processed templates:
+.
+.IP "" 4
+.
+.nf
+
+$ cfn\-tool deploy \-\-linter "cfn\-lint \-f pretty" my\-template\.yml my\-stack
+.
+.fi
+.
+.IP "" 0
+.
+.P
+Specifying tags and parameters as key\-value pairs:
+.
+.IP "" 4
+.
+.nf
+
+$ cfn\-tool deploy \-\-tags "Foo=bar Baz=baf" my\-template\.yml my\-stack
+$ cfn\-tool deploy \-\-parameters "Foo=bar Baz=baf" my\-template\.yml my\-stack
+.
+.fi
+.
+.IP "" 0
+.
+.SH "ENVIRONMENT"
+Each command line option is associated with a corresponding environment variable\. See the \fBOPTIONS\fR section above\.
+.
+.SH "FILES"
+The \fBcfn\-tool\fR program will look for a configuration file specified by the \fB\-\-config\fR option, the \fBCFN_TOOL_CONFIG\fR environment variable, or the default \fB\.cfn\-tool\fR file in the current working directory\. When this file exists it is sourced in the \fBbash\fR(1) shell and any configuration environment variables defined are used as defaults\. Here is an example configuration file:
+.
+.IP "" 4
+.
+.nf
+
+CFN_TOOL_BUCKET=my\-infra\-${AWS_DEFAULT_REGION:?}
+CFN_TOOL_KEEP=true
+CFN_TOOL_LINTER="cfn\-lint \-f pretty \-i W1007 \-\-"
+CFN_TOOL_PARAMETERS="Zone=${ZONE:?} Service=RestAPI"
+CFN_TOOL_TAGS="Zone=${ZONE:?} Service=RestAPI"
+.
+.fi
+.
+.IP "" 0
+.
+.P
+Note that environment variables associated with options specified on the command line, such as the \fBAWS_DEFAULT_REGION\fR variable above (associated with the \fB\-\-region\fR command line option), are defined in the environment in which the configuration file is evaluated when that command line option is specified\.
+.
+.SH "EXIT STATUS"
+Exits with a status of 1 if an error occurred, or 0 otherwise\.
+.
+.SH "BUGS"
+Please open an issue: \fIhttps://github\.com/daggerml/cfn\-tool/issues\fR\.
+.
+.SH "COPYRIGHT"
+Copyright © 2021 Micha Niskin \fB<micha\.niskin@gmail\.com>\fR, distributed under the following license:
+.
+.IP "\(bu" 4
+\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/4\.0\.0/LICENSE\fR
+.
+.IP "" 0
+.
+.P
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT\. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE\.

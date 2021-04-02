@@ -184,15 +184,13 @@ rmCR = (x='') ->
 #=============================================================================#
 
 class CfnTransformer extends YamlTransformer
-  constructor: ({
-    @basedir, @tmpdir, @cache, @s3bucket, @s3prefix, @verbose, @linter,
-    @dolint, @dovalidate, @dopackage
-  } = {}) ->
+  constructor: ({@basedir, @cache, @opts} = {}) ->
     super()
 
+    @opts           ?= {}
+    @opts.s3prefix  ?= ''
     @cache          ?= {}
     @basedir        ?= process.cwd()
-    @s3prefix       ?= ''
     @template       = null
     @needBucket     = false
     @resourceMacros = []
@@ -404,7 +402,7 @@ class CfnTransformer extends YamlTransformer
     form = {Path: form} if isString(form)
     form = Object.assign(form, opts)
     {Path, CacheKey, Parse} = form
-    if @dopackage
+    if @opts.dopackage
       @needBucket = true
       @withCache {package: [@userPath(Path), CacheKey, Parse]}, () =>
         (
@@ -415,7 +413,7 @@ class CfnTransformer extends YamlTransformer
         ).code
     else
       S3Bucket: 'example-bucket'
-      S3Key:    "#{@s3prefix}example-key"
+      S3Key:    "#{@opts.s3prefix}example-key"
 
   wrapError: (e) ->
     switch
@@ -481,12 +479,12 @@ class CfnTransformer extends YamlTransformer
     if key then md5(JSON.stringify([@canonicalKeyPath(),key])) else md5Path(fileOrDir)
 
   writePaths: (fileName, ext = '') ->
-    if @needBucket and not @s3bucket
+    if @needBucket and not @opts.s3bucket
       throw new CfnError("can't generate S3 URL: no S3 bucket configured")
     fileName = "#{fileName}#{ext}"
     nested:   @nested
     tmpPath:  @tmpPath(fileName),
-    code:     { S3Bucket: @s3bucket, S3Key: "#{@s3prefix}#{fileName}" }
+    code:     { S3Bucket: @opts.s3bucket, S3Key: "#{@opts.s3prefix}#{fileName}" }
 
   writeText: (text, ext, key, source='none') ->
     ret = @writePaths(md5(key or text), ext)
@@ -495,10 +493,7 @@ class CfnTransformer extends YamlTransformer
     ret
 
   transformTemplateFile: (file) ->
-    xformer = new @.constructor({
-      @basedir, @tmpdir, @cache, @s3bucket, @s3prefix, @verbose, @linter,
-      @dolint, @dovalidate, @dopackage
-    })
+    xformer = new @.constructor({@basedir, @cache, @opts})
     ret = xformer.transformFile(file)
     @nested = @nested.concat xformer.nested
     ret
@@ -514,7 +509,7 @@ class CfnTransformer extends YamlTransformer
 
   lint: (file) ->
     log.verbose "linting #{@template}"
-    cmd = "#{@linter} #{file}"
+    cmd = "#{@opts.linter} #{file}"
     @withCwd @basedir, (() => @tryExecRaw(cmd, 'lint error'))
 
   validate: (file) ->
@@ -530,8 +525,8 @@ class CfnTransformer extends YamlTransformer
       @template = @userPath(file)
       @withKeyStack [], () =>
         ret = @writeText(@transformTemplateFile(file), fileExt(file), key, file)
-        @lint ret.tmpPath if @linter and @dolint
-        @validate ret.tmpPath if @dovalidate
+        @lint ret.tmpPath if @opts.linter
+        @validate ret.tmpPath if @opts.dovalidate
         ret
     catch e then @abort e
 
@@ -554,7 +549,7 @@ class CfnTransformer extends YamlTransformer
     path.relative(@basedir, file)
 
   tmpPath: (name) ->
-    path.join(@tmpdir, name)
+    path.join(@opts.tmpdir, name)
 
   pushFile: (file, f) ->
     @nested.push(@userPath file)

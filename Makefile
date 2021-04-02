@@ -6,8 +6,9 @@ TAG_EXISTS = $(shell git ls-remote --tags |awk '{print $$2}' |grep ^refs/tags/ |
 OBJS       = index.js $(shell find lib/ -name '*.coffee' |sed 's@coffee$$@js@')
 MANS       = $(shell find man/ -name '*.in' |sed 's@in$$@1@')
 HTMLS      = $(shell find man/ -name '*.in' |sed 's@in$$@html@')
+YEAR       = $(shell date +%Y)
 
-.PHONY: all compile docs test push
+.PHONY: all clean compile docs test push
 
 all: compile docs test
 
@@ -17,6 +18,9 @@ docs: README.md $(MANS) $(HTMLS)
 
 test: compile package-lock.json
 	npm test
+
+clean:
+	rm -f $(OBJS)
 
 push: all
 	[ -n "$(VERSION)" ]
@@ -35,16 +39,16 @@ print-%:
 	npm run coffee -- --compile $<
 
 %.md: %.in package-lock.json
-	VERSION=$(VERSION) envsubst '$${VERSION}' < $< > $@
+	VERSION=$(VERSION) YEAR=$(YEAR) envsubst '$${VERSION} $${YEAR}' < $< > $@
 
 %.1: %.md
 	docker run --rm -v $(PWD):/app -w /app msoap/ruby-ronn \
 		ronn -r --pipe --manual 'CloudFormation Tools' \
 			--organization 'CloudFormation Tools $(VERSION)' $< > $@
 
-%.html: %.md cfn-tool.css
+%.html: %.md man/cfn-tool.css
 	docker run --rm -v $(PWD):/app -w /app msoap/ruby-ronn \
-		ronn -5 --pipe --manual 'CloudFormation Tools' --style=/app/cfn-tool.css \
+		ronn -5 --pipe --manual 'CloudFormation Tools' --style=/app/man/cfn-tool.css \
 			--organization 'CloudFormation Tools $(VERSION)' $< > $@
 
 package-lock.json: package.json

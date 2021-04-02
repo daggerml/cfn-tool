@@ -18,6 +18,9 @@ assoc = (xs, k, v) ->
   xs[k] = v
   xs
 
+objKeys = (x) -> Object.keys(x)
+objVals = (x) -> objKeys(x).reduce(((ys, y) -> ys.concat([x[y]])), [])
+
 selectKeys = (o, ks) ->
   Object.keys(o).reduce(((xs, x) -> if x in ks then assoc(xs, x, o[x]) else xs), {})
 
@@ -67,56 +70,105 @@ fixRegion = () ->
 
 fixRegion()
 
-getoptsConfig =
+defaultOptionsSpec =
   alias:
-    bucket:     'b'
-    config:     'c'
-    help:       'h'
-    keep:       'k'
-    linter:     'l'
-    parameters: 'P'
-    profile:    'p'
-    quiet:      'q'
-    region:     'r'
-    tags:       't'
-    verbose:    'v'
-    version:    'V'
-  boolean: [
-    'help'
-    'keep'
-    'quiet'
-    'verbose'
-    'version'
-  ]
-  string: [
-    'bucket'
-    'config'
-    'linter'
-    'parameters'
-    'profile'
-    'region'
-    'tags'
-  ]
-  unknown: (x) -> abort new CfnError("unknown option: '#{x}'")
+    help:     'h'
+    version:  'V'
+  boolean:    ['help', 'version']
+  string:     []
+  unknown:    (x) -> abort new CfnError("unknown option: '#{x}'")
+
+optionsSpecs =
+  deploy:
+    alias:
+      bucket:     'b'
+      config:     'c'
+      help:       'h'
+      keep:       'k'
+      linter:     'l'
+      parameters: 'P'
+      profile:    'p'
+      quiet:      'q'
+      region:     'r'
+      tags:       't'
+      verbose:    'v'
+      version:    'V'
+    boolean: [
+      'help'
+      'keep'
+      'quiet'
+      'verbose'
+      'version'
+    ]
+    string: [
+      'bucket'
+      'config'
+      'linter'
+      'parameters'
+      'profile'
+      'region'
+      'tags'
+    ]
+    unknown: (x) -> abort new CfnError("unknown option: '#{x}'")
+  transform:
+    alias:
+      config:     'c'
+      help:       'h'
+      linter:     'l'
+      profile:    'p'
+      quiet:      'q'
+      region:     'r'
+      verbose:    'v'
+      version:    'V'
+    boolean: [
+      'help'
+      'quiet'
+      'verbose'
+      'version'
+    ]
+    string: [
+      'config'
+      'linter'
+      'profile'
+      'region'
+    ]
+    unknown: (x) -> abort new CfnError("unknown option: '#{x}'")
+  update:
+    alias:
+      config:     'c'
+      help:       'h'
+      parameters: 'P'
+      profile:    'p'
+      quiet:      'q'
+      region:     'r'
+      verbose:    'v'
+      version:    'V'
+    boolean: [
+      'help'
+      'quiet'
+      'verbose'
+      'version'
+    ]
+    string: [
+      'config'
+      'parameters'
+      'profile'
+      'region'
+    ]
+    unknown: (x) -> abort new CfnError("unknown option: '#{x}'")
+
+getoptsConfig = optionsSpecs[process.argv[2]] or defaultOptionsSpec
 
 opt2var =
-  bucket:     'CFN_TOOL_BUCKET'
-  config:     'CFN_TOOL_CONFIG'
-  help:       'CFN_TOOL_HELP'
-  keep:       'CFN_TOOL_KEEP'
-  linter:     'CFN_TOOL_LINTER'
-  parameters: 'CFN_TOOL_PARAMETERS'
   profile:    'AWS_PROFILE'
-  quiet:      'CFN_TOOL_QUIET'
   region:     'AWS_REGION'
-  tags:       'CFN_TOOL_TAGS'
-  verbose:    'CFN_TOOL_VERBOSE'
-  version:    'CFN_TOOL_VERSION'
 
-assert.deepEqual new Set(Object.keys(opt2var)),
-  new Set(getoptsConfig.boolean.concat(getoptsConfig.string)),
-  "option->variable name mapping out of sync"
+opt2var = getoptsConfig.boolean.concat(getoptsConfig.string).reduce(
+  (xs, x) -> assoc(xs, x, opt2var[x] or "CFN_TOOL_#{x.toUpperCase()}")
+  {}
+)
 
+allCmds = Object.keys(optionsSpecs)
 var2opt = Object.keys(opt2var).reduce(((xs, x) -> assoc xs, opt2var[x], x), {})
 allOpts = Object.keys(opt2var)
 allVars = Object.keys(var2opt)
@@ -136,7 +188,7 @@ getVars = () ->
     {}
   )
 
-setVars = (opts, clobber=false) ->
+setVars = (opts, {clobber = false} = {}) ->
   for o, v of opt2var
     process.env[v] = "#{opts[o]}" if opts[o]? and (clobber or not (v in useVars))
   fixRegion()
@@ -154,27 +206,14 @@ version = () ->
 parseArgv = (argv) ->
   opts  = getopts argv, assoc getoptsConfig, 'default', getVars()
 
+  [command, args...]  = opts._ or []
+  Object.assign(opts, {command, args})
+
+  assertOk(not command or command in allCmds, "unknown command: '#{command}'")
+
   switch
     when opts.help then usage()
     when opts.version then version()
-    when not argv.length then usage()
-
-  opts.template   = opts._[0]
-  opts.stackname  = opts._[1]
-
-  assertOk opts.template, 'template argument required'
-
-  if not opts.stackname
-    Object.assign opts,
-      debug:      true
-      bucket:     'example-bucket'
-      s3bucket:   'example-bucket'
-  else
-    Object.assign opts,
-      dolint:     true
-      dovalidate: true
-      dopackage:  true
-      s3bucket:   opts.bucket
 
   opts
 
@@ -197,13 +236,12 @@ setLogLevel = (opts) ->
   log.level = switch
     when opts.verbose then 'verbose'
     when opts.quiet   then 'error'
-    when opts.debug   then 'warn'
     else              'info'
   opts
 
 module.exports = () ->
   opts  = setLogLevel parseArgv process.argv.slice(2)
-  cfn   = new CfnTransformer opts
+  cfn   = new CfnTransformer {opts}
   exec  = cfn.execShell.bind cfn
   cfg   = opts.config or (existsSync('.cfn-tool') and '.cfn-tool')
   uid   = uuid.v4()
@@ -224,47 +262,105 @@ module.exports = () ->
     catch e
       e.message = e.message.split('\n').shift()
       throw e
-    opts  = setLogLevel parseArgv process.argv.slice(2)
-    cfn   = new CfnTransformer opts
-    exec  = cfn.execShell.bind cfn
+    opts = cfn.opts = setLogLevel parseArgv process.argv.slice(2)
 
-  setVars opts, true
+  setVars opts, {clobber: true}
 
-  cfn.tmpdir = fs.mkdtempSync([os.tmpdir(), 'cfn-tool-'].join('/'))
-  process.on 'exit', () -> fs.rmdirSync cfn.tmpdir, {recursive: true} unless opts.keep
+  opts.tmpdir = fs.mkdtempSync([os.tmpdir(), 'cfn-tool-'].join('/'))
+  process.on 'exit', () -> fs.rmdirSync opts.tmpdir, {recursive: true} unless opts.keep
 
   log.verbose "configuration options", {body: inspect selectKeys(opts, allOpts)}
 
-  assertOk exec 'which aws', 'aws CLI tool not found on $PATH' if opts.stackname
+  assertOk exec 'which aws', 'aws CLI tool not found on $PATH'
   awsversion = parseAwsVersion(exec('aws --version'))
   assertOk awsversion in AWS_VERSIONS,
     "unsupported aws CLI tool version: #{awsversion} (supported versions are #{AWS_VERSIONS})"
 
-  log.info 'preparing templates'
+  switch opts.command
 
-  res = cfn.writeTemplate(opts.template)
-  tpl = readFileSync(res.tmpPath).toString('utf-8')
+    when 'transform'
+      Object.assign opts,
+        dovalidate: false
+        dopackage:  false
+        bucket:     'example-bucket'
+        s3bucket:   'example-bucket'
 
-  if opts.debug
-    console.log tpl.trimRight()
-  else if opts.stackname
-    if res.nested.length > 1
-      throw new CfnError('bucket required for nested stacks') unless opts.bucket
-      log.info 'uploading templates to S3'
-      exec "aws s3 sync --size-only '#{cfn.tmpdir}' 's3://#{opts.bucket}/'"
+      log.verbose 'preparing template'
+      res = cfn.writeTemplate(opts.template)
+      tpl = readFileSync(res.tmpPath).toString('utf-8')
 
-    bucketarg = "--s3-bucket '#{opts.bucket}' --s3-prefix aws/" if opts.bucket
-    paramsarg = "--parameter-overrides #{opts.parameters}"      if opts.parameters
-    tagsarg   = "--tags #{opts.tags}"                           if opts.tags
+      console.log tpl.trimRight()
 
-    log.info 'deploying stack'
-    exec """
-      aws cloudformation deploy \
-        --template-file '#{res.tmpPath}' \
-        --stack-name '#{opts.stackname}' \
-        --capabilities CAPABILITY_NAMED_IAM CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
-        #{bucketarg or ''} #{paramsarg or ''} #{tagsarg or ''}
-    """
+    when 'deploy'
+      Object.assign opts,
+        template:   opts.args[0]
+        stackname:  opts.args[1]
+        dovalidate: true
+        dopackage:  true
+        s3bucket:   opts.bucket
 
-  log.info 'done -- no errors'
+      assertOk opts.template, 'template argument required'
+      assertOk opts.stackname, 'stackname argument required'
+
+      log.info 'preparing templates'
+      res = cfn.writeTemplate(opts.template)
+      tpl = readFileSync(res.tmpPath).toString('utf-8')
+
+      if res.nested.length > 1
+        throw new CfnError('bucket required for nested stacks') unless opts.bucket
+        log.info 'uploading templates to S3'
+        exec "aws s3 sync --size-only '#{cfn.tmpdir}' 's3://#{opts.bucket}/'"
+
+      bucketarg = "--s3-bucket '#{opts.bucket}' --s3-prefix aws/" if opts.bucket
+      paramsarg = "--parameter-overrides #{opts.parameters}"      if opts.parameters
+      tagsarg   = "--tags #{opts.tags}"                           if opts.tags
+
+      log.info 'deploying stack'
+      exec """
+        aws cloudformation deploy \
+          --template-file '#{res.tmpPath}' \
+          --stack-name '#{opts.stackname}' \
+          --capabilities CAPABILITY_NAMED_IAM CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
+          #{bucketarg or ''} #{paramsarg or ''} #{tagsarg or ''}
+      """
+
+      log.info 'done -- no errors'
+
+    when 'update'
+      opts.stackname = opts.args[0]
+      assertOk opts.stackname, 'stackname argument required'
+
+      res = JSON.parse exec """
+        aws cloudformation describe-stacks --stack-name '#{opts.stackname}'
+      """
+
+      params = res?.Stacks?[0]?.Parameters?.reduce(
+        (xs, x) ->
+          k = x.ParameterKey
+          assoc xs, k, "ParameterKey=#{k},UsePreviousValue=true"
+        {}
+      )
+      assertOk Object.keys(params).length, "stack '#{opts.stackname}' has no parameters"
+
+      haveOverride = null
+      for x in (opts.parameters?.split(/ +/) or [])
+        [k, v] = split(x, '=', 2)
+        assertOk k and v, "parameter: expected <key>=<value>: got '#{x}'"
+        assertOk params[k], "stack '#{opts.stackname}' has no parameter '#{k}'"
+        haveOverride = params[k] = "ParameterKey=#{k},ParameterValue=#{v}"
+
+      assertOk haveOverride, 'parameter overrides required'
+
+      paramsarg = objVals(params).join(' ')
+
+      exec """
+        aws cloudformation update-stack \
+          --stack-name #{opts.stackname} \
+          --parameters #{paramsarg} \
+          --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
+          ----use-previous-template
+      """
+
+      log.info 'done -- no errors'
+
   quit()

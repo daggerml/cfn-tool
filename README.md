@@ -6,7 +6,7 @@
 # INSTALL
 
 ```bash
-sudo npm install -g 'daggerml/cfn-tool#3.2.0'
+sudo npm install -g 'daggerml/cfn-tool#4.0.0'
 ```
 
 # USAGE
@@ -25,6 +25,13 @@ to `my-stack`:
 cfn-tool deploy template.yml my-stack
 ```
 
+Update a parameter of an existing stack, preserving previous values of all
+existing parameters not specified for update:
+
+```bash
+cfn-tool update --parameters "Foo=bar Baz=baf" my-stack
+```
+
 Simple macro example:
 
 ```bash
@@ -36,7 +43,14 @@ EOT
 Foo: 53480aea-8c46-11eb-a4b0-61c2b0470324
 ```
 
-> **Note:** See [the manual page][6] (or `man cfn-tool`) for complete usage and options info.
+# MANUALS
+
+See the manual pages for complete usage and options info:
+
+* [cfn-tool(1)][6]
+* [cfn-tool-deploy(1)][23]
+* [cfn-tool-transform(1)][24]
+* [cfn-tool-update(1)][25]
 
 # TEMPLATE MACROS
 
@@ -621,7 +635,7 @@ Resources:
 [3]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-importvalue.html
 [4]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-sub.html
 [5]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-stack.html
-[6]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/3.2.0/man/cfn-tool.1.html
+[6]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/4.0.0/man/cfn-tool.html
 [7]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-ref.html
 [8]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-getatt.html
 [9]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-transform.html
@@ -638,3 +652,6 @@ Resources:
 [20]: none
 [21]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html
 [22]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html
+[23]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/4.0.0/man/cfn-tool-deploy.html
+[24]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/4.0.0/man/cfn-tool-transform.html
+[24]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/4.0.0/man/cfn-tool-update.html
