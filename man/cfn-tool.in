@@ -1,16 +1,30 @@
-cfn-tool(1) -- cloudformation template process and stack deploy
-===============================================================
+<!-- vim: set ft=markdown: -->
+cfn-tool(1) -- extra tools for working with aws cloudformation
+==============================================================
 
 ## SYNOPSIS
 
-`cfn-tool` [`-h`|`--help`|`-V`|`--version`]<br>
-`cfn-tool` [<options>...] <template-file> [<stack-name>]
+`cfn-tool` [`-V`|`--version`]<br>
+`cfn-tool` [<command>] [`-h`|`--help`]
+`cfn-tool` *command* [*option*...] [*argument*...]
 
 ## DESCRIPTION
 
-When a <stack-name> is specified `cfn-tool` deploys the template <template-file>
-to the cloudformation stack <stack-name>. If no stack named <stack-name> exists
-one is created. Otherwise, the existing stack is updated.
+This program provides extra tools for use with AWS CloudFormation. These tools
+include a template macro preprocessor, resource packaging, extended support for
+nested stacks, additional stack deployment options (like template linting, for
+example), and more.
+
+## COMMANDS
+
+The first argument to `cfn-tool` is the `command`. Each command has its own set
+of options and required positional parameters.
+
+### deploy [options...] template-file stack-name
+
+Deploys the template <template-file> to the cloudformation stack named
+<stack-name>. If no stack named <stack-name> exists one is created. Otherwise,
+the existing stack is updated.
 
 Each raw template file is processed as follows: macros are expanded, nested
 templates are recursively processed, packages are prepared for upload, and
@@ -20,10 +34,25 @@ and validated with the AWS CloudFormation API.
 When all templates have been successfully processed, any nested templates are
 uploaded to S3 with their associated packages and the stack is deployed.
 
-When no <stack-name> is specified, macros in the <template-file> are expanded,
-the resulting YAML is printed to `stdout`, and the program exits. No nested
-templates are processed, no packages are prepared, no linting or validation is
-performed, and no stack is deployed. This can be useful for debugging.
+cfn-tool deploy
+[`--bucket` <name>]
+[`--config` <file>]
+[`--keep`]
+[`--linter` <command>]
+[`--parameters` "<key>=<value> ..."]
+[`--profile` <name>]
+[`--quiet`]
+[`--region` <name>]
+[`--tags` "<key>=<value> ..."]
+[`--verbose`]
+<stack-name>
+
+### transform [options...] template-file
+
+Expands macros in the <template-file> &mdash; the resulting YAML is printed to
+`stdout`, and the program exits. No nested templates are processed, no packages
+are prepared, no linting or validation is performed, and no stack is deployed.
+This can be useful for debugging.
 
 ## OPTIONS
 

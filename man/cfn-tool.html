@@ -3,7 +3,7 @@
 <head>
   <meta http-equiv='content-type' value='text/html;charset=utf8'>
   <meta name='generator' value='Ronn/v0.7.3 (http://github.com/rtomayko/ronn/tree/0.7.3)'>
-  <title>cfn-tool(1) - cloudformation template process and stack deploy</title>
+  <title>cfn-tool(1) - extra tools for working with aws cloudformation</title>
   <style type='text/css' media='all'>
   /* style: man */
   body#manpage {margin:0}
@@ -42,7 +42,7 @@
   ol.man-decor li.tr {text-align:right;float:right}
   </style>
   <style type='text/css' media='all'>
-  /* style: cfn-tool.1 */
+  /* style: cfn-tool */
   .mp {margin-left: auto;margin-right: auto}
   </style>
 </head>
@@ -60,6 +60,7 @@
     <a href="#NAME">NAME</a>
     <a href="#SYNOPSIS">SYNOPSIS</a>
     <a href="#DESCRIPTION">DESCRIPTION</a>
+    <a href="#COMMANDS">COMMANDS</a>
     <a href="#OPTIONS">OPTIONS</a>
     <a href="#EXAMPLES">EXAMPLES</a>
     <a href="#ENVIRONMENT">ENVIRONMENT</a>
@@ -77,19 +78,32 @@
 
   <h2 id="NAME">NAME</h2>
 <p class="man-name">
-  <code>cfn-tool</code> - <span class="man-whatis">cloudformation template process and stack deploy</span>
+  <code>cfn-tool</code> - <span class="man-whatis">extra tools for working with aws cloudformation</span>
 </p>
 
 <h2 id="SYNOPSIS">SYNOPSIS</h2>
 
-<p><code>cfn-tool</code> [<code>-h</code>|<code>--help</code>|<code>-V</code>|<code>--version</code>]<br />
-<code>cfn-tool</code> [<var>options</var>...] <var>template-file</var> [<var>stack-name</var>]</p>
+<p><code>cfn-tool</code> [<code>-V</code>|<code>--version</code>]<br />
+<code>cfn-tool</code> [<var>command</var>] [<code>-h</code>|<code>--help</code>]
+<code>cfn-tool</code> <em>command</em> [<em>option</em>...] [<em>argument</em>...]</p>
 
 <h2 id="DESCRIPTION">DESCRIPTION</h2>
 
-<p>When a <var>stack-name</var> is specified <code>cfn-tool</code> deploys the template <var>template-file</var>
-to the cloudformation stack <var>stack-name</var>. If no stack named <var>stack-name</var> exists
-one is created. Otherwise, the existing stack is updated.</p>
+<p>This program provides extra tools for use with AWS CloudFormation. These tools
+include a template macro preprocessor, resource packaging, extended support for
+nested stacks, additional stack deployment options (like template linting, for
+example), and more.</p>
+
+<h2 id="COMMANDS">COMMANDS</h2>
+
+<p>The first argument to <code>cfn-tool</code> is the <code>command</code>. Each command has its own set
+of options and required positional parameters.</p>
+
+<h3 id="deploy-options-template-file-stack-name">deploy [options...] template-file stack-name</h3>
+
+<p>Deploys the template <var>template-file</var> to the cloudformation stack named
+<var>stack-name</var>. If no stack named <var>stack-name</var> exists one is created. Otherwise,
+the existing stack is updated.</p>
 
 <p>Each raw template file is processed as follows: macros are expanded, nested
 templates are recursively processed, packages are prepared for upload, and
@@ -99,10 +113,25 @@ and validated with the AWS CloudFormation API.</p>
 <p>When all templates have been successfully processed, any nested templates are
 uploaded to S3 with their associated packages and the stack is deployed.</p>
 
-<p>When no <var>stack-name</var> is specified, macros in the <var>template-file</var> are expanded,
-the resulting YAML is printed to <code>stdout</code>, and the program exits. No nested
-templates are processed, no packages are prepared, no linting or validation is
-performed, and no stack is deployed. This can be useful for debugging.</p>
+<p>cfn-tool deploy
+[<code>--bucket</code> <var>name</var>]
+[<code>--config</code> <var>file</var>]
+[<code>--keep</code>]
+[<code>--linter</code> <var>command</var>]
+[<code>--parameters</code> "<var>key</var>=<var>value</var> ..."]
+[<code>--profile</code> <var>name</var>]
+[<code>--quiet</code>]
+[<code>--region</code> <var>name</var>]
+[<code>--tags</code> "<var>key</var>=<var>value</var> ..."]
+[<code>--verbose</code>]
+<var>stack-name</var></p>
+
+<h3 id="transform-options-template-file">transform [options...] template-file</h3>
+
+<p>Expands macros in the <var>template-file</var> &mdash; the resulting YAML is printed to
+<code>stdout</code>, and the program exits. No nested templates are processed, no packages
+are prepared, no linting or validation is performed, and no stack is deployed.
+This can be useful for debugging.</p>
 
 <h2 id="OPTIONS">OPTIONS</h2>
 
@@ -222,7 +251,7 @@ THE SOFTWARE.</p>
 
   <ol class='man-decor man-foot man foot'>
     <li class='tl'>CloudFormation Tools 3.2.0</li>
-    <li class='tc'>March 2021</li>
+    <li class='tc'>April 2021</li>
     <li class='tr'>cfn-tool(1)</li>
   </ol>
 

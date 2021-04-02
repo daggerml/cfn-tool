@@ -1,3 +1,4 @@
+<!-- vim: set ft=markdown: -->
 # NAME
 
 `cfn-tool` &mdash; a cloudformation template processing and stack deployment tool.
@@ -13,7 +14,7 @@ sudo npm install -g 'daggerml/cfn-tool#3.2.0'
 Expand macros in `template.yml` and print resulting YAML to stdout:
 
 ```bash
-cfn-tool template.yml
+cfn-tool transform template.yml
 ```
 
 Expand macros in `my-template.yml` and nested templates, lint and validate
@@ -21,13 +22,13 @@ templates, upload packages and templates to S3, and deploy `my-template.yml`
 to `my-stack`:
 
 ```bash
-cfn-tool template.yml my-stack
+cfn-tool deploy template.yml my-stack
 ```
 
 Simple macro example:
 
 ```bash
-cat <<EOT |cfn-tool /dev/stdin
+cat <<EOT |cfn-tool transform /dev/stdin
 Foo: !Shell uuidgen -t
 EOT
 ```
