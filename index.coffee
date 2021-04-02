@@ -281,10 +281,13 @@ module.exports = () ->
 
     when 'transform'
       Object.assign opts,
+        template:   opts.args[0]
         dovalidate: false
         dopackage:  false
         bucket:     'example-bucket'
         s3bucket:   'example-bucket'
+
+      assertOk opts.template, 'template argument required'
 
       log.verbose 'preparing template'
       res = cfn.writeTemplate(opts.template)

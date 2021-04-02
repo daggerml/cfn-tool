@@ -372,11 +372,13 @@ done`)));
     switch (opts.command) {
       case 'transform':
         Object.assign(opts, {
+          template: opts.args[0],
           dovalidate: false,
           dopackage: false,
           bucket: 'example-bucket',
           s3bucket: 'example-bucket'
         });
+        assertOk(opts.template, 'template argument required');
         log.verbose('preparing template');
         res = cfn.writeTemplate(opts.template);
         tpl = readFileSync(res.tmpPath).toString('utf-8');
