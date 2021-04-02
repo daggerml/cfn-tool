@@ -38,6 +38,7 @@ quit = (msg) ->
   process.exit 0
 
 abort = (e) ->
+  throw e
   e = new CfnError(e.message) if e.code is 'ENOENT'
   body = if e instanceof CfnError then e.body else e.body or e.stack
   log.error(e.message, {body})

@@ -36,7 +36,7 @@ print-%:
 	@echo '$($*)'
 
 %.js: %.coffee
-	npm run coffee -- --compile $<
+	npm run coffee -- --map --compile $<
 
 %.md: %.tpl package-lock.json
 	VERSION=$(VERSION) YEAR=$(YEAR) envsubst '$${VERSION} $${YEAR}' < $< > $@

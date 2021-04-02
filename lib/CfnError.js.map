@@ -1,0 +1,13 @@
+{
+  "version": 3,
+  "file": "CfnError.js",
+  "sourceRoot": "..",
+  "sources": [
+    "lib/CfnError.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAAA;AAAA,MAAA;;EAAM,WAAN,MAAA,SAAA,QAAuB,MAAvB;IACE,WAAa,CAAC,OAAD,MAAA,UAAA,CAAA;;MAAU,IAAC,CAAA;MAAM,IAAC,CAAA;MAE7B,IAAC,CAAA,IAAD,GAAQ;IAFG;;EADf;;EAKA,MAAM,CAAC,OAAP,GAAiB;AALjB",
+  "sourcesContent": [
+    "class CfnError extends Error\n  constructor: (message, @body, @aborting) ->\n    super message\n    @name = 'CfnError'\n\nmodule.exports = CfnError\n"
+  ]
+}

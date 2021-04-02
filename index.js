@@ -85,6 +85,7 @@
 
   abort = function(e) {
     var body;
+    throw e;
     if (e.code === 'ENOENT') {
       e = new CfnError(e.message);
     }
@@ -445,3 +446,5 @@ done`)));
   };
 
 }).call(this);
+
+//# sourceMappingURL=index.js.map
