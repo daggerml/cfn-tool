@@ -4,26 +4,28 @@ cfn-tool(1) -- extra tools for working with aws cloudformation
 
 ## SYNOPSIS
 
-`cfn-tool` [`-V`|`--version`]<br>
-`cfn-tool` [*command*] [`-h`|`--help`]
+`cfn-tool` [`-h`|`--help`|`-V`|`--version`]<br>
 `cfn-tool` *command* [*option*...] [*argument*...]
 
 ## DESCRIPTION
 
-This program provides extra tools for use with AWS CloudFormation. These tools
-include a template macro preprocessor, resource packaging, extended support for
-nested stacks, additional stack deployment options (like template linting, for
-example), and more.
+This program provides extra tools for working with AWS CloudFormation including
+a template macro preprocessor, resource packaging, extended support for nested
+stacks, additional stack deployment options (like template linting, for example),
+and more.
 
 ## COMMANDS
 
 The first argument to `cfn-tool` is the `command`. Each command has its own set
-of options and required positional parameters, as described in its own manual
-page, see: `cfn-tool-deploy`(1), `cfn-tool-transform`(1).
+of options and required positional parameters, as described in its manual page.
 
-## EXIT STATUS
+## SEE ALSO
 
-Exits with a status of 1 if an error occurred, or 0 otherwise.
+Each command has its own man page:
+
+* `cfn-tool-deploy`(1)
+* `cfn-tool-transform`(1)
+* `cfn-tool-update`(1)
 
 ## BUGS
 

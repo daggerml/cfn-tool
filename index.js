@@ -261,10 +261,12 @@
     return fixRegion();
   };
 
-  usage = function() {
+  usage = function(command) {
+    var x;
+    x = ['cfn-tool'].concat(command ? [command] : []).join('-');
     return quit(`See the manpage:
-* cmd: man cfn-tool
-* url: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/${VERSION}/man/cfn-tool.1.html`);
+* cmd: man ${x}
+* url: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/${VERSION}/man/${x}.html`);
   };
 
   version = function() {
@@ -279,7 +281,7 @@
     assertOk(!command || indexOf.call(allCmds, command) >= 0, `unknown command: '${command}'`);
     switch (false) {
       case !opts.help:
-        usage();
+        usage(command);
         break;
       case !opts.version:
         version();

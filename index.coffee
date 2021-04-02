@@ -193,11 +193,12 @@ setVars = (opts, {clobber = false} = {}) ->
     process.env[v] = "#{opts[o]}" if opts[o]? and (clobber or not (v in useVars))
   fixRegion()
 
-usage = () ->
+usage = (command) ->
+  x = ['cfn-tool'].concat(if command then [command] else []).join('-') 
   quit """
     See the manpage:
-    * cmd: man cfn-tool
-    * url: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/#{VERSION}/man/cfn-tool.1.html
+    * cmd: man #{x}
+    * url: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/#{VERSION}/man/#{x}.html
   """
 
 version = () ->
@@ -212,7 +213,7 @@ parseArgv = (argv) ->
   assertOk(not command or command in allCmds, "unknown command: '#{command}'")
 
   switch
-    when opts.help then usage()
+    when opts.help then usage(command)
     when opts.version then version()
 
   opts

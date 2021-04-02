@@ -61,7 +61,7 @@
     <a href="#SYNOPSIS">SYNOPSIS</a>
     <a href="#DESCRIPTION">DESCRIPTION</a>
     <a href="#COMMANDS">COMMANDS</a>
-    <a href="#EXIT-STATUS">EXIT STATUS</a>
+    <a href="#SEE-ALSO">SEE ALSO</a>
     <a href="#BUGS">BUGS</a>
     <a href="#COPYRIGHT">COPYRIGHT</a>
   </div>
@@ -79,26 +79,31 @@
 
 <h2 id="SYNOPSIS">SYNOPSIS</h2>
 
-<p><code>cfn-tool</code> [<code>-V</code>|<code>--version</code>]<br />
-<code>cfn-tool</code> [<em>command</em>] [<code>-h</code>|<code>--help</code>]
+<p><code>cfn-tool</code> [<code>-h</code>|<code>--help</code>|<code>-V</code>|<code>--version</code>]<br />
 <code>cfn-tool</code> <em>command</em> [<em>option</em>...] [<em>argument</em>...]</p>
 
 <h2 id="DESCRIPTION">DESCRIPTION</h2>
 
-<p>This program provides extra tools for use with AWS CloudFormation. These tools
-include a template macro preprocessor, resource packaging, extended support for
-nested stacks, additional stack deployment options (like template linting, for
-example), and more.</p>
+<p>This program provides extra tools for working with AWS CloudFormation including
+a template macro preprocessor, resource packaging, extended support for nested
+stacks, additional stack deployment options (like template linting, for example),
+and more.</p>
 
 <h2 id="COMMANDS">COMMANDS</h2>
 
 <p>The first argument to <code>cfn-tool</code> is the <code>command</code>. Each command has its own set
-of options and required positional parameters, as described in its own manual
-page, see: <code>cfn-tool-deploy</code>(1), <code>cfn-tool-transform</code>(1).</p>
+of options and required positional parameters, as described in its manual page.</p>
 
-<h2 id="EXIT-STATUS">EXIT STATUS</h2>
+<h2 id="SEE-ALSO">SEE ALSO</h2>
 
-<p>Exits with a status of 1 if an error occurred, or 0 otherwise.</p>
+<p>Each command has its own man page:</p>
+
+<ul>
+<li><code>cfn-tool-deploy</code>(1)</li>
+<li><code>cfn-tool-transform</code>(1)</li>
+<li><code>cfn-tool-update</code>(1)</li>
+</ul>
+
 
 <h2 id="BUGS">BUGS</h2>
 
@@ -110,7 +115,7 @@ page, see: <code>cfn-tool-deploy</code>(1), <code>cfn-tool-transform</code>(1).<
 the following license:</p>
 
 <ul>
-<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.0.1/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.0.1/LICENSE</a></li>
+<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.0.2/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.0.2/LICENSE</a></li>
 </ul>
 
 
@@ -124,7 +129,7 @@ THE SOFTWARE.</p>
 
 
   <ol class='man-decor man-foot man foot'>
-    <li class='tl'>CloudFormation Tools 4.0.1</li>
+    <li class='tl'>CloudFormation Tools 4.0.2</li>
     <li class='tc'>April 2021</li>
     <li class='tr'>cfn-tool(1)</li>
   </ol>
