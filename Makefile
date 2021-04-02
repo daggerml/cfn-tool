@@ -4,8 +4,8 @@ BRANCH     = $(shell git symbolic-ref -q HEAD |grep ^refs/heads/ |cut -d/ -f3-)
 DIRTY      = $(shell git status --porcelain)
 TAG_EXISTS = $(shell git ls-remote --tags |awk '{print $$2}' |grep ^refs/tags/ |cut -d/ -f3- |grep $(VERSION))
 OBJS       = index.js $(shell find lib/ -name '*.coffee' |sed 's@coffee$$@js@')
-MANS       = $(shell find man/ -name '*.in' |sed 's@in$$@1@')
-HTMLS      = $(shell find man/ -name '*.in' |sed 's@in$$@html@')
+MANS       = $(shell find man/ -name '*.tpl' |sed 's@in$$@1@')
+HTMLS      = $(shell find man/ -name '*.tpl' |sed 's@in$$@html@')
 YEAR       = $(shell date +%Y)
 
 .PHONY: all clean compile docs test push
@@ -38,7 +38,7 @@ print-%:
 %.js: %.coffee
 	npm run coffee -- --compile $<
 
-%.md: %.in package-lock.json
+%.md: %.tpl package-lock.json
 	VERSION=$(VERSION) YEAR=$(YEAR) envsubst '$${VERSION} $${YEAR}' < $< > $@
 
 %.1: %.md
