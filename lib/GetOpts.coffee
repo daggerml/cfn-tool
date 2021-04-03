@@ -18,6 +18,9 @@ class GetOpts
   allVars: () ->
     Object.keys(@var2opt()).sort()
 
+  configVars: () ->
+    Object.keys(fn.invertObj(fn.selectKeys(@opt2var(), @allOpts())))
+
   useVars: () ->
     Object.keys(@var2opt()).reduce(
       (xs, x) -> if process.env[x]? then xs.concat [x] else xs
@@ -49,6 +52,7 @@ class GetOpts
     for o, v of @opt2var()
       process.env[v] = "#{opts[o]}" if opts[o]? and (clobber or not (v in @useVars()))
     @fixRegion()
+    true
 
   fixRegion: () ->
     [r1, r2] = [process.env.AWS_REGION, process.env.AWS_DEFAULT_REGION]
@@ -85,9 +89,10 @@ class GetOpts
     ret
 
   loadConfig: (exec, opts, file) ->
+    return unless (vars = @configVars())?.length
     uid   = uuid.v4()
-    pat   = "^\\(#{@allVars().join('\\|')}\\)$"
-    parse = (x, uid) =>
+    pat   = "^\\(#{@configVars().join('\\|')}\\)$"
+    parse = (x) =>
       lines = x.split('\n').map((x) -> x.trim()).filter(fn.identity)
       lines = lines.slice(lines.indexOf(uid) + 2)
       lines.reduce(

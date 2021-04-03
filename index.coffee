@@ -176,7 +176,8 @@ module.exports = () ->
   if cfg
     log.verbose "using config file: #{cfg}"
     try
-      getopts.loadConfig exec, opts, cfg
+      getopts.loadConfig(exec, opts, cfg) or
+        log.verbose "no relevant config variables"
     catch e
       e.message = e.message.split('\n').shift()
       throw e

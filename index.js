@@ -193,7 +193,7 @@ See the manpage:
     if (cfg) {
       log.verbose(`using config file: ${cfg}`);
       try {
-        getopts.loadConfig(exec, opts, cfg);
+        getopts.loadConfig(exec, opts, cfg) || log.verbose("no relevant config variables");
       } catch (error) {
         e = error;
         e.message = e.message.split('\n').shift();
