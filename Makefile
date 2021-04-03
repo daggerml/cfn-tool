@@ -4,8 +4,8 @@ BRANCH     = $(shell git symbolic-ref -q HEAD |grep ^refs/heads/ |cut -d/ -f3-)
 DIRTY      = $(shell git status --porcelain)
 TAG_EXISTS = $(shell git ls-remote --tags |awk '{print $$2}' |grep ^refs/tags/ |cut -d/ -f3- |grep $(VERSION))
 OBJS       = index.js $(shell find lib/ -name '*.coffee' |sed 's@coffee$$@js@')
-MANS       = $(shell find man/ -name '*.tpl' |sed 's@in$$@1@')
-HTMLS      = $(shell find man/ -name '*.tpl' |sed 's@in$$@html@')
+MANS       = $(shell find man/ -name '*.tpl' |sed 's@tpl$$@1@')
+HTMLS      = $(shell find man/ -name '*.tpl' |sed 's@tpl$$@html@')
 YEAR       = $(shell date +%Y)
 
 .PHONY: all clean compile docs test push
@@ -20,7 +20,7 @@ test: compile package-lock.json
 	npm test
 
 clean:
-	rm -f $(OBJS)
+	rm -f $(OBJS) $(MANS) $(HTMLS)
 
 push: all
 	[ -n "$(VERSION)" ]
@@ -41,12 +41,12 @@ print-%:
 %.md: %.tpl package-lock.json
 	VERSION=$(VERSION) YEAR=$(YEAR) envsubst '$${VERSION} $${YEAR}' < $< > $@
 
-%.1: %.md
+%.1: %.md package-lock.json
 	docker run --rm -v $(PWD):/app -w /app msoap/ruby-ronn \
 		ronn -r --pipe --manual 'CloudFormation Tools' \
 			--organization 'CloudFormation Tools $(VERSION)' $< > $@
 
-%.html: %.md man/cfn-tool.css
+%.html: %.md man/cfn-tool.css package-lock.json
 	docker run --rm -v $(PWD):/app -w /app msoap/ruby-ronn \
 		ronn -5 --pipe --manual 'CloudFormation Tools' --style=/app/man/cfn-tool.css \
 			--organization 'CloudFormation Tools $(VERSION)' $< > $@

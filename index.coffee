@@ -1,44 +1,22 @@
 fs                  = require 'fs'
 os                  = require 'os'
 path                = require 'path'
-uuid                = require 'uuid'
 {inspect}           = require 'util'
-getopts             = require 'getopts'
+GetOpts             = require './lib/GetOpts'
 yaml                = require 'js-yaml'
 {strict: assert}    = require 'assert'
+fn                  = require './lib/fn'
 log                 = require './lib/log'
 CfnError            = require './lib/CfnError'
 CfnTransformer      = require './lib/cfn-transformer'
 {version: VERSION}  = require './package.json'
 AWS_VERSIONS        = [1, 2]
 
-identity = (x) -> x
-
-assoc = (xs, k, v) ->
-  xs[k] = v
-  xs
-
-objKeys = (x) -> Object.keys(x)
-objVals = (x) -> objKeys(x).reduce(((ys, y) -> ys.concat([x[y]])), [])
-
-selectKeys = (o, ks) ->
-  Object.keys(o).reduce(((xs, x) -> if x in ks then assoc(xs, x, o[x]) else xs), {})
-
-split = (str, sep, count=Infinity) ->
-  toks  = str.split(sep)
-  n     = Math.min(toks.length, count) - 1
-  toks[0...n].concat(toks[n..].join(sep))
-
-assertOk = (x, msg, body) ->
-  throw new CfnError(msg, body) unless x
-  x
-
-quit = (msg) ->
+quit = (msg, status = 0) ->
   console.log msg if msg
-  process.exit 0
+  process.exit status
 
 abort = (e) ->
-  throw e
   e = new CfnError(e.message) if e.code is 'ENOENT'
   body = if e instanceof CfnError then e.body else e.body or e.stack
   log.error(e.message, {body})
@@ -46,193 +24,141 @@ abort = (e) ->
 
 process.on 'uncaughtException', abort
 
-typeOf = (thing) ->
-  Object::toString.call(thing).slice(8,-1)
-
-abortOnException = (lib, fn) ->
-  (if typeOf(fn) is 'Array' then fn else [fn]).forEach (x) ->
-    global[x] = (args...) ->
-      try
-        lib[x].apply(lib, args)
-      catch e
-        abort(e)
-
-abortOnException fs, [
+fn.abortOnException abort, fs, [
   'writeFileSync'
   'readFileSync'
   'existsSync'
 ]
 
-fixRegion = () ->
-  [r1, r2] = [process.env.AWS_REGION, process.env.AWS_DEFAULT_REGION]
-  process.env.AWS_REGION          = r2 if r1 and r2 and r1 isnt r2
-  process.env.AWS_REGION          = r2 if r2 and not r1
-  process.env.AWS_DEFAULT_REGION  = r1 if r1 and not r2
-
-fixRegion()
-
-defaultOptionsSpec =
+getopts = new GetOpts(
   alias:
-    help:     'h'
-    version:  'V'
-  boolean:    ['help', 'version']
-  string:     []
-  unknown:    (x) -> abort new CfnError("unknown option: '#{x}'")
+    bucket:     'b'
+    config:     'c'
+    help:       'h'
+    keep:       'k'
+    linter:     'l'
+    parameters: 'P'
+    profile:    'p'
+    quiet:      'q'
+    region:     'r'
+    tags:       't'
+    verbose:    'v'
+    version:    'V'
+  boolean: [
+    'help'
+    'keep'
+    'quiet'
+    'verbose'
+    'version'
+  ]
+  string:
+    bucket:     '<name>'
+    config:     '<file>'
+    linter:     '<command>'
+    parameters: '"<key>=<val> ..."'
+    profile:    '<name>'
+    region:     '<name>'
+    tags:       '"<key>=<val> ..."'
+  positional:
+    command:    null
+    template:   '<template-file>'
+    stackname:  '<stack-name>'
+  opt2var: (opt) ->
+    switch opt
+      when 'profile' then 'AWS_PROFILE'
+      when 'region' then 'AWS_REGION'
+      else "CFN_TOOL_#{opt.toUpperCase()}"
+  unknown: (x) -> abort new CfnError("unknown option: '#{x}'")
+)
+
+defaultOptionsSpec = [
+  'help'
+  'version'
+  'command'
+]
 
 optionsSpecs =
-  deploy:
-    alias:
-      bucket:     'b'
-      config:     'c'
-      help:       'h'
-      keep:       'k'
-      linter:     'l'
-      parameters: 'P'
-      profile:    'p'
-      quiet:      'q'
-      region:     'r'
-      tags:       't'
-      verbose:    'v'
-      version:    'V'
-    boolean: [
-      'help'
-      'keep'
-      'quiet'
-      'verbose'
-      'version'
-    ]
-    string: [
-      'bucket'
-      'config'
-      'linter'
-      'parameters'
-      'profile'
-      'region'
-      'tags'
-    ]
-    unknown: (x) -> abort new CfnError("unknown option: '#{x}'")
-  transform:
-    alias:
-      config:     'c'
-      help:       'h'
-      linter:     'l'
-      profile:    'p'
-      quiet:      'q'
-      region:     'r'
-      verbose:    'v'
-      version:    'V'
-    boolean: [
-      'help'
-      'quiet'
-      'verbose'
-      'version'
-    ]
-    string: [
-      'config'
-      'linter'
-      'profile'
-      'region'
-    ]
-    unknown: (x) -> abort new CfnError("unknown option: '#{x}'")
-  update:
-    alias:
-      config:     'c'
-      help:       'h'
-      parameters: 'P'
-      profile:    'p'
-      quiet:      'q'
-      region:     'r'
-      verbose:    'v'
-      version:    'V'
-    boolean: [
-      'help'
-      'quiet'
-      'verbose'
-      'version'
-    ]
-    string: [
-      'config'
-      'parameters'
-      'profile'
-      'region'
-    ]
-    unknown: (x) -> abort new CfnError("unknown option: '#{x}'")
+  deploy: [
+    'bucket'
+    'config'
+    'help'
+    'keep'
+    'linter'
+    'parameters'
+    'profile'
+    'quiet'
+    'region'
+    'tags'
+    'verbose'
+    'command'
+    'template'
+    'stackname'
+  ]
+  transform: [
+    'config'
+    'help'
+    'linter'
+    'profile'
+    'quiet'
+    'region'
+    'tags'
+    'verbose'
+    'command'
+    'template'
+  ]
+  update: [
+    'config'
+    'help'
+    'parameters'
+    'profile'
+    'quiet'
+    'region'
+    'verbose'
+    'command'
+    'stackname'
+  ]
 
-getoptsConfig = optionsSpecs[process.argv[2]] or defaultOptionsSpec
-
-opt2var =
-  profile:    'AWS_PROFILE'
-  region:     'AWS_REGION'
-
-opt2var = getoptsConfig.boolean.concat(getoptsConfig.string).reduce(
-  (xs, x) -> assoc(xs, x, opt2var[x] or "CFN_TOOL_#{x.toUpperCase()}")
-  {}
-)
+do (spec = optionsSpecs[process.argv[2]]) ->
+  if spec then getopts.configure(spec)
+  else getopts.configure(defaultOptionsSpec, false)
 
 allCmds = Object.keys(optionsSpecs)
-var2opt = Object.keys(opt2var).reduce(((xs, x) -> assoc xs, opt2var[x], x), {})
-allOpts = Object.keys(opt2var)
-allVars = Object.keys(var2opt)
-useVars = Object.keys(var2opt).reduce(
-  (xs, x) -> if process.env[x]? then xs.concat [x] else xs
-  []
-)
 
-config2opt = (k, v) ->
-  if not (k in getoptsConfig.boolean) then v else (v is 'true')
+usageCmd = (cmd) ->
+  getopts.configure(if cmd then optionsSpecs[cmd] else defaultOptionsSpec)
+  prog  = path.basename(process.argv[1])
+  lpad  = (x) -> "  #{x}"
+  opts  = getopts.usage().map(lpad).join("\n")
+  "#{prog}#{if cmd then " #{cmd}" else ''}#{if opts then "\n#{opts}" else ''}"
 
-getVars = () ->
-  allOpts.reduce(
-    (xs, x) ->
-      v = process.env[opt2var[x]]
-      if v? then assoc(xs, x, config2opt(x, v)) else xs
-    {}
-  )
-
-setVars = (opts, {clobber = false} = {}) ->
-  for o, v of opt2var
-    process.env[v] = "#{opts[o]}" if opts[o]? and (clobber or not (v in useVars))
-  fixRegion()
-
-usage = (command) ->
-  x = ['cfn-tool'].concat(if command then [command] else []).join('-') 
+usage = (cmd, status) ->
+  prog  = path.basename(process.argv[1])
+  manp  = [prog].concat(if cmd then [cmd] else []).join('-')
+  text  = if cmd then usageCmd(cmd) else [null].concat(allCmds).map(usageCmd).join("\n\n")
   quit """
+    #{text}
+
     See the manpage:
-    * cmd: man #{x}
-    * url: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/#{VERSION}/man/#{x}.html
-  """
+    * cmd: man #{manp}
+    * url: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/#{VERSION}/man/#{manp}.html
+  """, status
 
 version = () ->
   quit VERSION
 
 parseArgv = (argv) ->
-  opts  = getopts argv, assoc getoptsConfig, 'default', getVars()
-
-  [command, args...]  = opts._ or []
-  Object.assign(opts, {command, args})
-
-  assertOk(not command or command in allCmds, "unknown command: '#{command}'")
-
+  opts  = getopts.parse argv
+  cmd   = opts.command
+  fn.assertOk(cmd in allCmds, "unknown command: '#{cmd}'") if cmd
   switch
-    when opts.help then usage(command)
+    when opts.help then usage(cmd)
     when opts.version then version()
-
+    when not cmd then usage(null, 1)
+  getopts.validateArgs(opts)
   opts
 
 parseAwsVersion = (x) ->
   Number x?.match(/^aws-cli\/([0-9]+)\./)?[1]
-
-parseConfig = (x, uid) ->
-  lines = x.split('\n').map((x) -> x.trim()).filter(identity)
-  lines = lines.slice(lines.indexOf(uid) + 2)
-  lines.reduce(
-    (xs, line) ->
-      [k, v] = split(line, '=', 2)
-      k = var2opt[k]
-      v = Buffer.from(v, 'base64').toString('utf-8')
-      if k then assoc(xs, k, config2opt(k, v)) else xs
-    {}
-  )
 
 setLogLevel = (opts) ->
   log.level = switch
@@ -246,49 +172,38 @@ module.exports = () ->
   cfn   = new CfnTransformer {opts}
   exec  = cfn.execShell.bind cfn
   cfg   = opts.config or (existsSync('.cfn-tool') and '.cfn-tool')
-  uid   = uuid.v4()
 
   if cfg
     log.verbose "using config file: #{cfg}"
-    setVars opts
-    cfgscript = readFileSync(cfg)
     try
-      setVars parseConfig exec """
-        . '#{cfg}'
-        echo
-        echo #{uid}
-        for i in $(compgen -A variable |grep '^\\(AWS_\\|CFN_TOOL_\\)'); do
-          echo $i=$(echo -n "${!i}" |base64 -w0)
-        done
-      """
+      getopts.loadConfig exec, opts, cfg
     catch e
       e.message = e.message.split('\n').shift()
       throw e
     opts = cfn.opts = setLogLevel parseArgv process.argv.slice(2)
 
-  setVars opts, {clobber: true}
+  getopts.setVars opts, {clobber: true}
 
   opts.tmpdir = fs.mkdtempSync([os.tmpdir(), 'cfn-tool-'].join('/'))
   process.on 'exit', () -> fs.rmdirSync opts.tmpdir, {recursive: true} unless opts.keep
 
-  log.verbose "configuration options", {body: inspect selectKeys(opts, allOpts)}
+  log.verbose "configuration options", {body: inspect fn.selectKeys(opts, getopts.allOpts())}
 
-  assertOk exec 'which aws', 'aws CLI tool not found on $PATH'
+  fn.assertOk exec 'which aws', 'aws CLI tool not found on $PATH'
   awsversion = parseAwsVersion(exec('aws --version'))
-  assertOk awsversion in AWS_VERSIONS,
+  fn.assertOk awsversion in AWS_VERSIONS,
     "unsupported aws CLI tool version: #{awsversion} (supported versions are #{AWS_VERSIONS})"
 
   switch opts.command
 
     when 'transform'
       Object.assign opts,
-        template:   opts.args[0]
         dovalidate: false
         dopackage:  false
         bucket:     'example-bucket'
         s3bucket:   'example-bucket'
 
-      assertOk opts.template, 'template argument required'
+      fn.assertOk opts.template, 'template argument required'
 
       log.verbose 'preparing template'
       res = cfn.writeTemplate(opts.template)
@@ -298,14 +213,12 @@ module.exports = () ->
 
     when 'deploy'
       Object.assign opts,
-        template:   opts.args[0]
-        stackname:  opts.args[1]
         dovalidate: true
         dopackage:  true
         s3bucket:   opts.bucket
 
-      assertOk opts.template, 'template argument required'
-      assertOk opts.stackname, 'stackname argument required'
+      fn.assertOk opts.template, 'template argument required'
+      fn.assertOk opts.stackname, 'stackname argument required'
 
       log.info 'preparing templates'
       res = cfn.writeTemplate(opts.template)
@@ -333,7 +246,7 @@ module.exports = () ->
 
     when 'update'
       opts.stackname = opts.args[0]
-      assertOk opts.stackname, 'stackname argument required'
+      fn.assertOk opts.stackname, 'stackname argument required'
 
       res = JSON.parse exec """
         aws cloudformation describe-stacks --stack-name '#{opts.stackname}'
@@ -342,19 +255,19 @@ module.exports = () ->
       params = res?.Stacks?[0]?.Parameters?.reduce(
         (xs, x) ->
           k = x.ParameterKey
-          assoc xs, k, "ParameterKey=#{k},UsePreviousValue=true"
+          fn.assoc xs, k, "ParameterKey=#{k},UsePreviousValue=true"
         {}
       )
-      assertOk Object.keys(params).length, "stack '#{opts.stackname}' has no parameters"
+      fn.assertOk Object.keys(params).length, "stack '#{opts.stackname}' has no parameters"
 
       haveOverride = null
       for x in (opts.parameters?.split(/ +/) or [])
-        [k, v] = split(x, '=', 2)
-        assertOk k and v, "parameter: expected <key>=<value>: got '#{x}'"
-        assertOk params[k], "stack '#{opts.stackname}' has no parameter '#{k}'"
+        [k, v] = fn.split(x, '=', 2)
+        fn.assertOk k and v, "parameter: expected <key>=<value>: got '#{x}'"
+        fn.assertOk params[k], "stack '#{opts.stackname}' has no parameter '#{k}'"
         haveOverride = params[k] = "ParameterKey=#{k},ParameterValue=#{v}"
 
-      assertOk haveOverride, 'parameter overrides required'
+      fn.assertOk haveOverride, 'parameter overrides required'
 
       paramsarg = objVals(params).join(' ')
 
