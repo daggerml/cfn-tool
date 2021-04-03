@@ -86,7 +86,7 @@ class GetOpts
 
   loadConfig: (exec, opts, file) ->
     uid   = uuid.v4()
-    pat   = "^\\(#{@allVars.join('\\|')}\\)$"
+    pat   = "^\\(#{@allVars().join('\\|')}\\)$"
     parse = (x, uid) =>
       lines = x.split('\n').map((x) -> x.trim()).filter(fn.identity)
       lines = lines.slice(lines.indexOf(uid) + 2)

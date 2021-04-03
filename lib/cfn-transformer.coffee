@@ -3,8 +3,8 @@ fs              = require 'fs'
 os              = require 'os'
 path            = require 'path'
 assert          = require 'assert'
-crypto          = require 'crypto'
 {spawnSync}     = require 'child_process'
+fn              = require './fn'
 log             = require './log'
 CfnError        = require './CfnError'
 YamlTransformer = require './yaml-transformer'
@@ -13,10 +13,6 @@ YamlTransformer = require './yaml-transformer'
 #=============================================================================#
 # Helper functions.                                                           #
 #=============================================================================#
-
-dbg = (x) ->
-  console.log require('util').inspect {dbg: x}, {depth: null}
-  x
 
 topLevelResourceProperties = [
   'Type'
@@ -29,96 +25,6 @@ topLevelResourceProperties = [
   'UpdateReplacePolicy'
 ]
 
-identity = (x) -> x
-
-assoc = (xs, k, v) ->
-  xs[k] = v
-  xs
-
-conj = (xs, x) ->
-  xs.push(x)
-  xs
-
-readFile = (file) ->
-  fs.readFileSync(file).toString('utf-8')
-
-typeOf = (thing) ->
-  Object::toString.call(thing)[8...-1]
-
-fileExt = (file) ->
-  if (e = split(path.basename(file), '.', 2)[1])? then ".#{e}"
-
-merge = (args...) ->
-  Object.assign.apply(null, args)
-
-deepMerge = (args...) ->
-  dm = (x, y) ->
-    if not (isObject(x) and isObject(y))
-      y
-    else
-      ret = Object.assign({}, x)
-      ret[k] = dm(x[k], v) for k, v of y
-      ret
-  args.reduce(((xs, x) -> dm(xs, x)), {})
-
-hashMap = (args...) ->
-  ret = {}
-  ret[args[2*i]] = args[2*i+1] for i in [0...args.length/2]
-  ret
-
-isDirectory = (file) ->
-  fs.statSync(file).isDirectory()
-
-reduceKv = (map, f) ->
-  Object.keys(map).reduce(((xs, k) -> f(xs, k, map[k])), {})
-
-notEmpty = (map) ->
-  Object.keys(map or {}).length > 0
-
-md5 = (data) ->
-  crypto.createHash("md5").update(data).digest("hex")
-
-md5File = (filePath) ->
-  md5(fs.readFileSync(filePath))
-
-md5Dir = (dirPath) ->
-  origDir = process.cwd()
-  try
-    process.chdir(dirPath)
-    add2tree = (tree, path) -> assoc(tree, path, md5Path(path))
-    md5(JSON.stringify(fs.readdirSync('.').sort().reduce(add2tree, {})))
-  finally
-    process.chdir(origDir)
-
-md5Path = (path) ->
-  (if isDirectory(path) then md5Dir else md5File)(path)
-
-peek = (ary) -> ary[ary.length - 1]
-
-getIn = (obj, ks) -> ks.reduce(((xs, x) -> xs[x]), obj)
-
-split = (str, sep, count=Infinity) ->
-  toks  = str.split(sep)
-  n     = Math.min(toks.length, count) - 1
-  toks[0...n].concat(toks[n..].join(sep))
-
-isString  = (x) -> typeOf(x) is 'String'
-isArray   = (x) -> typeOf(x) is 'Array'
-isObject  = (x) -> typeOf(x) is 'Object'
-isBoolean = (x) -> typeOf(x) is 'Boolean'
-
-assertObject = (thing) ->
-  assert.ok(typeOf(thing) in [
-    'Object'
-    'Undefined'
-    'Null'
-  ], "expected an Object, got #{JSON.stringify(thing)}")
-  thing
-
-assertArray = (thing) ->
-  assert.ok(isArray(thing), "expected an Array, got #{JSON.stringify(thing)}")
-  thing
-
 parseKeyOpt = (opt) ->
   if (multi = opt.match(/^\[(.*)\]$/)) then multi[1].split(',') else opt
 
@@ -126,23 +32,8 @@ parseKeyOpts = (opts) ->
   opts.reduce(((xs, x) ->
     [k, v] = x.split('=')
     v ?= k
-    merge(xs, hashMap(k, parseKeyOpt(v)))
+    fn.merge(xs, fn.hashMap(k, parseKeyOpt(v)))
   ), {})
-
-mergeStrings = (toks, sep = '') ->
-  reducer = (xs, x) ->
-    x = "#{x}" unless isObject(x)
-    y = xs.pop()
-    xs.concat(if isString(x) and isString(y) then [[y,x].join(sep)] else [y,x])
-  toks.reduce(reducer, []).filter((x) -> x? and x isnt '')
-
-prependLines = (x, prefix) ->
-  return null unless x and isString(x)
-  x.split(/\n/)
-    .map((x) -> x.trimRight())
-    .filter(identity)
-    .map((x) -> "#{prefix}| #{x}")
-    .join('\n')
 
 indexOfClosingCurly = (form) ->
   depth = 0
@@ -172,13 +63,6 @@ interpolateSub = (form) ->
         form = form[i..]
   ret
 
-rmCR = (x='') ->
-  lines = []
-  for v in x.split(/\r/)
-    if v[0] is '\n' then v = v.slice(1) else lines.pop()
-    lines.push(w) for w in v.split(/\n/)
-  lines.join('\n')
-
 #=============================================================================#
 # AWS CLOUDFORMATION YAML TRANSFORMER BASE CLASS                              #
 #=============================================================================#
@@ -202,50 +86,50 @@ class CfnTransformer extends YamlTransformer
     #=========================================================================#
 
     @defmacro 'Base64', (form) =>
-      form = if isArray(form) then form[0] else form
+      form = if fn.isArray(form) then form[0] else form
       {'Fn::Base64': form}
 
     @defmacro 'GetAZs', (form) =>
-      form = if isArray(form) then form[0] else form
+      form = if fn.isArray(form) then form[0] else form
       {'Fn::GetAZs': form}
 
     @defmacro 'ImportValue', (form) =>
-      form = if isArray(form) then form[0] else form
+      form = if fn.isArray(form) then form[0] else form
       {'Fn::ImportValue': form}
 
     @defmacro 'GetAtt', (form) =>
-      form = if isArray(form) and form.length is 1 then form[0] else form
-      {'Fn::GetAtt': if isString(form) then split(form, '.', 2) else form}
+      form = if fn.isArray(form) and form.length is 1 then form[0] else form
+      {'Fn::GetAtt': if fn.isString(form) then fn.split(form, '.', 2) else form}
 
     @defmacro 'RefAll', (form) =>
-      form = if isArray(form) then form[0] else form
+      form = if fn.isArray(form) then form[0] else form
       {'Fn::RefAll': form}
 
     @defmacro 'Join', (form) =>
       [sep, toks] = form
-      switch (xs = mergeStrings(toks, sep)).length
+      switch (xs = fn.mergeStrings(toks, sep)).length
         when 0 then ''
         when 1 then xs[0]
         else {'Fn::Join': [sep, xs]}
 
     @defmacro 'Condition', 'Condition', (form) =>
-      {Condition: if isArray(form) then form[0] else form}
+      {Condition: if fn.isArray(form) then form[0] else form}
 
     @defmacro 'Ref', 'Ref', (form) =>
-      form = if isArray(form) then form[0] else form
-      if isString(form)
+      form = if fn.isArray(form) then form[0] else form
+      if fn.isString(form)
         [ref, ks...] = form.split('.')
         switch
           when form.startsWith('$')     then {'Fn::Env': form[1..]}
           when form.startsWith('%')     then {'Fn::Get': form[1..]}
           when form.startsWith('@')     then {'Fn::Attr': form[1..]}
-          when peek(@bindstack)[ref]?   then getIn(@walk(peek(@bindstack)[ref]), ks)
+          when fn.peek(@bindstack)[ref]?   then fn.getIn(@walk(fn.peek(@bindstack)[ref]), ks)
           else {Ref: form}
       else form
 
     @defmacro 'Sub', (form) =>
-      form = if isArray(form) and form.length is 1 then form[0] else form
-      switch typeOf(form)
+      form = if fn.isArray(form) and form.length is 1 then form[0] else form
+      switch fn.typeOf(form)
         when 'String' then {'Fn::Join': ['', interpolateSub(form)]}
         else {'Fn::Sub': form}
 
@@ -254,39 +138,39 @@ class CfnTransformer extends YamlTransformer
     #=========================================================================#
 
     @defspecial 'Let', (form) =>
-      form = if isArray(form) and form.length is 1 then form[0] else form
-      if isArray(form)
+      form = if fn.isArray(form) and form.length is 1 then form[0] else form
+      if fn.isArray(form)
         @withBindings(@walk(form[0]), => @walk(form[1]))
       else
-        merge(peek(@bindstack), assertObject(@walk(form)))
+        fn.merge(fn.peek(@bindstack), fn.assertObject(@walk(form)))
         null
 
     @defspecial 'Do', (form) =>
-      assertArray(form).reduce(((xs, x) => @walk(x)), null)
+      fn.assertArray(form).reduce(((xs, x) => @walk(x)), null)
 
     #=========================================================================#
     # Define custom macros.                                                   #
     #=========================================================================#
 
     @defmacro 'Require', (form) =>
-      form = [form] unless isArray(form)
+      form = [form] unless fn.isArray(form)
       require(path.resolve(v))(@) for v in form
       null
 
     @defmacro 'Parameters', (form) =>
       Parameters: form.reduce(((xs, param) =>
         [name, opts...] = param.split(/ +/)
-        opts = merge({Type: 'String'}, parseKeyOpts(opts))
-        merge(xs, hashMap(name, opts))
+        opts = fn.merge({Type: 'String'}, parseKeyOpts(opts))
+        fn.merge(xs, fn.hashMap(name, opts))
       ), {})
 
     @defmacro 'Return', (form) =>
-      Outputs: reduceKv form, (xs, k, v) =>
+      Outputs: fn.reduceKv form, (xs, k, v) =>
         [name, opts...] = k.split(/ +/)
-        xport = if notEmpty(opts = parseKeyOpts(opts))
+        xport = if fn.notEmpty(opts = parseKeyOpts(opts))
           opts.Name = @walk {'Fn::Sub': opts.Name} if opts.Name
           {Export: opts}
-        merge(xs, hashMap(name, merge({Value: v}, xport)))
+        fn.merge(xs, fn.hashMap(name, fn.merge({Value: v}, xport)))
 
     @defmacro 'Resources', (form) =>
       ret = {}
@@ -296,37 +180,37 @@ class CfnTransformer extends YamlTransformer
         ret[id] = if not Type
           if (m = @resourceMacros[body.Type]) then m(body) else body
         else
-          body = merge({Type}, parseKeyOpts(opts), {Properties: body})
+          body = fn.merge({Type}, parseKeyOpts(opts), {Properties: body})
           if (m = @resourceMacros[Type]) then m(body) else body
       Resources: ret
 
     @defmacro 'Attr', (form) =>
-      form = if isArray(form) then form[0] else form
-      {'Fn::GetAtt': split(form, '.', 2).map((x) => {'Fn::Sub': x})}
+      form = if fn.isArray(form) then form[0] else form
+      {'Fn::GetAtt': fn.split(form, '.', 2).map((x) => {'Fn::Sub': x})}
 
     @defmacro 'Get', (form) =>
-      form = if isArray(form) and form.length is 1 then form[0] else form
-      form = form.split('.') if isString(form)
+      form = if fn.isArray(form) and form.length is 1 then form[0] else form
+      form = form.split('.') if fn.isString(form)
       {'Fn::FindInMap': form.map((x) => {'Fn::Sub': x})}
 
     @defmacro 'Env', (form) =>
-      form = if isArray(form) then form[0] else form
+      form = if fn.isArray(form) then form[0] else form
       ret = process.env[form]
       throw new CfnError("required environment variable not set: #{form}") unless ret
       ret
 
     @defmacro 'Var', (form) =>
-      form = if isArray(form) then form[0] else form
+      form = if fn.isArray(form) then form[0] else form
       {'Fn::ImportValue': {'Fn::Sub': form}}
 
     @defmacro 'Shell', (form) =>
-      [form='', vars={}] = if isArray(form) then form else [form]
+      [form='', vars={}] = if fn.isArray(form) then form else [form]
       env = Object.assign({}, process.env, vars)
       @withCache {shell: [@template, form]}, () =>
         (@execShell(form, {env}) or '').replace(/\n$/, '')
 
     @defmacro 'Js', (form) =>
-      [form='', vars={}] = if isArray(form) then form else [form]
+      [form='', vars={}] = if fn.isArray(form) then form else [form]
       args = Object.keys(vars)
       vals = args.reduce(((xs, x) -> xs.concat(["(#{JSON.stringify(vars[x])})"])), [])
       form = "return (function(#{args.join ','}){#{form}})(#{vals.join ','})"
@@ -350,34 +234,34 @@ class CfnTransformer extends YamlTransformer
       "https://s3.amazonaws.com/#{S3Bucket}/#{S3Key}"
 
     @defmacro 'YamlParse', (form) =>
-      form = if isArray(form) then form[0] else form
+      form = if fn.isArray(form) then form[0] else form
       yaml.safeLoad(form)
 
     @defmacro 'YamlDump', (form) =>
-      form = if isArray(form) then form[0] else form
+      form = if fn.isArray(form) then form[0] else form
       yaml.safeDump(form)
 
     @defmacro 'JsonParse', (form) =>
-      form = if isArray(form) then form[0] else form
+      form = if fn.isArray(form) then form[0] else form
       JSON.parse(form)
 
     @defmacro 'JsonDump', (form) =>
-      form = if isArray(form) then form[0] else form
+      form = if fn.isArray(form) then form[0] else form
       JSON.stringify(form)
 
     @defmacro 'File', (form) =>
-      form = if isArray(form) then form[0] else form
+      form = if fn.isArray(form) then form[0] else form
       fs.readFileSync(form)
 
     @defmacro 'TemplateFile', (form) =>
-      form = if isArray(form) then form[0] else form
+      form = if fn.isArray(form) then form[0] else form
       yaml.safeLoad(@transformTemplateFile(form))
 
     @defmacro 'Merge', (form) =>
-      merge.apply(null, form)
+      fn.merge.apply(null, form)
 
     @defmacro 'DeepMerge', (form) =>
-      deepMerge.apply(null, form)
+      fn.deepMerge.apply(null, form)
 
     @defmacro 'Tags', (form) =>
       {Key: k, Value: form[k]} for k in Object.keys(form)
@@ -389,7 +273,7 @@ class CfnTransformer extends YamlTransformer
       stackProps  = Object.keys(ResourceTypes[Type].Properties)
       for k, v of (form.Properties or {})
         (if k in stackProps then Properties else Parameters)[k] = v
-      merge(form, {Type, Properties})
+      fn.merge(form, {Type, Properties})
 
   macroexpand: (form) -> @walk(form)
 
@@ -398,8 +282,8 @@ class CfnTransformer extends YamlTransformer
     (@cache[key] or (@cache[key] = [f()]))[0]
 
   packageMacro: (form, opts) ->
-    form = if isArray(form) then form[0] else form
-    form = {Path: form} if isString(form)
+    form = if fn.isArray(form) then form[0] else form
+    form = {Path: form} if fn.isString(form)
     form = Object.assign(form, opts)
     {Path, CacheKey, Parse} = form
     if @opts.dopackage
@@ -407,7 +291,7 @@ class CfnTransformer extends YamlTransformer
       @withCache {package: [@userPath(Path), CacheKey, Parse]}, () =>
         (
           switch
-            when isDirectory(Path) then @writeDir(Path, CacheKey)
+            when fn.isDirectory(Path) then @writeDir(Path, CacheKey)
             when Parse then @writeTemplate(Path, CacheKey)
             else @writeFile(Path, CacheKey)
         ).code
@@ -433,12 +317,12 @@ class CfnTransformer extends YamlTransformer
     throw e
 
   handleShell: (cmd, res, raw) ->
-    cmd = prependLines cmd, 'cmd'
-    stdout = rmCR res.stdout?.toString('utf-8')
-    stderr = rmCR res.stderr?.toString('utf-8')
-    res.out = prependLines(stdout, 'out')
-    res.err = prependLines(stderr, 'err')
-    res.all = [res.out, res.err].filter(identity).join('\n')
+    cmd = fn.prependLines cmd, 'cmd'
+    stdout = fn.rmCR res.stdout?.toString('utf-8')
+    stderr = fn.rmCR res.stderr?.toString('utf-8')
+    res.out = fn.prependLines(stdout, 'out')
+    res.err = fn.prependLines(stderr, 'err')
+    res.all = [res.out, res.err].filter(fn.identity).join('\n')
     if raw
       res
     else
@@ -449,11 +333,11 @@ class CfnTransformer extends YamlTransformer
         throw new CfnError("bash: exit status #{res.status}", "#{cmd}\n#{res.all}")
 
   execShell: (cmd, opts, raw=false) ->
-    res = spawnSync(cmd, merge({stdio: 'pipe', shell: '/bin/bash'}, opts))
+    res = spawnSync(cmd, fn.merge({stdio: 'pipe', shell: '/bin/bash'}, opts))
     @handleShell cmd, res, raw
 
   execShellArgs: (cmd, args, opts, raw=false) ->
-    res = spawnSync(cmd, args, merge({stdio: 'pipe', shell: '/bin/bash'}, opts))
+    res = spawnSync(cmd, args, fn.merge({stdio: 'pipe', shell: '/bin/bash'}, opts))
     @handleShell cmd, res, raw
 
   withCwd: (dir, f) ->
@@ -468,7 +352,7 @@ class CfnTransformer extends YamlTransformer
     ret
 
   withBindings: (bindings, f) ->
-    @bindstack.push(merge({}, peek(@bindstack), assertObject(bindings)))
+    @bindstack.push(fn.merge({}, fn.peek(@bindstack), fn.assertObject(bindings)))
     ret = f()
     @bindstack.pop()
     ret
@@ -476,7 +360,7 @@ class CfnTransformer extends YamlTransformer
   canonicalKeyPath: () -> [@template].concat(@keystack)
 
   canonicalHash: (fileOrDir, key) ->
-    if key then md5(JSON.stringify([@canonicalKeyPath(),key])) else md5Path(fileOrDir)
+    if key then fn.md5(JSON.stringify([@canonicalKeyPath(),key])) else fn.md5Path(fileOrDir)
 
   writePaths: (fileName, ext = '') ->
     if @needBucket and not @opts.s3bucket
@@ -487,7 +371,7 @@ class CfnTransformer extends YamlTransformer
     code:     { S3Bucket: @opts.s3bucket, S3Key: "#{@opts.s3prefix}#{fileName}" }
 
   writeText: (text, ext, key, source='none') ->
-    ret = @writePaths(md5(key or text), ext)
+    ret = @writePaths(fn.md5(key or text), ext)
     log.verbose "wrote #{@userPath source} -> #{ret.tmpPath}"
     fs.writeFileSync(ret.tmpPath, text)
     ret
@@ -500,7 +384,7 @@ class CfnTransformer extends YamlTransformer
 
   tryExecRaw: (cmd, msg) ->
     res = @execShell cmd, null, true
-    cmd = prependLines cmd, 'cmd'
+    cmd = fn.prependLines cmd, 'cmd'
     if res.status is 0
       log.verbose "bash: status 0", {body: "#{cmd}\n#{res.all}"}
     else
@@ -524,14 +408,14 @@ class CfnTransformer extends YamlTransformer
     try
       @template = @userPath(file)
       @withKeyStack [], () =>
-        ret = @writeText(@transformTemplateFile(file), fileExt(file), key, file)
+        ret = @writeText(@transformTemplateFile(file), fn.fileExt(file), key, file)
         @lint ret.tmpPath if @opts.linter
         @validate ret.tmpPath if @opts.dovalidate
         ret
     catch e then @abort e
 
   writeFile: (file, key) ->
-    ret = @writePaths(@canonicalHash(file, key), fileExt(file))
+    ret = @writePaths(@canonicalHash(file, key), fn.fileExt(file))
     log.verbose("wrote #{@userPath file} -> #{ret.tmpPath}")
     fs.copyFileSync(file, ret.tmpPath)
     ret
