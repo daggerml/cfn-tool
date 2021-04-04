@@ -19,6 +19,12 @@ and more.
 The first argument to `cfn-tool` is the `command`. Each command has its own set
 of options and required positional parameters, as described in its manual page.
 
+## BASH COMPLETION
+
+Add the following to your `bash`(1) configuration:
+
+    complete -o default -C $(which cfn-tool-completer) cfn-tool
+
 ## SEE ALSO
 
 Each command has its own man page:
