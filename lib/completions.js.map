@@ -1,0 +1,13 @@
+{
+  "version": 3,
+  "file": "completions.js",
+  "sourceRoot": "..",
+  "sources": [
+    "lib/completions.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAAA;AAAA,MAAA,IAAA,EAAA,IAAA,EAAA,EAAA,EAAA,IAAA,EAAA,IAAA,EAAA,YAAA,EAAA,OAAA,EAAA;;EAAA,EAAA,GAAK,OAAA,CAAQ,MAAR;;EAEL,YAAA,GAAe,QAAA,CAAC,MAAD,EAAS,EAAT,CAAA;WACb,EAAE,CAAC,MAAH,CAAU,QAAA,CAAC,CAAD,CAAA;aAAO,CAAA,IAAM,CAAC,CAAC,CAAI,MAAL,CAAA,IAAgB,CAAC,CAAC,UAAF,CAAa,MAAb,CAAjB;IAAb,CAAV,CAA8D,CAAC,IAA/D,CAAoE,IAApE;EADa;;EAGf,IAAA,GAAO,QAAA,CAAC,GAAD,CAAA;AACP,QAAA;AAAE;aAAI,EAAE,CAAC,SAAH,CAAa,GAAb,CAAiB,CAAC,SAAlB,CAAA,EAAJ;KAAkC,aAAA;MAAM,UAAN;;EAD7B;;EAGP,IAAA,GAAO,MAAM,CAAC,OAAO,CAAC,IAAf,GAAsB,QAAA,CAAC,MAAD,CAAA,EAAA;;EAE7B,IAAA,GAAO,MAAM,CAAC,OAAO,CAAC,IAAf,GAAsB,QAAA,CAAC,MAAD,CAAA;WAC3B,IAAA,CAAK,CAAA,YAAA,CAAA,CACW,MADX,CAAA,CAAA,CAAL;EAD2B;;EAK7B,IAAA,GAAO,MAAM,CAAC,OAAO,CAAC,IAAf,GAAsB,QAAA,CAAC,MAAD,EAAS,KAAT,CAAA;WAC3B,YAAA,CAAa,MAAb,EAAqB,KAArB;EAD2B;;EAG7B,OAAA,GAAU,MAAM,CAAC,OAAO,CAAC,OAAf,GAAyB,QAAA,CAAC,MAAD,CAAA;WACjC,YAAA,CAAa,MAAb,EAAqB,IAAA,CAAK,6BAAL,CAAmC,CAAC,KAApC,CAA0C,IAA1C,CAArB;EADiC;;EAGnC,MAAA,GAAS,MAAM,CAAC,OAAO,CAAC,MAAf,GAAwB,QAAA,CAAC,MAAD,CAAA;WAC/B,IAAA,CAAK,MAAL,EAAa,CACX,YADW,EAEX,WAFW,EAGX,WAHW,EAIX,gBAJW,EAKX,gBALW,EAMX,WANW,EAOX,cAPW,EAQX,gBARW,EASX,gBATW,EAUX,cAVW,EAWX,WAXW,EAYX,WAZW,EAaX,WAbW,EAcX,WAdW,CAAb;EAD+B;AArBjC",
+  "sourcesContent": [
+    "fn = require './fn'\n\nprefixFilter = (prefix, xs) ->\n  xs.filter((x) -> x and ((not prefix) or x.startsWith(prefix))).join('\\n')\n\nexec = (cmd) ->\n  try fn.execShell(cmd).trimRight() catch e\n\nnone = module.exports.none = (prefix) ->\n\nfile = module.exports.file = (prefix) ->\n  exec \"\"\"\n    compgen -f '#{prefix}'\n  \"\"\"\n\nlist = module.exports.list = (prefix, words) ->\n  prefixFilter prefix, words\n\nprofile = module.exports.profile = (prefix) ->\n  prefixFilter prefix, exec('aws configure list-profiles').split('\\n')\n\nregion = module.exports.region = (prefix) ->\n  list prefix, [\n    'ap-south-1'\n    'eu-west-2'\n    'eu-west-1'\n    'ap-northeast-2'\n    'ap-northeast-1'\n    'sa-east-1'\n    'ca-central-1'\n    'ap-southeast-1'\n    'ap-southeast-2'\n    'eu-central-1'\n    'us-east-1'\n    'us-east-2'\n    'us-west-1'\n    'us-west-2'\n  ]\n"
+  ]
+}

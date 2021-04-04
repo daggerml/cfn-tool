@@ -3,7 +3,6 @@ fs              = require 'fs'
 os              = require 'os'
 path            = require 'path'
 assert          = require 'assert'
-{spawnSync}     = require 'child_process'
 fn              = require './fn'
 log             = require './log'
 CfnError        = require './CfnError'
@@ -207,7 +206,7 @@ class CfnTransformer extends YamlTransformer
       [form='', vars={}] = if fn.isArray(form) then form else [form]
       env = Object.assign({}, process.env, vars)
       @withCache {shell: [@template, form]}, () =>
-        (@execShell(form, {env}) or '').replace(/\n$/, '')
+        (fn.execShell(form, {env}) or '').replace(/\n$/, '')
 
     @defmacro 'Js', (form) =>
       [form='', vars={}] = if fn.isArray(form) then form else [form]
@@ -316,30 +315,6 @@ class CfnTransformer extends YamlTransformer
     e.aborting = true
     throw e
 
-  handleShell: (cmd, res, raw) ->
-    cmd = fn.prependLines cmd, 'cmd'
-    stdout = fn.rmCR res.stdout?.toString('utf-8')
-    stderr = fn.rmCR res.stderr?.toString('utf-8')
-    res.out = fn.prependLines(stdout, 'out')
-    res.err = fn.prependLines(stderr, 'err')
-    res.all = [res.out, res.err].filter(fn.identity).join('\n')
-    if raw
-      res
-    else
-      if res.status is 0
-        log.verbose "bash: status 0", {body: "#{cmd}\n#{res.all}"}
-        stdout
-      else
-        throw new CfnError("bash: exit status #{res.status}", "#{cmd}\n#{res.all}")
-
-  execShell: (cmd, opts, raw=false) ->
-    res = spawnSync(cmd, fn.merge({stdio: 'pipe', shell: '/bin/bash'}, opts))
-    @handleShell cmd, res, raw
-
-  execShellArgs: (cmd, args, opts, raw=false) ->
-    res = spawnSync(cmd, args, fn.merge({stdio: 'pipe', shell: '/bin/bash'}, opts))
-    @handleShell cmd, res, raw
-
   withCwd: (dir, f) ->
     old = process.cwd()
     process.chdir(dir)
@@ -372,7 +347,7 @@ class CfnTransformer extends YamlTransformer
 
   writeText: (text, ext, key, source='none') ->
     ret = @writePaths(fn.md5(key or text), ext)
-    log.verbose "wrote #{@userPath source} -> #{ret.tmpPath}"
+    log.verbose "wrote '#{@userPath source}' -> '#{ret.tmpPath}'"
     fs.writeFileSync(ret.tmpPath, text)
     ret
 
@@ -382,27 +357,18 @@ class CfnTransformer extends YamlTransformer
     @nested = @nested.concat xformer.nested
     ret
 
-  tryExecRaw: (cmd, msg) ->
-    res = @execShell cmd, null, true
-    cmd = fn.prependLines cmd, 'cmd'
-    if res.status is 0
-      log.verbose "bash: status 0", {body: "#{cmd}\n#{res.all}"}
-    else
-      log.verbose "bash: exit status #{res.status}", {body: cmd}
-      throw new CfnError msg, res.all
-
   lint: (file) ->
-    log.verbose "linting #{@template}"
+    log.verbose "linting '#{@template}'"
     cmd = "#{@opts.linter} #{file}"
-    @withCwd @basedir, (() => @tryExecRaw(cmd, 'lint error'))
+    @withCwd @basedir, (() => fn.tryExecRaw(cmd, 'lint error'))
 
   validate: (file) ->
-    log.verbose "validating #{@template}"
+    log.verbose "validating '#{@template}'"
     cmd = """
       aws cloudformation validate-template \
         --template-body "$(cat '#{file}')"
     """
-    @tryExecRaw cmd, 'aws cloudformation validation error'
+    fn.tryExecRaw cmd, 'aws cloudformation validation error'
 
   writeTemplate: (file, key) ->
     try
@@ -416,16 +382,16 @@ class CfnTransformer extends YamlTransformer
 
   writeFile: (file, key) ->
     ret = @writePaths(@canonicalHash(file, key), fn.fileExt(file))
-    log.verbose("wrote #{@userPath file} -> #{ret.tmpPath}")
+    log.verbose("wrote '#{@userPath file}' -> '#{ret.tmpPath}'")
     fs.copyFileSync(file, ret.tmpPath)
     ret
 
   writeDir: (dir, key) ->
     tmpZip = @tmpPath("#{encodeURIComponent(@userPath(dir))}.zip")
-    log.verbose("packaging: #{dir}")
-    @execShell("zip -qr #{tmpZip} .", {cwd: dir})
+    log.verbose("packaging: '#{dir}'")
+    fn.execShell("zip -qr #{tmpZip} .", {cwd: dir})
     ret = @writePaths(@canonicalHash(dir, key), '.zip')
-    log.verbose("wrote #{@userPath dir} -> #{ret.tmpPath}")
+    log.verbose("wrote '#{@userPath dir}' -> '#{ret.tmpPath}'")
     fs.renameSync(tmpZip, ret.tmpPath)
     ret
 
@@ -438,7 +404,7 @@ class CfnTransformer extends YamlTransformer
   pushFile: (file, f) ->
     @nested.push(@userPath file)
     [old, @template] = [@template, @userPath(file)]
-    log.verbose("transforming #{@template}")
+    log.verbose("transforming '#{@template}'")
     ret = @withCwd path.dirname(file), (() -> f(path.basename(file)))
     @template = old
     ret

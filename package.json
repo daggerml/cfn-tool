@@ -1,6 +1,6 @@
 {
   "name": "cfn-tool",
-  "version": "4.0.6",
+  "version": "4.0.7",
   "description": "AWS CloudFormation template processing and stack deployment tool.",
   "main": "index.js",
   "directories": {
@@ -11,6 +11,7 @@
     "chalk": "^4.1.0",
     "getopts": "daggerml/getopts#daggerml",
     "js-yaml": "daggerml/js-yaml#daggerml",
+    "shell-quote": "^1.7.2",
     "uuid": "8.3.0",
     "winston": "^3.3.3"
   },

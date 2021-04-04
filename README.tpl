@@ -9,6 +9,14 @@
 sudo npm install -g 'daggerml/cfn-tool#${VERSION}'
 ```
 
+## Bash Completion
+
+Add the following to your `~/.bashrc`:
+
+```bash
+complete -o default -C $(which cfn-tool-completer)
+```
+
 # USAGE
 
 Expand macros in `template.yml` and print resulting YAML to stdout:

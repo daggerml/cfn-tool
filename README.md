@@ -6,7 +6,15 @@
 # INSTALL
 
 ```bash
-sudo npm install -g 'daggerml/cfn-tool#4.0.6'
+sudo npm install -g 'daggerml/cfn-tool#4.0.7'
+```
+
+## Bash Completion
+
+Add the following to your `~/.bashrc`:
+
+```bash
+complete -o default -C $(which cfn-tool-completer)
 ```
 
 # USAGE
@@ -635,7 +643,7 @@ Resources:
 [3]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-importvalue.html
 [4]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-sub.html
 [5]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-stack.html
-[6]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/4.0.6/man/cfn-tool.html
+[6]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/4.0.7/man/cfn-tool.html
 [7]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-ref.html
 [8]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-getatt.html
 [9]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference-transform.html
@@ -652,6 +660,6 @@ Resources:
 [20]: none
 [21]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html
 [22]: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html
-[23]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/4.0.6/man/cfn-tool-deploy.html
-[24]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/4.0.6/man/cfn-tool-transform.html
-[25]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/4.0.6/man/cfn-tool-update.html
+[23]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/4.0.7/man/cfn-tool-deploy.html
+[24]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/4.0.7/man/cfn-tool-transform.html
+[25]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/4.0.7/man/cfn-tool-update.html

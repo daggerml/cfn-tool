@@ -1,10 +1,11 @@
 fs                  = require 'fs'
 os                  = require 'os'
 path                = require 'path'
-{inspect}           = require 'util'
+sq                  = require 'shell-quote'
 GetOpts             = require './lib/GetOpts'
 yaml                = require 'js-yaml'
 {strict: assert}    = require 'assert'
+completions         = require './lib/completions'
 fn                  = require './lib/fn'
 log                 = require './lib/log'
 CfnError            = require './lib/CfnError'
@@ -24,13 +25,7 @@ abort = (e) ->
 
 process.on 'uncaughtException', abort
 
-fn.abortOnException abort, fs, [
-  'writeFileSync'
-  'readFileSync'
-  'existsSync'
-]
-
-getopts = new GetOpts(
+options = new GetOpts(
   alias:
     bucket:     'b'
     config:     'c'
@@ -68,6 +63,16 @@ getopts = new GetOpts(
       when 'profile' then 'AWS_PROFILE'
       when 'region' then 'AWS_REGION'
       else "CFN_TOOL_#{opt.toUpperCase()}"
+  complete:
+    bucket:     completions.none
+    config:     completions.none
+    linter:     completions.none
+    parameters: completions.none
+    profile:    completions.profile
+    region:     completions.region
+    tags:       completions.none
+    template:   completions.none
+    stackname:  completions.none
   unknown: (x) -> abort new CfnError("unknown option: '#{x}'")
 )
 
@@ -118,23 +123,18 @@ optionsSpecs =
     'stackname'
   ]
 
-do (spec = optionsSpecs[process.argv[2]]) ->
-  if spec then getopts.configure(spec)
-  else getopts.configure(defaultOptionsSpec, false)
-
 allCmds = Object.keys(optionsSpecs)
 
-usageCmd = (cmd) ->
-  getopts.configure(if cmd then optionsSpecs[cmd] else defaultOptionsSpec)
-  prog  = path.basename(process.argv[1])
+usageCmd = (prog, cmd) ->
+  options.configure(if cmd then optionsSpecs[cmd] else defaultOptionsSpec)
   lpad  = (x) -> "  #{x}"
-  opts  = getopts.usage().map(lpad).join("\n")
+  opts  = options.usage().map(lpad).join("\n")
   "#{prog}#{if cmd then " #{cmd}" else ''}#{if opts then "\n#{opts}" else ''}"
 
-usage = (cmd, status) ->
-  prog  = path.basename(process.argv[1])
+usage = (prog, cmd, status) ->
   manp  = [prog].concat(if cmd then [cmd] else []).join('-')
-  text  = if cmd then usageCmd(cmd) else [null].concat(allCmds).map(usageCmd).join("\n\n")
+  ucmd  = fn.partial usageCmd, null, prog
+  text  = if cmd then ucmd(cmd) else [null].concat(allCmds).map(ucmd).join("\n\n")
   quit """
     #{text}
 
@@ -146,57 +146,51 @@ usage = (cmd, status) ->
 version = () ->
   quit VERSION
 
-parseArgv = (argv) ->
-  opts  = getopts.parse argv
-  cmd   = opts.command
-  fn.assertOk(cmd in allCmds, "unknown command: '#{cmd}'") if cmd
+bashCompletion = ([$0, prefix, prev]) ->
+  words = sq.parse(process.env.COMP_LINE).slice(1)
+  words.pop() if prefix
+  command = words[0]
+  if $0 is prev and words.length < 2
+    options.configure defaultOptionsSpec, false
+    quit completions.list prefix, allCmds.concat(options.completeOpt(words))
+  else if (spec = optionsSpecs[command])
+    fs.writeFileSync '/tmp/t', "got here 1"
+    options.configure spec, false
+    opts = options.completeOpt()
+    if prev in opts
+      quit(c(prefix)) if (c = options.master.complete[prev.replace(/^-+/, '')])
+    if prefix.startsWith('-')
+      quit completions.list prefix, options.completeOpt(words)
+    opts = options.parse words, {noenv: true}
+    for x in options.config.positional
+      continue if opts[x]
+      fs.writeFileSync '/tmp/t', JSON.stringify {opts, x}
+      quit(c(prefix)) if (c = options.master.complete[x])
+    quit()
+  quit completions.file prefix
+
+module.exports = (completionArgs) ->
+  bashCompletion(completionArgs) if completionArgs
+
+  if (spec = optionsSpecs[process.argv[2]]) then options.configure(spec)
+  else options.configure(defaultOptionsSpec, false)
+
+  prog        = path.basename(process.argv[1])
+  argv        = process.argv.slice(2)
+  opts        = options.parse argv, {key: 'config', file: '.cfn-tool'}
+  opts.tmpdir = fn.tmpdir 'cfn-tool-', opts.keep
+  cmdKnown    = (opts.command in allCmds) or not opts.command
+
+  fn.assertOk cmdKnown, "unknown command: '#{opts.command}'"
+
   switch
-    when opts.help then usage(cmd)
-    when opts.version then version()
-    when not cmd then usage(null, 1)
-  getopts.validateArgs(opts)
-  opts
+    when opts.help        then usage(prog, opts.command)
+    when opts.version     then version()
+    when not opts.command then usage(prog, null, 1)
 
-parseAwsVersion = (x) ->
-  Number x?.match(/^aws-cli\/([0-9]+)\./)?[1]
-
-setLogLevel = (opts) ->
-  log.level = switch
-    when opts.verbose then 'verbose'
-    when opts.quiet   then 'error'
-    else              'info'
-  opts
-
-module.exports = () ->
-  opts  = setLogLevel parseArgv process.argv.slice(2)
-  cfn   = new CfnTransformer {opts}
-  exec  = cfn.execShell.bind cfn
-  cfg   = opts.config or (existsSync('.cfn-tool') and '.cfn-tool')
-
-  if cfg
-    log.verbose "using config file: #{cfg}"
-    try
-      getopts.loadConfig(exec, opts, cfg) or
-        log.verbose "no relevant config variables"
-    catch e
-      e.message = e.message.split('\n').shift()
-      throw e
-    opts = cfn.opts = setLogLevel parseArgv process.argv.slice(2)
-
-  getopts.setVars opts, {clobber: true}
-
-  opts.tmpdir = fs.mkdtempSync([os.tmpdir(), 'cfn-tool-'].join('/'))
-  process.on 'exit', () -> fs.rmdirSync opts.tmpdir, {recursive: true} unless opts.keep
-
-  log.verbose "configuration options", {body: inspect fn.selectKeys(opts, getopts.allOpts())}
-
-  fn.assertOk exec 'which aws', 'aws CLI tool not found on $PATH'
-  awsversion = parseAwsVersion(exec('aws --version'))
-  fn.assertOk awsversion in AWS_VERSIONS,
-    "unsupported aws CLI tool version: #{awsversion} (supported versions are #{AWS_VERSIONS})"
+  options.validateArgs(opts)
 
   switch opts.command
-
     when 'transform'
       Object.assign opts,
         dovalidate: false
@@ -204,38 +198,32 @@ module.exports = () ->
         bucket:     'example-bucket'
         s3bucket:   'example-bucket'
 
-      fn.assertOk opts.template, 'template argument required'
-
       log.verbose 'preparing template'
+      cfn = new CfnTransformer {opts}
       res = cfn.writeTemplate(opts.template)
-      tpl = readFileSync(res.tmpPath).toString('utf-8')
 
-      console.log tpl.trimRight()
-
+      console.log fs.readFileSync(res.tmpPath).toString('utf-8').trimRight()
     when 'deploy'
       Object.assign opts,
         dovalidate: true
         dopackage:  true
         s3bucket:   opts.bucket
 
-      fn.assertOk opts.template, 'template argument required'
-      fn.assertOk opts.stackname, 'stackname argument required'
-
       log.info 'preparing templates'
+      cfn = new CfnTransformer {opts}
       res = cfn.writeTemplate(opts.template)
-      tpl = readFileSync(res.tmpPath).toString('utf-8')
 
       if res.nested.length > 1
         throw new CfnError('bucket required for nested stacks') unless opts.bucket
         log.info 'uploading templates to S3'
-        exec "aws s3 sync --size-only '#{cfn.tmpdir}' 's3://#{opts.bucket}/'"
+        fn.execShell "aws s3 sync --size-only '#{cfn.tmpdir}' 's3://#{opts.bucket}/'"
 
       bucketarg = "--s3-bucket '#{opts.bucket}' --s3-prefix aws/" if opts.bucket
       paramsarg = "--parameter-overrides #{opts.parameters}"      if opts.parameters
       tagsarg   = "--tags #{opts.tags}"                           if opts.tags
 
       log.info 'deploying stack'
-      exec """
+      fn.execShell """
         aws cloudformation deploy \
           --template-file '#{res.tmpPath}' \
           --stack-name '#{opts.stackname}' \
@@ -244,12 +232,8 @@ module.exports = () ->
       """
 
       log.info 'done -- no errors'
-
     when 'update'
-      opts.stackname = opts.args[0]
-      fn.assertOk opts.stackname, 'stackname argument required'
-
-      res = JSON.parse exec """
+      res = JSON.parse fn.execShell """
         aws cloudformation describe-stacks --stack-name '#{opts.stackname}'
       """
 
@@ -272,8 +256,8 @@ module.exports = () ->
 
       paramsarg = objVals(params).join(' ')
 
-      exec """
-        aws cloudformation update-stack \
+      fn.execShell """
+        echo aws cloudformation update-stack \
           --stack-name #{opts.stackname} \
           --parameters #{paramsarg} \
           --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
