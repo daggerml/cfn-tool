@@ -8,10 +8,10 @@ cfn-tool-transform(1) -- expand template macros
 
 ## DESCRIPTION
 
-Expands macros in the <template-file> &mdash; the resulting YAML is printed to
-`stdout`, and the program exits. No nested templates are processed, no packages
-are prepared, no linting or validation is performed, and no stack is deployed.
-This can be useful for debugging.
+Expands macros in the <template-file>, optionally passing the resulting YAML
+through a linter, prints it to `stdout`, and exits. No nested templates are
+processed, no packages are prepared, no validation is performed, and no stack
+is deployed. This can be useful for debugging.
 
 ## OPTIONS
 
