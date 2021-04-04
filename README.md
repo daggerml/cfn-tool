@@ -9,12 +9,10 @@
 sudo npm install -g 'daggerml/cfn-tool#4.0.7'
 ```
 
-## Bash Completion
-
-Add the following to your `~/.bashrc`:
+Add the following to your `~/.bashrc` to enable bash completion:
 
 ```bash
-complete -o default -C $(which cfn-tool-completer)
+complete -o default -C $(which cfn-tool-completer) cfn-tool
 ```
 
 # USAGE
