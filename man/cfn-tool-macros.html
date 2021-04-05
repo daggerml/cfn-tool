@@ -199,6 +199,10 @@ section below for a demonstration of how to use each macro.</p>
 accomplish various common CloudFormation template patterns.</p>
 
 <dl>
+<dt><code>!Outputs</code> <var>MAPPING</var></dt><dd><p>Populates the CloudFormation <code>Outputs</code> section from a simple <var>MAPPING</var> of
+keys and values. Additional directives can be provided in the keys of the
+<var>MAPPING</var> (such as the <code>Name</code> property), as shown in the <code>EXAMPLES</code> section
+below. References in the keys are interpolated as with <code>!Sub</code>.</p></dd>
 <dt><code>!Parameters</code> <code>[</code> <var>NAME-PROPS</var>, ... <code>]</code></dt><dd><p>Populates the CloudFormation <code>Parameters</code> section from a sequence of
 <var>NAME-PROPS</var>. Each <var>NAME-PROPS</var> in the sequence is a string of the parameter
 <var>NAME</var> followed by optional <var>KEY</var>=<var>VALUE</var> properties, separated by spaces.
@@ -209,10 +213,6 @@ keys may contain the <code>Type</code> and top-level properties, with the <code>
 of the resource provided by the value associated with this key. Note that
 within the <code>!Resources</code> macro body, regular vanilla CloudFormation is still
 valid and is passed through verbatim.</p></dd>
-<dt><code>!Return</code> <var>MAPPING</var></dt><dd><p>Populates the CloudFormation <code>Outputs</code> section from a simple <var>MAPPING</var> of
-keys and values. Additional directives can be provided in the keys of the
-<var>MAPPING</var> (such as the <code>Name</code> property), as shown in the <code>EXAMPLES</code> section
-below. References in the keys are interpolated as with <code>!Sub</code>.</p></dd>
 <dt><code>!Tags</code> <var>MAPPING</var></dt><dd><p>Expands a simple <var>MAPPING</var> to a list of resource tag structures with <code>Key</code>
 and <code>Value</code> properties.</p></dd>
 </dl>
@@ -384,6 +384,9 @@ is replaced by the value returned by <var>FUNCTION</var>. The returned value may
 also contain macro calls, which are automatically expanded as required.
 The new macros is immediately available anywhere in the template in which
 it was defined, but not in nested or parent templates.</p></dd>
+<dt><code>info</code>(<var>MESSAGE</var>[, <var>BODY</var>])</dt><dd><p>Logs an info level <var>MESSAGE</var>, with an optional <var>BODY</var> string containing
+additional information to be displayed when the user has specified the
+<code>--verbose</code> option.</p></dd>
 <dt><code>macroexpand</code>(<var>FORM</var>)</dt><dd><p>Expands all macros in <var>FORM</var>, recursively and repeatedly, until <var>FORM</var> has
 been completely expanded and is suitable for consumption by CloudFormation.
 This method is used mostly by macros to process their arguments when code
@@ -396,6 +399,11 @@ managed by <code>cfn-tool</code>. This directory is automatically deleted on exi
 <dt><code>userPath</code>(<var>PATH</var>)</dt><dd><p>Resolves <var>PATH</var> relative to <code>cfn-tool</code>'s working directory. This is the
 path the user expects to see, as the working directory is set to the
 template's directory during macro expansion.</p></dd>
+<dt><code>verbose</code>(<var>MESSAGE</var>[, <var>BODY</var>])</dt><dd><p>Logs a verbose level <var>MESSAGE</var>, with an optional <var>BODY</var> string containing
+additional information.</p></dd>
+<dt><code>warn</code>(<var>MESSAGE</var>[, <var>BODY</var>])</dt><dd><p>Logs a warning level <var>MESSAGE</var>, with an optional <var>BODY</var> string containing
+additional information to be displayed when the user has specified the
+<code>--verbose</code> option.</p></dd>
 <dt><code>withBindings</code>(<var>BINDINGS</var>, <var>FUNCTION</var>)</dt><dd><p>Creates a new scope with the <var>BINDINGS</var> and calls <var>FUNCTION</var> with no
 arguments, then restores the previous scope and returns the <var>FUNCTION</var>'s
 result.</p></dd>
@@ -454,8 +462,13 @@ Foo:
 
 <p><code>!File</code></p>
 
-<pre><code># INPUT
-Script: !File doit.sh
+<pre><code># FILE: ./doit.sh
+#!/bin/bash
+name=joe
+echo "hello, $name"
+
+# INPUT
+Script: !File ./doit.sh
 
 # RESULT
 Script: |
@@ -671,8 +684,9 @@ Tags:
 <p><code>!TemplateFile</code></p>
 
 <pre><code># FILE: ./foo/config.yml
-Foo:
-  Bar: baz
+Foo: !Let
+  - Baz: baf
+  - Bar: !Ref Baz
 
 # INPUT
 Config: !TemplateFile ./foo/config.yml
@@ -680,7 +694,7 @@ Config: !TemplateFile ./foo/config.yml
 # RESULT
 Config:
   Foo:
-    Bar: baz
+    Bar: baf
 </code></pre>
 
 <p><code>!Var</code></p>
@@ -742,7 +756,7 @@ Foo:
 the following license:</p>
 
 <ul>
-<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.1.0/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.1.0/LICENSE</a></li>
+<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.2.0/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.2.0/LICENSE</a></li>
 </ul>
 
 
@@ -756,7 +770,7 @@ THE SOFTWARE.</p>
 
 
   <ol class='man-decor man-foot man foot'>
-    <li class='tl'>CloudFormation Tools 4.1.0</li>
+    <li class='tl'>CloudFormation Tools 4.2.0</li>
     <li class='tc'>April 2021</li>
     <li class='tr'>cfn-tool-macros(7)</li>
   </ol>

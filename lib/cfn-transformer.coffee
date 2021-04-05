@@ -169,6 +169,10 @@ class CfnTransformer extends YamlTransformer
       ), {})
 
     @defmacro 'Return', (form) =>
+      @warn '!Return was deprecated in 4.2.0: use !Outputs instead'
+      {'Fn::Outputs': form}
+
+    @defmacro 'Outputs', (form) =>
       Outputs: fn.reduceKv form, (xs, k, v) =>
         [name, opts...] = k.split(/ +/)
         xport = if fn.notEmpty(opts = parseKeyOpts(opts))
@@ -317,7 +321,7 @@ class CfnTransformer extends YamlTransformer
       when e.name is 'Error' then new CfnError(e.message)
       else new CfnError "#{e.name}: #{e.message}"
 
-  abort: (e) ->
+  abort: (e, {warn}) ->
     {message, body, aborting} = e = @wrapError(e)
     if not aborting
       errmsg = []
@@ -326,7 +330,16 @@ class CfnTransformer extends YamlTransformer
       errmsg.push("at #{@keystack.join('/')}") if @keystack.length
       e.message = errmsg.join('\n')
     e.aborting = true
-    throw e
+    if warn then log.warn e.message else throw e
+
+  verbose: (message, body) ->
+    log.verbose message {body}
+
+  info: (message, body) ->
+    log.info message, {body}
+
+  warn: (message, body) ->
+    @abort new CfnError(message, body), {warn: true}
 
   withCwd: (dir, f) ->
     old = process.cwd()

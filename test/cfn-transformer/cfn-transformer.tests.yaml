@@ -301,10 +301,10 @@ expands bound templates:
           Parameters:
             Param1: goodbye world
 
-expands !Return macros:
+expands !Outputs macros:
 
   template:
-    <<: !Return
+    <<: !Outputs
       Foop: !Ref Foo
       Barp: !GetAtt Bar.ARN
       Bazp Name=${$ZONE}-${$REGION}-bazp: 123

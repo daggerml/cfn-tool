@@ -115,6 +115,12 @@ section below for a demonstration of how to use each macro.
 These macros are an attempt to reduce the amount of boilerplate required to
 accomplish various common CloudFormation template patterns.
 
+  * `!Outputs` <MAPPING>:
+    Populates the CloudFormation `Outputs` section from a simple <MAPPING> of
+    keys and values. Additional directives can be provided in the keys of the
+    <MAPPING> (such as the `Name` property), as shown in the `EXAMPLES` section
+    below. References in the keys are interpolated as with `!Sub`.
+
   * `!Parameters` `[` <NAME-PROPS>, ... `]`:
     Populates the CloudFormation `Parameters` section from a sequence of
     <NAME-PROPS>. Each <NAME-PROPS> in the sequence is a string of the parameter
@@ -128,12 +134,6 @@ accomplish various common CloudFormation template patterns.
     of the resource provided by the value associated with this key. Note that
     within the `!Resources` macro body, regular vanilla CloudFormation is still
     valid and is passed through verbatim.
-
-  * `!Return` <MAPPING>:
-    Populates the CloudFormation `Outputs` section from a simple <MAPPING> of
-    keys and values. Additional directives can be provided in the keys of the
-    <MAPPING> (such as the `Name` property), as shown in the `EXAMPLES` section
-    below. References in the keys are interpolated as with `!Sub`.
 
   * `!Tags` <MAPPING>:
     Expands a simple <MAPPING> to a list of resource tag structures with `Key`
@@ -324,6 +324,11 @@ which has the following API methods:
     The new macros is immediately available anywhere in the template in which
     it was defined, but not in nested or parent templates.
 
+  * `info`(<MESSAGE>[, <BODY>]):
+    Logs an info level <MESSAGE>, with an optional <BODY> string containing
+    additional information to be displayed when the user has specified the
+    `--verbose` option.
+
   * `macroexpand`(<FORM>):
     Expands all macros in <FORM>, recursively and repeatedly, until <FORM> has
     been completely expanded and is suitable for consumption by CloudFormation.
@@ -343,6 +348,15 @@ which has the following API methods:
     Resolves <PATH> relative to `cfn-tool`'s working directory. This is the
     path the user expects to see, as the working directory is set to the
     template's directory during macro expansion.
+
+  * `verbose`(<MESSAGE>[, <BODY>]):
+    Logs a verbose level <MESSAGE>, with an optional <BODY> string containing
+    additional information.
+
+  * `warn`(<MESSAGE>[, <BODY>]):
+    Logs a warning level <MESSAGE>, with an optional <BODY> string containing
+    additional information to be displayed when the user has specified the
+    `--verbose` option.
 
   * `withBindings`(<BINDINGS>, <FUNCTION>):
     Creates a new scope with the <BINDINGS> and calls <FUNCTION> with no
@@ -403,8 +417,13 @@ section.
 
 `!File`
 
+    # FILE: ./doit.sh
+    #!/bin/bash
+    name=joe
+    echo "hello, $name"
+
     # INPUT
-    Script: !File doit.sh
+    Script: !File ./doit.sh
 
     # RESULT
     Script: |
@@ -604,8 +623,9 @@ section.
 `!TemplateFile`
 
     # FILE: ./foo/config.yml
-    Foo:
-      Bar: baz
+    Foo: !Let
+      - Baz: baf
+      - Bar: !Ref Baz
 
     # INPUT
     Config: !TemplateFile ./foo/config.yml
@@ -613,7 +633,7 @@ section.
     # RESULT
     Config:
       Foo:
-        Bar: baz
+        Bar: baf
 
 `!Var`
 
