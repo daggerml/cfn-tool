@@ -1,16 +1,16 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "CFN\-TOOL\-DEPLOY" "1" "April 2021" "CloudFormation Tools 4.0.9" "CloudFormation Tools"
+.TH "CFN\-TOOL\-DEPLOY" "1" "April 2021" "CloudFormation Tools 4.0.10" "CloudFormation Tools"
 .
 .SH "NAME"
 \fBcfn\-tool\-deploy\fR \- deploy cloudformation stacks
 .
 .SH "SYNOPSIS"
-\fBcfn\-tool\fR \fBdeploy\fR [\fIoption\fR\.\.\.] \fItemplate\-file\fR \fIstack\-name\fR
+\fBcfn\-tool\fR \fBdeploy\fR [\fIOPTIONS\fR\.\.\.] \fITEMPLATE\-FILE\fR \fISTACK\-NAME\fR
 .
 .SH "DESCRIPTION"
-Deploys the template \fItemplate\-file\fR to the cloudformation stack named \fIstack\-name\fR\. If a stack named \fIstack\-name\fR already exists it is updated, otherwise a new stack is created\.
+Deploys the template \fITEMPLATE\-FILE\fR to the cloudformation stack named \fISTACK\-NAME\fR\. If a stack named \fISTACK\-NAME\fR already exists it is updated, otherwise a new stack is created\.
 .
 .P
 Each raw template file is processed as follows: macros are expanded, nested templates are recursively processed, packages are prepared for upload, and their S3 URIs are computed\. The processed template is then linted (optionally) and validated with the AWS CloudFormation API\.
@@ -31,39 +31,39 @@ Environment variables associated with boolean options must have a value of eithe
 Options provided via the command line will be automatically exported as their corresponding environment variables, and will be in the environment of any shell commands executed during macro expansion\. For example, when the \fB\-\-profile\fR option is specified on the command line there is no need to use it in shell commands using the \fBaws\fR(1) CLI tool, as the \fBAWS_PROFILE\fR environment variable is exported by \fBcfn\-tool\fR to the environment in which the shell commands are executed\.
 .
 .TP
-\fB\-b\fR, \fB\-\-bucket\fR=\fIname\fR
-Upload templates to the S3 bucket given by \fIname\fR\. A bucket must be specified when nested stacks are used, or when the template specified by \fItemplate\-name\fR is more than 51KiB in size\.
+\fB\-b\fR, \fB\-\-bucket\fR=\fINAME\fR
+Upload templates to the S3 bucket given by \fINAME\fR\. A bucket must be specified when nested stacks are used, or when the template specified by \fITEMPLATE\-FILE\fR is more than 51KiB in size\.
 .
 .TP
-\fB\-c\fR, \fB\-\-config\fR=\fIfile\fR
-Specify the config file to use\. If this option is not specified \fBcfn\-tool\fR will look for a file named \fB\.cfn\-tool\fR in the current directory\. This file will be sourced in the \fBbash\fR(1) shell\. Environment variables defined here will be applied as default options\.
+\fB\-c\fR, \fB\-\-config\fR=\fIFILE\fR
+Specify the config file load environment variables from\. If this option is not specified \fBcfn\-tool\fR will look for a file named \fB\.cfn\-tool\fR in the current directory\. This file will be sourced in the \fBbash\fR(1) shell\. Environment variables defined here will be applied as default options\.
 .
 .TP
 \fB\-k\fR, \fB\-\-keep\fR
-Don\'t delete the temporary directory to which processed templates are written when \fBcfn\-tool\fR exits\. This can be useful for debugging\.
+Don\'t delete the temporary directory containing processed templates when \fBcfn\-tool\fR exits\. This can be useful for debugging\.
 .
 .TP
-\fB\-l\fR, \fB\-\-linter\fR=\fIcommand\fR
-Run \fIcommand\fR on each processed template file, aborting if the \fIcommand\fR fails\. The template file path is appended to the \fIcommand\fR string and the resulting command line is evaluated in the \fBbash\fR(1) shell\. The working directory is set to the directory in which the \fBcfn\-tool\fR program was run\.
+\fB\-l\fR, \fB\-\-linter\fR=\fICOMMAND\fR
+Run \fICOMMAND\fR on each processed template file, aborting if the \fICOMMAND\fR fails\. The template file path is appended to the \fICOMMAND\fR string and the resulting command line is evaluated in the \fBbash\fR(1) shell (see the \fBEXAMPLES\fR section below)\. The \fICOMMAND\fR is executed with its working directory set to the current directory (ie\. the directory in which the \fBcfn\-tool\fR program runs)\.
 .
 .TP
-\fB\-p\fR, \fB\-\-parameters\fR="\fIkey\fR=\fIvalue\fR [\fIkey\fR=\fIvalue\fR \.\.\.]"
+\fB\-p\fR, \fB\-\-parameters\fR="\fIKEY\fR=\fIVALUE\fR [\fIKEY\fR=\fIVALUE\fR \.\.\.]"
 Set template input parameter overrides\. When updating an existing stack the values of any unspecified parameters will be preserved\.
 .
 .TP
-\fB\-p\fR, \fB\-\-profile\fR=\fIname\fR
-Use the AWS profile given by \fIname\fR to configure the AWS credentials provider chain\.
+\fB\-p\fR, \fB\-\-profile\fR=\fINAME\fR
+Use the AWS profile given by \fINAME\fR to configure the AWS credentials provider chain\.
 .
 .TP
 \fB\-q\fR, \fB\-\-quiet\fR
 Suppress all informational, diagnostic, and warning output\.
 .
 .TP
-\fB\-r\fR, \fB\-\-region\fR=\fIname\fR
-Use the AWS region given by \fIname\fR for all AWS API calls\.
+\fB\-r\fR, \fB\-\-region\fR=\fINAME\fR
+Use the AWS region given by \fINAME\fR for all AWS API calls\.
 .
 .TP
-\fB\-t\fR, \fB\-\-tags\fR="\fIkey\fR=\fIvalue\fR [\fIkey\fR=\fIvalue\fR \.\.\.]"
+\fB\-t\fR, \fB\-\-tags\fR="\fIKEY\fR=\fIVALUE\fR [\fIKEY\fR=\fIVALUE\fR \.\.\.]"
 A list of tags to associate with the stack that is created or updated\. AWS CloudFormation also propagates these tags to resources in the stack if the resource supports it\.
 .
 .TP
@@ -101,7 +101,7 @@ $ cfn\-tool deploy \-\-parameters "Foo=bar Baz=baf" my\-template\.yml my\-stack
 Each command line option is associated with a corresponding environment variable\. See the \fBOPTIONS\fR section above\.
 .
 .SH "FILES"
-The \fBcfn\-tool\fR program will look for a configuration file specified by the \fB\-\-config\fR option, the \fBCFN_TOOL_CONFIG\fR environment variable, or the default \fB\.cfn\-tool\fR file in the current working directory\. When this file exists it is sourced in the \fBbash\fR(1) shell and any configuration environment variables defined are used as defaults\. Here is an example configuration file:
+The \fBcfn\-tool\fR program will look for a configuration file specified by the \fB\-\-config\fR option, the \fBCFN_TOOL_CONFIG\fR environment variable, or the default \fI\.cfn\-tool\fR file in the current working directory\. When this file exists it is sourced in the \fBbash\fR(1) shell and any configuration environment variables defined are used as defaults\. Here is an example configuration file:
 .
 .IP "" 4
 .
@@ -126,11 +126,33 @@ Exits with a status of 1 if an error occurred, or 0 otherwise\.
 .SH "BUGS"
 Please open an issue: \fIhttps://github\.com/daggerml/cfn\-tool/issues\fR\.
 .
+.SH "SEE ALSO"
+Man pages for other commands:
+.
+.IP "\(bu" 4
+\fBcfn\-tool\fR(1)
+.
+.IP "\(bu" 4
+\fBcfn\-tool\-transform\fR(1)
+.
+.IP "\(bu" 4
+\fBcfn\-tool\-update\fR(1)
+.
+.IP "" 0
+.
+.P
+Documentation for built\-in macros:
+.
+.IP "\(bu" 4
+\fBcfn\-tool\-macros\fR(7)
+.
+.IP "" 0
+.
 .SH "COPYRIGHT"
 Copyright © 2021 Micha Niskin \fB<micha\.niskin@gmail\.com>\fR, distributed under the following license:
 .
 .IP "\(bu" 4
-\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/4\.0\.9/LICENSE\fR
+\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/4\.0\.10/LICENSE\fR
 .
 .IP "" 0
 .

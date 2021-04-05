@@ -62,8 +62,8 @@
     <a href="#DESCRIPTION">DESCRIPTION</a>
     <a href="#COMMANDS">COMMANDS</a>
     <a href="#BASH-COMPLETION">BASH COMPLETION</a>
-    <a href="#SEE-ALSO">SEE ALSO</a>
     <a href="#BUGS">BUGS</a>
+    <a href="#SEE-ALSO">SEE ALSO</a>
     <a href="#COPYRIGHT">COPYRIGHT</a>
   </div>
 
@@ -81,7 +81,7 @@
 <h2 id="SYNOPSIS">SYNOPSIS</h2>
 
 <p><code>cfn-tool</code> [<code>-h</code>|<code>--help</code>|<code>-V</code>|<code>--version</code>]<br />
-<code>cfn-tool</code> <em>command</em> [<em>option</em>...] [<em>argument</em>...]</p>
+<code>cfn-tool</code> <var>COMMAND</var> [<var>OPTIONS</var>...] [<var>ARGUMENTS</var>...]</p>
 
 <h2 id="DESCRIPTION">DESCRIPTION</h2>
 
@@ -90,9 +90,13 @@ a template macro preprocessor, resource packaging, extended support for nested
 stacks, additional stack deployment options (like template linting, for example),
 and more.</p>
 
+<p>The macro preprocessor provides a variety of generally useful, built-in macros
+to handle common use cases, and can be extended via JavaScript modules loaded
+at macro expansion time (see <code>cfn-tool-macros</code>(7) for details).</p>
+
 <h2 id="COMMANDS">COMMANDS</h2>
 
-<p>The first argument to <code>cfn-tool</code> is the <code>command</code>. Each command has its own set
+<p>The first argument to <code>cfn-tool</code> is the <var>COMMAND</var>. Each command has its own set
 of options and required positional parameters, as described in its manual page.</p>
 
 <h2 id="BASH-COMPLETION">BASH COMPLETION</h2>
@@ -101,6 +105,10 @@ of options and required positional parameters, as described in its manual page.<
 
 <pre><code>complete -o default -C $(which cfn-tool-completer) cfn-tool
 </code></pre>
+
+<h2 id="BUGS">BUGS</h2>
+
+<p>Please open an issue: <a href="https://github.com/daggerml/cfn-tool/issues" data-bare-link="true">https://github.com/daggerml/cfn-tool/issues</a>.</p>
 
 <h2 id="SEE-ALSO">SEE ALSO</h2>
 
@@ -113,9 +121,12 @@ of options and required positional parameters, as described in its manual page.<
 </ul>
 
 
-<h2 id="BUGS">BUGS</h2>
+<p>Documentation for built-in macros:</p>
 
-<p>Please open an issue: <a href="https://github.com/daggerml/cfn-tool/issues" data-bare-link="true">https://github.com/daggerml/cfn-tool/issues</a>.</p>
+<ul>
+<li><code>cfn-tool-macros</code>(7)</li>
+</ul>
+
 
 <h2 id="COPYRIGHT">COPYRIGHT</h2>
 
@@ -123,7 +134,7 @@ of options and required positional parameters, as described in its manual page.<
 the following license:</p>
 
 <ul>
-<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.0.9/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.0.9/LICENSE</a></li>
+<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.0.10/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.0.10/LICENSE</a></li>
 </ul>
 
 
@@ -137,7 +148,7 @@ THE SOFTWARE.</p>
 
 
   <ol class='man-decor man-foot man foot'>
-    <li class='tl'>CloudFormation Tools 4.0.9</li>
+    <li class='tl'>CloudFormation Tools 4.0.10</li>
     <li class='tc'>April 2021</li>
     <li class='tr'>cfn-tool(1)</li>
   </ol>

@@ -1,0 +1,806 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "CFN\-TOOL\-MACROS" "7" "April 2021" "CloudFormation Tools 4.0.10" "CloudFormation Tools"
+.
+.SH "NAME"
+\fBcfn\-tool\-macros\fR \- built\-in macros for common use cases
+.
+.SH "SYNOPSIS"
+Documentation for the built\-in macros provided by \fBcfn\-tool\fR(1)\.
+.
+.SH "DESCRIPTION"
+CloudFormation templates are structured \(em there are top\-level forms (eg\. the \fBResources\fR, \fBParameters\fR, \fBMappings\fR, and \fBOutputs\fR sections), and there are a few macros that the CloudFormation system knows how to expand (eg\. \fB!Sub\fR, \fB!Ref\fR, and \fB!Base64\fR)\.
+.
+.P
+The \fBcfn\-tool\fR(1) program provides the built\-in macros described in this manual to satisfy the needs of some common use cases, for example:
+.
+.IP "\(bu" 4
+Dynamic bindings for expressions used in multiple places within a template, for a more DRY approach without admitting excessive logic to the process\.
+.
+.IP "\(bu" 4
+Evaluation of \fBbash\fR(1) or JavaScript snippets to generate resource names or content (eg\. UUIDs via \fBuuidgen\fR(1) or \fBgit\fR(1) SHAs, for example)\.
+.
+.IP "\(bu" 4
+Packaging of resources in the local filesystem \(em automatic \fBzip\fR(1) compression of directories and upload to AWS S3, with the S3 URI injected into the template (eg\. upload a lambda function directory from the local filesystem to S3 and inject the S3 URI as the \fBCode\fR property of the resource)\.
+.
+.IP "\(bu" 4
+Run a build script prior to packaging (eg\. run \fBnpm install\fR before zipping and uploading a lambda directory to S3)\.
+.
+.IP "\(bu" 4
+And various other affordances to reduce the AWS CloudFormation boilerplate required for common use cases\.
+.
+.IP "" 0
+.
+.P
+The philosophy is not to create a layer of abstraction on top of the one already provided by CloudFormation, as there really is no higher level abstraction that can be devised that would be any simpler \(em it would only be yet another layer of tooling that needs to be understood, in addition to the underlying CloudFormation template system\.
+.
+.P
+Instead, the \fBcfn\-tool\fR macro preprocessor is designed to facilitate a reduction in the amount of typing required to define a CloudFormation template\. All of the macros described in this manual are optional; \fBcfn\-tool\fR is compatible with pure vanilla CloudFormation\.
+.
+.SH "SHORT VS\. FULL TAGS"
+All of the macros in this manual may be invoked as \fIshort tags\fR (eg\. \fB!Sub\fR), or as \fIfull tags\fR (eg\. \fBFn::Sub\fR)\. The first pass during macro expansion replaces all short tags with the corresponding full tag, so they can be used interchangeably in a template\.
+.
+.SS "Chaining Short Tags"
+Short tags applied to scalar arguments (eg\. \fB!Ref Thing\fR) can not be chained, as the YAML syntax does not support this\. For example, the following will raise a syntax error:
+.
+.IP "" 4
+.
+.nf
+
+!Ref !Ref Thing
+.
+.fi
+.
+.IP "" 0
+.
+.P
+To make this easier, all macros accepting scalar arguments also accept a list of a single item when preprocessed by \fBcfn\-tool\fR\. This includes the macros provided by CloudFormation itself\. The above example can be achieved with \fBcfn\-tool\fR as follows:
+.
+.IP "" 4
+.
+.nf
+
+!Ref [ !Ref Thing ]
+.
+.fi
+.
+.IP "" 0
+.
+.P
+Which expands to:
+.
+.IP "" 4
+.
+.nf
+
+{"Ref": {"Ref": "Thing"}}
+.
+.fi
+.
+.IP "" 0
+.
+.P
+This may seem pointless because the above is not a valid reference in a CloudFormation template, but this does actually make sense when \fBThing\fR is a dynamic binding (via \fB!Let\fR below) bound to a string which can be resolved at macro expansion time\.
+.
+.SS "Short Tags In Merge Context"
+Macros which expand to objects will be automatically merged when applied in a merge context\. For example, the following \fB!Parameters\fR macro:
+.
+.IP "" 4
+.
+.nf
+
+Fn::Parameters:
+  \- Foo
+  \- Bar
+.
+.fi
+.
+.IP "" 0
+.
+.P
+expands to the more verbose CloudFormation \fBParameters\fR structure, and is merged into the document in place:
+.
+.IP "" 4
+.
+.nf
+
+Parameters:
+  Foo:
+    Type: String
+  Bar:
+    Type: String
+.
+.fi
+.
+.IP "" 0
+.
+.P
+Note that the full tag was required there, as the YAML syntax does not support short tags in a merge context\. However, the special YAML merge syntax (the \fB<<\fR property name) can be applied to use a short tag\. The above example then becomes:
+.
+.IP "" 4
+.
+.nf
+
+<<: !Parameters
+  \- Foo
+  \- Bar
+.
+.fi
+.
+.IP "" 0
+.
+.P
+which is equivalent to the full tag expression\.
+.
+.SH "MACRO REFERENCE"
+The following are macros provided by \fBcfn\-tool\fR, and extensions to the macros provided by CloudFormation in some cases\. CloudFormation\-provided macros which are not extended by \fBcfn\-tool\fR are not described here\. See the \fBEXAMPLES\fR section below for a demonstration of how to use each macro\.
+.
+.SS "CloudFormation Boilerplate Macros"
+These macros are an attempt to reduce the amount of boilerplate required to accomplish various common CloudFormation template patterns\.
+.
+.TP
+\fB!Parameters\fR \fB[\fR \fINAME\-PROPS\fR, \.\.\. \fB]\fR
+Populates the CloudFormation \fBParameters\fR section from a sequence of \fINAME\-PROPS\fR\. Each \fINAME\-PROPS\fR in the sequence is a string of the parameter \fINAME\fR followed by optional \fIKEY\fR=\fIVALUE\fR properties, separated by spaces\. For example, a \fINAME\-PROPS\fR string could be \fB"Param1 Type=Number Default=42"\fR\. The default \fBType\fR is \fBString\fR, and only the name is required\.
+.
+.TP
+\fB!Resources\fR \fIMAPPING\fR
+Populates the CloudFormation \fBResources\fR section from the \fIMAPPING\fR whose keys may contain the \fBType\fR and top\-level properties, with the \fBProperties\fR of the resource provided by the value associated with this key\. Note that within the \fB!Resources\fR macro body, regular vanilla CloudFormation is still valid and is passed through verbatim\.
+.
+.TP
+\fB!Return\fR \fIMAPPING\fR
+Populates the CloudFormation \fBOutputs\fR section from a simple \fIMAPPING\fR of keys and values\. Additional directives can be provided in the keys of the \fIMAPPING\fR (such as the \fBName\fR property), as shown in the \fBEXAMPLES\fR section below\. References in the keys are interpolated as with \fB!Sub\fR\.
+.
+.TP
+\fB!Tags\fR \fIMAPPING\fR
+Expands a simple \fIMAPPING\fR to a list of resource tag structures with \fBKey\fR and \fBValue\fR properties\.
+.
+.SS "Binding Macros"
+These macros bind values to names which can be referenced from multiple places within a template\.
+.
+.TP
+\fB!Let\fR \fIMAPPING\fR
+Binds each value of \fIMAPPING\fR to the name given by the associated key\. These are dynamic bindings \(em the bound values are expanded when they are referenced in the document, not when they are bound, and any references within the bound values themselves are resolved then, too\. The \fB!Let\fR expression itself expands to \fBnull\fR and does not appear in the final document\.
+.
+.TP
+\fB!Let\fR \fB[\fR \fIMAPPING\fR, \fIEXPR\fR \fB]\fR
+Establishes bindings for the scope of a single expression\. The first item in the sequence is the \fIMAPPING\fR of binding pairs, and the second item is the \fIEXPR\fR to be expanded within the scope of these bindings, and whose expansion is returned as the result\.
+.
+.SS "References"
+These macros are used to refer to resources, mappings, attributes, etc\., including bindings and other constructs introduced by the \fBcfn\-tool\fR macro system\.
+.
+.TP
+\fB!Ref\fR \fINAME\fR
+The CloudFormation \fB!Ref\fR intrinsic function has been extended to support various new types of references in addition to its normal functionality\. The type of reference is denoted by a sigil prefixing the name: \fB$\fR for environment variables, \fB%\fR for \fBMapping\fR section lookup, and \fB@\fR for \fB!GetAtt\fR resource attributes\. Bound names (see \fBBinding Macros\fR above) are referenced with no prefix\.
+.
+.TP
+\fB!Sub\fR \fITEMPLATE\fR
+References inside the curly\-brace \fB${\fR\.\.\.\fB}\fR in the \fITEMPLATE\fR may be any name understood by \fB!Ref\fR\. For example, \fB${$FOO}\fR in the \fITEMPLATE\fR would be substituted with the value associated with the \fBFOO\fR environment variable, and \fB${@MyRole\.Arn}\fR would be substituted with \fB!GetAtt\fR \fBMyRole\.Arn\fR\.
+.
+.TP
+\fB!Var\fR \fITEMPLATE\fR
+Expands to an \fB!ImportValue\fR expression, with \fB!Sub\fR style interpolation of the \fITEMPLATE\fR\.
+.
+.SS "Packaging Macros"
+These macros package files or directories from the local filesystem, upload them to S3, and return the S3 coordinates in different forms as their result\. All of these macros accept an argument which can be either a \fIPATH\fR or a \fIMAPPING\fR\.
+.
+.TP
+\fB!Package\fR \fIPATH\fR
+Returns a mapping with \fBS3Bucket\fR and \fBS3Key\fR properties, suitable for use with the \fBCode\fR property of an AWS Lambda function resource, for instance\.
+.
+.TP
+\fB!Package\fR \fB{\fR \fBPath\fR: \fIPATH\fR, \fBParse\fR: \fIBOOL\fR, \fBCacheKey\fR: \fIKEY\fR \fB}\fR
+Returns a mapping as above\. The \fBPath\fR property is required\. The \fBParse\fR property indicates whether the \fIPATH\fR is a YAML file that should be parsed and macro expanded prior to packaging\. The \fBCacheKey\fR property allows the user to provide a string which will be used instead of the MD5 hash of the package contents when determining the filename in S3\.
+.
+.TP
+\fB!PackageURI\fR \fIPATH\-OR\-MAPPING\fR
+Returns a URI with the \fIs3://\fR protocol\. The \fIMAPPING\fR argument is as above\.
+.
+.TP
+\fB!PackageURL\fR \fIPATH\-OR\-MAPPING\fR
+Returns the HTTPS URL of the S3 object\. The \fIMAPPING\fR argument is as above\.
+.
+.TP
+\fB!PackageTemplateURL\fR \fIPATH\-OR\-MAPPING\fR
+Like \fBPackageURL\fR above, but parses and expands macros before packaging\. The \fIMAPPING\fR argument is as above, as well\.
+.
+.SS "File I/O Macros"
+These macros allow the user to read files from the local filesystem and incorporate the data into the template\.
+.
+.TP
+\fB!File\fR \fIFILE\fR
+Reads a local file and returns its contents as a string\. The path is resolved relative to the directory containing the template\.
+.
+.TP
+\fB!TemplateFile\fR \fIFILE\fR
+Reads a local YAML file, parses it, expands macros, and merges the result into the document\. The path is relative to the directory containing the template in which the \fB!TemplateFile\fR macro is expanded\.
+.
+.SS "Serialization And Deserialization Macros"
+These macros are used to serialize and deserialize values in a template (eg\. when a resource property expects a JSON payload which might be easier to type out in YAML when writing the template)\.
+.
+.TP
+\fB!JsonDump\fR \fIDATA\fR
+Returns a JSON string representing the given \fIDATA\fR\.
+.
+.TP
+\fB!JsonParse\fR \fIJSON\fR
+Parses the \fIJSON\fR string, returning the result as data\.
+.
+.TP
+\fB!YamlDump\fR \fIDATA\fR
+Returns a YAML string representing the given \fIDATA\fR\.
+.
+.TP
+\fB!YamlParse\fR \fIYAML\fR
+Parses a \fIYAML\fR string and returns the resulting data\.
+.
+.SS "Shell Command Macros"
+These macros provide the user with the ability to evaluate commands in a shell to generate values and names for use in templates\.
+.
+.TP
+\fB!Js\fR \fIBODY\fR
+Evaluates a JavaScript function \fIBODY\fR string, returning the result\. The working directory is set to the template directory, and the \fBthis\fR object is set to the \fBCfnTransformer\fR instance (see the \fBTRANSFORMER API\fR section below)\.
+.
+.TP
+\fB!Js\fR \fB[\fR \fIBODY\fR, \fIMAPPING\fR \fB]\fR
+Evaluates the JavaScript function \fIBODY\fR string as above, with local variables set according to the given \fIMAPPING\fR\.
+.
+.TP
+\fB!Shell\fR \fISCRIPT\fR
+Evaluates a shell \fISCRIPT\fR string in \fBbash\fR(1), returning its output on \fBstdout\fR as a string\. If the output ends with a newline it is removed\. Only a single trailing newline is removed \(em add an extra newline to the script\'s output if preserving the trailing newline is desired\.
+.
+.TP
+\fB!Shell\fR \fB[\fR \fISCRIPT\fR, \fIMAPPING\fR \fB]\fR
+Evaluates a shell \fISCRIPT\fR in \fBbash\fR(1) as above, with variables set according to the given \fIMAPPING\fR\.
+.
+.SS "Merging Macros"
+These macros allow the user to merge objects in various ways, deep or shallow\.
+.
+.TP
+\fB!DeepMerge\fR \fB[\fR \fIMAPPING\fR, \.\.\. \fB]\fR
+Performs a deep merge of two or more mappings, returning the result\.
+.
+.TP
+\fB!Merge\fR \fB[\fR \fIMAPPING\fR, \.\.\. \fB]\fR
+Performs a shallow merge of two or more mappings and returns the result\.
+.
+.SS "Macro Combinators"
+These macros provide the means to combine other macro expressions in various ways\.
+.
+.TP
+\fB!Do\fR \fB[\fR \fIEXPR\fR, \.\.\. \fB]\fR
+Expands each \fIEXPR\fR in the sequence in order (presumably for side\-effects), returning the expansion of the last one as the result\.
+.
+.SS "Extension Macros"
+These macros allow the user to add his own custom macros or extend the capabilities of the built\-in macro system within the scope of the template\.
+.
+.TP
+\fB!Require\fR \fIFILE\fR
+Loads the given JavaScript \fIFILE\fR\. The user may define custom macros in this file\. The \fIFILE\fR path is relative to the template\'s directory\. The \fB!Require\fR macro itself expands to \fBnull\fR and does not appear in the final document\.
+.
+.TP
+\fB!Require\fR \fB[\fR \fIFILE\fR, \.\.\. \fB]\fR
+As above, but loads multiple JavaScript files\.
+.
+.SH "TRANSFORMER API"
+Within the body of the \fB!Js\fR macro and in JavaScript modules loaded via the \fB!Require\fR macro the \fBthis\fR object is bound to the \fBCfnTransformer\fR instance, which has the following API methods:
+.
+.TP
+\fBdefmacro\fR(\fINAME\fR, \fIFUNCTION\fR)
+Defines a new macro\. The \fIFUNCTION\fR receives a single argument, the form to be expanded\. The location in the template where the macro was called is replaced by the value returned by \fIFUNCTION\fR\. The returned value may also contain macro calls, which are automatically expanded as required\. The new macros is immediately available anywhere in the template in which it was defined, but not in nested or parent templates\.
+.
+.TP
+\fBmacroexpand\fR(\fIFORM\fR)
+Expands all macros in \fIFORM\fR, recursively and repeatedly, until \fIFORM\fR has been completely expanded and is suitable for consumption by CloudFormation\. This method is used mostly by macros to process their arguments when code walking is necessary\.
+.
+.SH "EXAMPLES"
+The following examples demonstrate how to use the macros described above\. Each example consists of an \fBINPUT\fR template (the source) and a \fBRESULT\fR template reflecting the final document with all macros expanded\. Some macros in the examples refer to a file in the local filesystem, in which case the contents and path of the file (relative to the \fBINPUT\fR template) is provided in a \fBFILE\fR section\.
+.
+.P
+\fB!DeepMerge\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+Foo: !DeepMerge
+  \- Numeros:
+      Uno: 1
+      Dos: 2
+      Cuatro: 4
+  \- Numeros:
+      Dos: two
+      Tres: three
+
+# RESULT
+Foo:
+  Numeros:
+    Uno: 1
+    Dos: two
+    Tres: three
+    Cuatro: 4
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!Do\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+Foo: !Do
+  \- !Shell make build
+  \- !Package dist/
+
+# RESULT
+Foo:
+  S3Bucket: mybucket
+  S3Key: 6806d30eed132b19183a51be47264629\.zip
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!File\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+Script: !File doit\.sh
+
+# RESULT
+Script: |
+  #!/bin/bash
+  name=joe
+  echo "hello, $name"
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!Js\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+Foo: !Js "return \'hello, world!\'"
+Bar: !Js
+  \- "return GREET + \', \' + NAME + \'!\'"
+  \- GREET: salve
+    NAME: orbis
+
+# RESULT
+Foo: hello, world!
+Bar: salve, orbis!
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!JsonDump\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+Foo: !JsonDump
+  Bar:
+    Baz: baf
+
+# RESULT
+Foo: \'{"Bar":{"Baz":"baf"}}\'
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!JsonParse\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+Foo: !JsonParse \'{"Bar":{"Baz":"baf"}}\'
+
+# RESULT
+Foo1:
+  Bar:
+    Baz: baf
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!Let\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+<<: !Let
+  Foo: !If [ Bar, Baz, Baf ]
+Foop: !Ref Foo
+Barp: !Let
+  \- Foo: !Shell echo hello, world!
+  \- !Ref Foo
+
+# RESULT
+Foop: !If [ Bar, Baz, Baf ]
+Barp: hello, world!
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!Merge\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+Foo: !Merge
+  \- Uno: 1
+  \- Dos: 2
+    Tres: 3
+
+# RESULT
+Foo:
+  Uno: 1
+  Dos: 2
+  Tres: 3
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!Package\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+Code: !Package foo/
+
+# RESULT
+Code:
+  S3Bucket: mybucket
+  S3Key: 6806d30eed132b19183a51be47264629\.zip
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!PackageURI\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+Foo: !PackageURI foo/
+
+# RESULT
+Foo: s3://mybucket/6806d30eed132b19183a51be47264629\.zip
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!PackageURL\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+Foo: !PackageURL foo/
+
+# RESULT
+Foo: https://s3\.amazonaws\.com/mybucket/6806d30eed132b19183a51be47264629\.zip
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!PackageTemplateURL\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+Foo: !PackageTemplateURL infra/mytemplate\.yml
+
+# OUTPUT
+Foo: https://s3\.amazonaws\.com/mybucket/6806d30eed132b19183a51be47264629\.yml
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!Parameters\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+<<: !Parameters
+  \- Foo
+  \- Bar Type=Number Default=42
+
+# RESULT
+Parameters:
+  Foo:
+    Type: String
+  Bar:
+    Type: Number
+    Default: 42
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!Require\fR
+.
+.IP "" 4
+.
+.nf
+
+# FILE: \./lib/case\-macros\.js
+module\.exports = (compiler) => {
+  compiler\.defmacro(\'UpperCase\', (form) => form\.toUpperCase());
+  compiler\.defmacro(\'LowerCase\', (form) => form\.toLowerCase());
+};
+
+# INPUT
+<<: !Require \./lib/case\-macros
+Foo: !UpperCase AsDf
+Bar: !LowerCase AsDf
+
+# RESULT
+Foo: ASDF
+Bar: asdf
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!Resources\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+<<: !Resources
+  MyBucket AWS::S3::Bucket Condition=Create DependsOn=[Foo,Bar]:
+    BucketName: !Ref Name
+
+# RESULT
+Resources:
+  MyBucket:
+    Type: AWS::S3::Bucket
+    Condition: Create
+    DependsOn:
+      \- Foo
+      \- Bar
+    Properties:
+      BucketName: !Ref Name
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!Return\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+<<: !Return
+  Key1: !Ref Val1
+  Key2 Name=key2\-${AWS::Region}: !Ref Val2
+
+# RESULT
+Outputs:
+  Key1:
+    Value:
+      Ref: Val1
+  Key2:
+    Value:
+      Ref: Val2
+    Name: !Sub key2\-${AWS::Region}
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!Shell\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+Foo: !Shell uuidgen \-t
+Bar: !Shell
+  \- echo "$GREET, $NAME!"
+  \- GREET: hello
+    NAME: world
+
+# RESULT
+Foo: 53480aea\-8c46\-11eb\-a4b0\-61c2b0470324
+Bar: hello, world!
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!Tags\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+Tags: !Tags
+  Foo: Bar
+  Baz: Baf
+
+# RESULT
+Tags:
+  \- Key: Foo
+    Value: Bar
+  \- Key: Baz
+    Value: Baf
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!TemplateFile\fR
+.
+.IP "" 4
+.
+.nf
+
+# FILE: \./foo/config\.yml
+Foo:
+  Bar: baz
+
+# INPUT
+Config: !TemplateFile \./foo/config\.yml
+
+# RESULT
+Config:
+  Foo:
+    Bar: baz
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!Var\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+Foo: !Var supercollider\-${AWS::Region}
+
+# RESULT
+Foo:
+  Fn::ImportValue:
+    !Sub supercollider\-${AWS::Region}
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!YamlDump\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+Foo: !YamlDump
+  Bar:
+    Baz: baf
+
+# RESULT
+Foo: |
+  Bar:
+    Baz: baf
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!YamlParse\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+Foo: !YamlParse |
+  Bar:
+    Baz: baf
+
+# RESULT
+Foo:
+  Bar:
+    Baz: baf
+.
+.fi
+.
+.IP "" 0
+.
+.SH "BUGS"
+Please open an issue: \fIhttps://github\.com/daggerml/cfn\-tool/issues\fR\.
+.
+.SH "SEE ALSO"
+Man pages for the \fBcfn\-tool\fR commands:
+.
+.IP "\(bu" 4
+\fBcfn\-tool\fR(1)
+.
+.IP "\(bu" 4
+\fBcfn\-tool\-deploy\fR(1)
+.
+.IP "\(bu" 4
+\fBcfn\-tool\-transform\fR(1)
+.
+.IP "\(bu" 4
+\fBcfn\-tool\-update\fR(1)
+.
+.IP "" 0
+.
+.SH "COPYRIGHT"
+Copyright © 2021 Micha Niskin \fB<micha\.niskin@gmail\.com>\fR, distributed under the following license:
+.
+.IP "\(bu" 4
+\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/4\.0\.10/LICENSE\fR
+.
+.IP "" 0
+.
+.P
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT\. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE\.

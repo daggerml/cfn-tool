@@ -1,6 +1,6 @@
 {
   "name": "cfn-tool",
-  "version": "4.0.9",
+  "version": "4.0.10",
   "description": "AWS CloudFormation template processing and stack deployment tool.",
   "main": "index.js",
   "directories": {
@@ -44,7 +44,8 @@
     "./man/cfn-tool.1",
     "./man/cfn-tool-deploy.1",
     "./man/cfn-tool-transform.1",
-    "./man/cfn-tool-update.1"
+    "./man/cfn-tool-update.1",
+    "./man/cfn-tool-macros.7"
   ],
   "keywords": [
     "aws",

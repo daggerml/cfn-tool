@@ -4,11 +4,11 @@ cfn-tool-update(1) -- update stack parameters
 
 ## SYNOPSIS
 
-`cfn-tool` `update` [*option*...] <stack-name>
+`cfn-tool` `update` [<OPTIONS>...] <STACK-NAME>
 
 ## DESCRIPTION
 
-Updates only the parameters of the stack with name <stack-name>. Any parameters
+Updates only the parameters of the stack with name <STACK-NAME>. Any parameters
 not specified will retain their previous values.
 
 ## OPTIONS
@@ -35,28 +35,35 @@ in shell commands using the `aws`(1) CLI tool, as the `AWS_PROFILE` environment
 variable is exported by `cfn-tool` to the environment in which the shell
 commands are executed.
 
-  * `-c`, `--config`=<file>:
-    Specify the config file to use. If this option is not specified `cfn-tool`
-    will look for a file named `.cfn-tool` in the current directory. This file
-    will be sourced in the `bash`(1) shell. Environment variables defined here
-    will be applied as default options.
+  * `-c`, `--config`=<FILE>:
+    Specify the config file load environment variables from. If this option is
+    not specified `cfn-tool` will look for a file named `.cfn-tool` in the
+    current directory. This file will be sourced in the `bash`(1) shell.
+    Environment variables defined here will be applied as default options.
 
-  * `-p`, `--profile`=<name>:
-    Use the AWS profile given by <name> to configure the AWS credentials
-    provider chain.
-
-  * `-p`, `--parameters`="<key>=<value> [<key>=<value> ...]":
+  * `-p`, `--parameters`="<KEY>=<VALUE> [<KEY>=<VALUE> ...]":
     Set template input parameter overrides. When updating an existing stack the
     values of any unspecified parameters will be preserved.
+
+  * `-p`, `--profile`=<NAME>:
+    Use the AWS profile given by <NAME> to configure the AWS credentials
+    provider chain.
 
   * `-q`, `--quiet`:
     Suppress all informational, diagnostic, and warning output.
 
-  * `-r`, `--region`=<name>:
-    Use the AWS region given by <name> for all AWS API calls.
+  * `-r`, `--region`=<NAME>:
+    Use the AWS region given by <NAME> for all AWS API calls.
 
   * `-v`, `--verbose`:
     Print extra diagnostic output while processing.
+
+## EXAMPLES
+
+Update the `Foo` and `Baz` parameters of the stack named `my-stack` to have
+values `bar` and `baf`, respectively:
+
+    cfn-tool update --parameters "Foo=bar Baz=baf" my-stack
 
 ## ENVIRONMENT
 
@@ -67,7 +74,7 @@ variable. See the `OPTIONS` section above.
 
 The `cfn-tool` program will look for a configuration file specified by the
 `--config` option, the `CFN_TOOL_CONFIG` environment variable, or the default
-`.cfn-tool` file in the current working directory. When this file exists it is
+_.cfn-tool_ file in the current working directory. When this file exists it is
 sourced in the `bash`(1) shell and any configuration environment variables
 defined are used as defaults. Here is an example configuration file:
 
@@ -89,6 +96,18 @@ Exits with a status of 1 if an error occurred, or 0 otherwise.
 ## BUGS
 
 Please open an issue: <https://github.com/daggerml/cfn-tool/issues>.
+
+## SEE ALSO
+
+Man pages for other commands:
+
+  * `cfn-tool`(1)
+  * `cfn-tool-deploy`(1)
+  * `cfn-tool-transform`(1)
+
+Documentation for built-in macros:
+
+  * `cfn-tool-macros`(7)
 
 ## COPYRIGHT
 

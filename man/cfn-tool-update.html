@@ -61,10 +61,12 @@
     <a href="#SYNOPSIS">SYNOPSIS</a>
     <a href="#DESCRIPTION">DESCRIPTION</a>
     <a href="#OPTIONS">OPTIONS</a>
+    <a href="#EXAMPLES">EXAMPLES</a>
     <a href="#ENVIRONMENT">ENVIRONMENT</a>
     <a href="#FILES">FILES</a>
     <a href="#EXIT-STATUS">EXIT STATUS</a>
     <a href="#BUGS">BUGS</a>
+    <a href="#SEE-ALSO">SEE ALSO</a>
     <a href="#COPYRIGHT">COPYRIGHT</a>
   </div>
 
@@ -81,11 +83,11 @@
 
 <h2 id="SYNOPSIS">SYNOPSIS</h2>
 
-<p><code>cfn-tool</code> <code>update</code> [<em>option</em>...] <var>stack-name</var></p>
+<p><code>cfn-tool</code> <code>update</code> [<var>OPTIONS</var>...] <var>STACK-NAME</var></p>
 
 <h2 id="DESCRIPTION">DESCRIPTION</h2>
 
-<p>Updates only the parameters of the stack with name <var>stack-name</var>. Any parameters
+<p>Updates only the parameters of the stack with name <var>STACK-NAME</var>. Any parameters
 not specified will retain their previous values.</p>
 
 <h2 id="OPTIONS">OPTIONS</h2>
@@ -113,19 +115,27 @@ variable is exported by <code>cfn-tool</code> to the environment in which the sh
 commands are executed.</p>
 
 <dl>
-<dt><code>-c</code>, <code>--config</code>=<var>file</var></dt><dd><p>Specify the config file to use. If this option is not specified <code>cfn-tool</code>
-will look for a file named <code>.cfn-tool</code> in the current directory. This file
-will be sourced in the <code>bash</code>(1) shell. Environment variables defined here
-will be applied as default options.</p></dd>
-<dt><code>-p</code>, <code>--profile</code>=<var>name</var></dt><dd><p>Use the AWS profile given by <var>name</var> to configure the AWS credentials
-provider chain.</p></dd>
-<dt><code>-p</code>, <code>--parameters</code>="<var>key</var>=<var>value</var> [<var>key</var>=<var>value</var> ...]"</dt><dd><p>Set template input parameter overrides. When updating an existing stack the
+<dt><code>-c</code>, <code>--config</code>=<var>FILE</var></dt><dd><p>Specify the config file load environment variables from. If this option is
+not specified <code>cfn-tool</code> will look for a file named <code>.cfn-tool</code> in the
+current directory. This file will be sourced in the <code>bash</code>(1) shell.
+Environment variables defined here will be applied as default options.</p></dd>
+<dt><code>-p</code>, <code>--parameters</code>="<var>KEY</var>=<var>VALUE</var> [<var>KEY</var>=<var>VALUE</var> ...]"</dt><dd><p>Set template input parameter overrides. When updating an existing stack the
 values of any unspecified parameters will be preserved.</p></dd>
+<dt><code>-p</code>, <code>--profile</code>=<var>NAME</var></dt><dd><p>Use the AWS profile given by <var>NAME</var> to configure the AWS credentials
+provider chain.</p></dd>
 <dt><code>-q</code>, <code>--quiet</code></dt><dd><p>Suppress all informational, diagnostic, and warning output.</p></dd>
-<dt><code>-r</code>, <code>--region</code>=<var>name</var></dt><dd><p>Use the AWS region given by <var>name</var> for all AWS API calls.</p></dd>
+<dt><code>-r</code>, <code>--region</code>=<var>NAME</var></dt><dd><p>Use the AWS region given by <var>NAME</var> for all AWS API calls.</p></dd>
 <dt><code>-v</code>, <code>--verbose</code></dt><dd><p>Print extra diagnostic output while processing.</p></dd>
 </dl>
 
+
+<h2 id="EXAMPLES">EXAMPLES</h2>
+
+<p>Update the <code>Foo</code> and <code>Baz</code> parameters of the stack named <code>my-stack</code> to have
+values <code>bar</code> and <code>baf</code>, respectively:</p>
+
+<pre><code>cfn-tool update --parameters "Foo=bar Baz=baf" my-stack
+</code></pre>
 
 <h2 id="ENVIRONMENT">ENVIRONMENT</h2>
 
@@ -136,7 +146,7 @@ variable. See the <code>OPTIONS</code> section above.</p>
 
 <p>The <code>cfn-tool</code> program will look for a configuration file specified by the
 <code>--config</code> option, the <code>CFN_TOOL_CONFIG</code> environment variable, or the default
-<code>.cfn-tool</code> file in the current working directory. When this file exists it is
+<em>.cfn-tool</em> file in the current working directory. When this file exists it is
 sourced in the <code>bash</code>(1) shell and any configuration environment variables
 defined are used as defaults. Here is an example configuration file:</p>
 
@@ -160,13 +170,31 @@ the configuration file is evaluated when that command line option is specified.<
 
 <p>Please open an issue: <a href="https://github.com/daggerml/cfn-tool/issues" data-bare-link="true">https://github.com/daggerml/cfn-tool/issues</a>.</p>
 
+<h2 id="SEE-ALSO">SEE ALSO</h2>
+
+<p>Man pages for other commands:</p>
+
+<ul>
+<li><code>cfn-tool</code>(1)</li>
+<li><code>cfn-tool-deploy</code>(1)</li>
+<li><code>cfn-tool-transform</code>(1)</li>
+</ul>
+
+
+<p>Documentation for built-in macros:</p>
+
+<ul>
+<li><code>cfn-tool-macros</code>(7)</li>
+</ul>
+
+
 <h2 id="COPYRIGHT">COPYRIGHT</h2>
 
 <p>Copyright © 2021 Micha Niskin <code>&lt;micha.niskin@gmail.com&gt;</code>, distributed under
 the following license:</p>
 
 <ul>
-<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.0.9/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.0.9/LICENSE</a></li>
+<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.0.10/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.0.10/LICENSE</a></li>
 </ul>
 
 
@@ -180,7 +208,7 @@ THE SOFTWARE.</p>
 
 
   <ol class='man-decor man-foot man foot'>
-    <li class='tl'>CloudFormation Tools 4.0.9</li>
+    <li class='tl'>CloudFormation Tools 4.0.10</li>
     <li class='tc'>April 2021</li>
     <li class='tr'>cfn-tool-update(1)</li>
   </ol>

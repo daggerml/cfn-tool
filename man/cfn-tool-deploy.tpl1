@@ -4,12 +4,12 @@ cfn-tool-deploy(1) -- deploy cloudformation stacks
 
 ## SYNOPSIS
 
-`cfn-tool` `deploy` [*option*...] <template-file> <stack-name>
+`cfn-tool` `deploy` [<OPTIONS>...] <TEMPLATE-FILE> <STACK-NAME>
 
 ## DESCRIPTION
 
-Deploys the template <template-file> to the cloudformation stack named
-<stack-name>. If a stack named <stack-name> already exists it is updated,
+Deploys the template <TEMPLATE-FILE> to the cloudformation stack named
+<STACK-NAME>. If a stack named <STACK-NAME> already exists it is updated,
 otherwise a new stack is created.
 
 Each raw template file is processed as follows: macros are expanded, nested
@@ -44,42 +44,44 @@ in shell commands using the `aws`(1) CLI tool, as the `AWS_PROFILE` environment
 variable is exported by `cfn-tool` to the environment in which the shell
 commands are executed.
 
-  * `-b`, `--bucket`=<name>:
-    Upload templates to the S3 bucket given by <name>. A bucket must be
+  * `-b`, `--bucket`=<NAME>:
+    Upload templates to the S3 bucket given by <NAME>. A bucket must be
     specified when nested stacks are used, or when the template specified by
-    <template-name> is more than 51KiB in size.
+    <TEMPLATE-FILE> is more than 51KiB in size.
 
-  * `-c`, `--config`=<file>:
-    Specify the config file to use. If this option is not specified `cfn-tool`
-    will look for a file named `.cfn-tool` in the current directory. This file
-    will be sourced in the `bash`(1) shell. Environment variables defined here
-    will be applied as default options.
+  * `-c`, `--config`=<FILE>:
+    Specify the config file load environment variables from. If this option is
+    not specified `cfn-tool` will look for a file named `.cfn-tool` in the
+    current directory. This file will be sourced in the `bash`(1) shell.
+    Environment variables defined here will be applied as default options.
 
   * `-k`, `--keep`:
-    Don't delete the temporary directory to which processed templates are
-    written when `cfn-tool` exits. This can be useful for debugging.
+    Don't delete the temporary directory containing processed templates when
+    `cfn-tool` exits. This can be useful for debugging.
 
-  * `-l`, `--linter`=<command>:
-    Run <command> on each processed template file, aborting if the <command>
-    fails. The template file path is appended to the <command> string and the
-    resulting command line is evaluated in the `bash`(1) shell. The working
-    directory is set to the directory in which the `cfn-tool` program was run.
+  * `-l`, `--linter`=<COMMAND>:
+    Run <COMMAND> on each processed template file, aborting if the <COMMAND>
+    fails. The template file path is appended to the <COMMAND> string and the
+    resulting command line is evaluated in the `bash`(1) shell (see the
+    `EXAMPLES` section below). The <COMMAND> is executed with its working
+    directory set to the current directory (ie. the directory in which the
+    `cfn-tool` program runs).
 
-  * `-p`, `--parameters`="<key>=<value> [<key>=<value> ...]":
+  * `-p`, `--parameters`="<KEY>=<VALUE> [<KEY>=<VALUE> ...]":
     Set template input parameter overrides. When updating an existing stack the
     values of any unspecified parameters will be preserved.
 
-  * `-p`, `--profile`=<name>:
-    Use the AWS profile given by <name> to configure the AWS credentials
+  * `-p`, `--profile`=<NAME>:
+    Use the AWS profile given by <NAME> to configure the AWS credentials
     provider chain.
 
   * `-q`, `--quiet`:
     Suppress all informational, diagnostic, and warning output.
 
-  * `-r`, `--region`=<name>:
-    Use the AWS region given by <name> for all AWS API calls.
+  * `-r`, `--region`=<NAME>:
+    Use the AWS region given by <NAME> for all AWS API calls.
 
-  * `-t`, `--tags`="<key>=<value> [<key>=<value> ...]":
+  * `-t`, `--tags`="<KEY>=<VALUE> [<KEY>=<VALUE> ...]":
     A list of tags to associate with the stack that is created or updated. AWS
     CloudFormation also propagates these tags to resources in the stack if the
     resource supports it.
@@ -107,7 +109,7 @@ variable. See the `OPTIONS` section above.
 
 The `cfn-tool` program will look for a configuration file specified by the
 `--config` option, the `CFN_TOOL_CONFIG` environment variable, or the default
-`.cfn-tool` file in the current working directory. When this file exists it is
+_.cfn-tool_ file in the current working directory. When this file exists it is
 sourced in the `bash`(1) shell and any configuration environment variables
 defined are used as defaults. Here is an example configuration file:
 
@@ -129,6 +131,18 @@ Exits with a status of 1 if an error occurred, or 0 otherwise.
 ## BUGS
 
 Please open an issue: <https://github.com/daggerml/cfn-tool/issues>.
+
+## SEE ALSO
+
+Man pages for other commands:
+
+  * `cfn-tool`(1)
+  * `cfn-tool-transform`(1)
+  * `cfn-tool-update`(1)
+
+Documentation for built-in macros:
+
+  * `cfn-tool-macros`(7)
 
 ## COPYRIGHT
 

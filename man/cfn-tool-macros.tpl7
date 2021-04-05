@@ -1,0 +1,638 @@
+<!-- vim: set ft=markdown: -->
+cfn-tool-macros(7) -- built-in macros for common use cases
+==========================================================
+
+## SYNOPSIS
+
+Documentation for the built-in macros provided by `cfn-tool`(1).
+
+## DESCRIPTION
+
+CloudFormation templates are structured &mdash; there are top-level forms (eg.
+the `Resources`, `Parameters`, `Mappings`, and `Outputs` sections), and there
+are a few macros that the CloudFormation system knows how to expand (eg.
+`!Sub`, `!Ref`, and `!Base64`).
+
+The `cfn-tool`(1) program provides the built-in macros described in this manual
+to satisfy the needs of some common use cases, for example:
+
+* Dynamic bindings for expressions used in multiple places within a template,
+  for a more DRY approach without admitting excessive logic to the process.
+
+* Evaluation of `bash`(1) or JavaScript snippets to generate resource names or
+  content (eg. UUIDs via `uuidgen`(1) or `git`(1) SHAs, for example).
+
+* Packaging of resources in the local filesystem &mdash; automatic `zip`(1)
+  compression of directories and upload to AWS S3, with the S3 URI injected
+  into the template (eg. upload a lambda function directory from the local
+  filesystem to S3 and inject the S3 URI as the `Code` property of the resource).
+
+* Run a build script prior to packaging (eg. run `npm install` before zipping
+  and uploading a lambda directory to S3).
+
+* And various other affordances to reduce the AWS CloudFormation boilerplate
+  required for common use cases.
+
+The philosophy is not to create a layer of abstraction on top of the one already
+provided by CloudFormation, as there really is no higher level abstraction that
+can be devised that would be any simpler &mdash; it would only be yet another
+layer of tooling that needs to be understood, in addition to the underlying
+CloudFormation template system.
+
+Instead, the `cfn-tool` macro preprocessor is designed to facilitate a reduction
+in the amount of typing required to define a CloudFormation template. All of the
+macros described in this manual are optional; `cfn-tool` is compatible with pure
+vanilla CloudFormation.
+
+## SHORT VS. FULL TAGS
+
+All of the macros in this manual may be invoked as _short tags_ (eg. `!Sub`),
+or as _full tags_ (eg. `Fn::Sub`). The first pass during macro expansion
+replaces all short tags with the corresponding full tag, so they can be used
+interchangeably in a template.
+
+### Chaining Short Tags
+
+Short tags applied to scalar arguments (eg. `!Ref Thing`) can not be chained,
+as the YAML syntax does not support this. For example, the following will raise
+a syntax error:
+
+    !Ref !Ref Thing
+
+To make this easier, all macros accepting scalar arguments also accept a list
+of a single item when preprocessed by `cfn-tool`. This includes the macros
+provided by CloudFormation itself. The above example can be achieved with
+`cfn-tool` as follows:
+
+    !Ref [ !Ref Thing ]
+
+Which expands to:
+
+    {"Ref": {"Ref": "Thing"}}
+
+This may seem pointless because the above is not a valid reference in a
+CloudFormation template, but this does actually make sense when `Thing` is a
+dynamic binding (via `!Let` below) bound to a string which can be resolved at
+macro expansion time.
+
+### Short Tags In Merge Context
+
+Macros which expand to objects will be automatically merged when applied in
+a merge context. For example, the following `!Parameters` macro:
+
+    Fn::Parameters:
+      - Foo
+      - Bar
+
+expands to the more verbose CloudFormation `Parameters` structure, and is
+merged into the document in place:
+
+    Parameters:
+      Foo:
+        Type: String
+      Bar:
+        Type: String
+
+Note that the full tag was required there, as the YAML syntax does not support
+short tags in a merge context. However, the special YAML merge syntax (the `<<`
+property name) can be applied to use a short tag. The above example then becomes:
+
+    <<: !Parameters
+      - Foo
+      - Bar
+
+which is equivalent to the full tag expression.
+
+## MACRO REFERENCE
+
+The following are macros provided by `cfn-tool`, and extensions to the macros
+provided by CloudFormation in some cases. CloudFormation-provided macros which
+are not extended by `cfn-tool` are not described here. See the `EXAMPLES`
+section below for a demonstration of how to use each macro.
+
+### CloudFormation Boilerplate Macros
+
+These macros are an attempt to reduce the amount of boilerplate required to
+accomplish various common CloudFormation template patterns.
+
+  * `!Parameters` `[` <NAME-PROPS>, ... `]`:
+    Populates the CloudFormation `Parameters` section from a sequence of
+    <NAME-PROPS>. Each <NAME-PROPS> in the sequence is a string of the parameter
+    <NAME> followed by optional <KEY>=<VALUE> properties, separated by spaces.
+    For example, a <NAME-PROPS> string could be `"Param1 Type=Number Default=42"`.
+    The default `Type` is `String`, and only the name is required.
+
+  * `!Resources` <MAPPING>:
+    Populates the CloudFormation `Resources` section from the <MAPPING> whose
+    keys may contain the `Type` and top-level properties, with the `Properties`
+    of the resource provided by the value associated with this key. Note that
+    within the `!Resources` macro body, regular vanilla CloudFormation is still
+    valid and is passed through verbatim.
+
+  * `!Return` <MAPPING>:
+    Populates the CloudFormation `Outputs` section from a simple <MAPPING> of
+    keys and values. Additional directives can be provided in the keys of the
+    <MAPPING> (such as the `Name` property), as shown in the `EXAMPLES` section
+    below. References in the keys are interpolated as with `!Sub`.
+
+  * `!Tags` <MAPPING>:
+    Expands a simple <MAPPING> to a list of resource tag structures with `Key`
+    and `Value` properties.
+
+### Binding Macros
+
+These macros bind values to names which can be referenced from multiple places
+within a template.
+
+  * `!Let` <MAPPING>:
+    Binds each value of <MAPPING> to the name given by the associated key.
+    These are dynamic bindings &mdash; the bound values are expanded when they
+    are referenced in the document, not when they are bound, and any references
+    within the bound values themselves are resolved then, too. The `!Let`
+    expression itself expands to `null` and does not appear in the final
+    document.
+
+  * `!Let` `[` <MAPPING>, <EXPR> `]`:
+    Establishes bindings for the scope of a single expression. The first item
+    in the sequence is the <MAPPING> of binding pairs, and the second item is
+    the <EXPR> to be expanded within the scope of these bindings, and whose
+    expansion is returned as the result.
+
+### References
+
+These macros are used to refer to resources, mappings, attributes, etc.,
+including bindings and other constructs introduced by the `cfn-tool` macro
+system.
+
+  * `!Ref` <NAME>:
+    The CloudFormation `!Ref` intrinsic function has been extended to support
+    various new types of references in addition to its normal functionality.
+    The type of reference is denoted by a sigil prefixing the name: `$` for
+    environment variables, `%` for `Mapping` section lookup, and `@` for
+    `!GetAtt` resource attributes. Bound names (see `Binding Macros` above) are
+    referenced with no prefix.
+
+  * `!Sub` <TEMPLATE>:
+    References inside the curly-brace `${`...`}` in the <TEMPLATE> may be any
+    name understood by `!Ref`. For example, `${$FOO}` in the <TEMPLATE> would
+    be substituted with the value associated with the `FOO` environment variable,
+    and `${@MyRole.Arn}` would be substituted with `!GetAtt` `MyRole.Arn`.
+
+  * `!Var` <TEMPLATE>:
+    Expands to an `!ImportValue` expression, with `!Sub` style interpolation of
+    the <TEMPLATE>.
+
+### Packaging Macros
+
+These macros package files or directories from the local filesystem, upload
+them to S3, and return the S3 coordinates in different forms as their result.
+All of these macros accept an argument which can be either a <PATH> or a
+<MAPPING>.
+
+  * `!Package` <PATH>:
+    Returns a mapping with `S3Bucket` and `S3Key` properties, suitable for use with
+    the `Code` property of an AWS Lambda function resource, for instance.
+
+  * `!Package` `{` `Path`: <PATH>, `Parse`: <BOOL>, `CacheKey`: <KEY> `}`:
+    Returns a mapping as above. The `Path` property is required. The `Parse`
+    property indicates whether the <PATH> is a YAML file that should be parsed
+    and macro expanded prior to packaging. The `CacheKey` property allows the
+    user to provide a string which will be used instead of the MD5 hash of the
+    package contents when determining the filename in S3.
+
+  * `!PackageURI` <PATH-OR-MAPPING>:
+    Returns a URI with the _s3://_ protocol. The <MAPPING> argument is as above.
+
+  * `!PackageURL` <PATH-OR-MAPPING>:
+    Returns the HTTPS URL of the S3 object. The <MAPPING> argument is as above.
+
+  * `!PackageTemplateURL` <PATH-OR-MAPPING>:
+    Like `PackageURL` above, but parses and expands macros before packaging.
+    The <MAPPING> argument is as above, as well.
+
+### File I/O Macros
+
+These macros allow the user to read files from the local filesystem and
+incorporate the data into the template.
+
+  * `!File` <FILE>:
+    Reads a local file and returns its contents as a string. The path is
+    resolved relative to the directory containing the template.
+
+  * `!TemplateFile` <FILE>:
+    Reads a local YAML file, parses it, expands macros, and merges the result
+    into the document. The path is relative to the directory containing the
+    template in which the `!TemplateFile` macro is expanded.
+
+### Serialization And Deserialization Macros
+
+These macros are used to serialize and deserialize values in a template (eg.
+when a resource property expects a JSON payload which might be easier to type
+out in YAML when writing the template).
+
+  * `!JsonDump` <DATA>:
+    Returns a JSON string representing the given <DATA>.
+
+  * `!JsonParse` <JSON>:
+    Parses the <JSON> string, returning the result as data.
+
+  * `!YamlDump` <DATA>:
+    Returns a YAML string representing the given <DATA>.
+
+  * `!YamlParse` <YAML>:
+    Parses a <YAML> string and returns the resulting data.
+
+### Shell Command Macros
+
+These macros provide the user with the ability to evaluate commands in a shell
+to generate values and names for use in templates.
+
+  * `!Js` <BODY>:
+    Evaluates a JavaScript function <BODY> string, returning the result. The
+    working directory is set to the template directory, and the `this` object
+    is set to the `CfnTransformer` instance (see the `TRANSFORMER API` section
+    below).
+
+  * `!Js` `[` <BODY>, <MAPPING> `]`:
+    Evaluates the JavaScript function <BODY> string as above, with local
+    variables set according to the given <MAPPING>.
+
+  * `!Shell` <SCRIPT>:
+    Evaluates a shell <SCRIPT> string in `bash`(1), returning its output on
+    `stdout` as a string. If the output ends with a newline it is removed. Only
+    a single trailing newline is removed &mdash; add an extra newline to the
+    script's output if preserving the trailing newline is desired.
+
+  * `!Shell` `[` <SCRIPT>, <MAPPING> `]`:
+    Evaluates a shell <SCRIPT> in `bash`(1) as above, with variables set
+    according to the given <MAPPING>.
+
+### Merging Macros
+
+These macros allow the user to merge objects in various ways, deep or shallow.
+
+  * `!DeepMerge` `[` <MAPPING>, ... `]`:
+    Performs a deep merge of two or more mappings, returning the result.
+
+  * `!Merge` `[` <MAPPING>, ... `]`:
+    Performs a shallow merge of two or more mappings and returns the result.
+
+### Macro Combinators
+
+These macros provide the means to combine other macro expressions in various
+ways.
+
+  * `!Do` `[` <EXPR>, ... `]`:
+    Expands each <EXPR> in the sequence in order (presumably for side-effects),
+    returning the expansion of the last one as the result.
+
+### Extension Macros
+
+These macros allow the user to add his own custom macros or extend the
+capabilities of the built-in macro system within the scope of the template.
+
+  * `!Require` <FILE>:
+    Loads the given JavaScript <FILE>. The user may define custom macros in
+    this file. The <FILE> path is relative to the template's directory. The
+    `!Require` macro itself expands to `null` and does not appear in the final
+    document.
+
+  * `!Require` `[` <FILE>, ... `]`:
+    As above, but loads multiple JavaScript files.
+
+## TRANSFORMER API
+
+Within the body of the `!Js` macro and in JavaScript modules loaded via the
+`!Require` macro the `this` object is bound to the `CfnTransformer` instance,
+which has the following API methods:
+
+  * `defmacro`(<NAME>, <FUNCTION>):
+    Defines a new macro. The <FUNCTION> receives a single argument, the form
+    to be expanded. The location in the template where the macro was called
+    is replaced by the value returned by <FUNCTION>. The returned value may
+    also contain macro calls, which are automatically expanded as required.
+    The new macros is immediately available anywhere in the template in which
+    it was defined, but not in nested or parent templates.
+
+  * `macroexpand`(<FORM>):
+    Expands all macros in <FORM>, recursively and repeatedly, until <FORM> has
+    been completely expanded and is suitable for consumption by CloudFormation.
+    This method is used mostly by macros to process their arguments when code
+    walking is necessary.
+
+## EXAMPLES
+
+The following examples demonstrate how to use the macros described above. Each
+example consists of an `INPUT` template (the source) and a `RESULT` template
+reflecting the final document with all macros expanded. Some macros in the
+examples refer to a file in the local filesystem, in which case the contents
+and path of the file (relative to the `INPUT` template) is provided in a `FILE`
+section.
+
+`!DeepMerge`
+
+    # INPUT
+    Foo: !DeepMerge
+      - Numeros:
+          Uno: 1
+          Dos: 2
+          Cuatro: 4
+      - Numeros:
+          Dos: two
+          Tres: three
+
+    # RESULT
+    Foo:
+      Numeros:
+        Uno: 1
+        Dos: two
+        Tres: three
+        Cuatro: 4
+
+`!Do`
+
+    # INPUT
+    Foo: !Do
+      - !Shell make build
+      - !Package dist/
+
+    # RESULT
+    Foo:
+      S3Bucket: mybucket
+      S3Key: 6806d30eed132b19183a51be47264629.zip
+
+`!File`
+
+    # INPUT
+    Script: !File doit.sh
+
+    # RESULT
+    Script: |
+      #!/bin/bash
+      name=joe
+      echo "hello, $name"
+
+`!Js`
+
+    # INPUT
+    Foo: !Js "return 'hello, world!'"
+    Bar: !Js
+      - "return GREET + ', ' + NAME + '!'"
+      - GREET: salve
+        NAME: orbis
+
+    # RESULT
+    Foo: hello, world!
+    Bar: salve, orbis!
+
+`!JsonDump`
+
+    # INPUT
+    Foo: !JsonDump
+      Bar:
+        Baz: baf
+
+    # RESULT
+    Foo: '{"Bar":{"Baz":"baf"}}'
+
+`!JsonParse`
+
+    # INPUT
+    Foo: !JsonParse '{"Bar":{"Baz":"baf"}}'
+
+    # RESULT
+    Foo1:
+      Bar:
+        Baz: baf
+
+`!Let`
+
+    # INPUT
+    <<: !Let
+      Foo: !If [ Bar, Baz, Baf ]
+    Foop: !Ref Foo
+    Barp: !Let
+      - Foo: !Shell echo hello, world!
+      - !Ref Foo
+
+    # RESULT
+    Foop: !If [ Bar, Baz, Baf ]
+    Barp: hello, world!
+
+`!Merge`
+
+    # INPUT
+    Foo: !Merge
+      - Uno: 1
+      - Dos: 2
+        Tres: 3
+
+    # RESULT
+    Foo:
+      Uno: 1
+      Dos: 2
+      Tres: 3
+
+`!Package`
+
+    # INPUT
+    Code: !Package foo/
+
+    # RESULT
+    Code:
+      S3Bucket: mybucket
+      S3Key: 6806d30eed132b19183a51be47264629.zip
+
+`!PackageURI`
+
+    # INPUT
+    Foo: !PackageURI foo/
+
+    # RESULT
+    Foo: s3://mybucket/6806d30eed132b19183a51be47264629.zip
+
+`!PackageURL`
+
+    # INPUT
+    Foo: !PackageURL foo/
+
+    # RESULT
+    Foo: https://s3.amazonaws.com/mybucket/6806d30eed132b19183a51be47264629.zip
+
+`!PackageTemplateURL`
+
+    # INPUT
+    Foo: !PackageTemplateURL infra/mytemplate.yml
+
+    # OUTPUT
+    Foo: https://s3.amazonaws.com/mybucket/6806d30eed132b19183a51be47264629.yml
+
+`!Parameters`
+
+    # INPUT
+    <<: !Parameters
+      - Foo
+      - Bar Type=Number Default=42
+
+    # RESULT
+    Parameters:
+      Foo:
+        Type: String
+      Bar:
+        Type: Number
+        Default: 42
+
+`!Require`
+
+    # FILE: ./lib/case-macros.js
+    module.exports = (compiler) => {
+      compiler.defmacro('UpperCase', (form) => form.toUpperCase());
+      compiler.defmacro('LowerCase', (form) => form.toLowerCase());
+    };
+
+    # INPUT
+    <<: !Require ./lib/case-macros
+    Foo: !UpperCase AsDf
+    Bar: !LowerCase AsDf
+
+    # RESULT
+    Foo: ASDF
+    Bar: asdf
+
+`!Resources`
+
+    # INPUT
+    <<: !Resources
+      MyBucket AWS::S3::Bucket Condition=Create DependsOn=[Foo,Bar]:
+        BucketName: !Ref Name
+
+    # RESULT
+    Resources:
+      MyBucket:
+        Type: AWS::S3::Bucket
+        Condition: Create
+        DependsOn:
+          - Foo
+          - Bar
+        Properties:
+          BucketName: !Ref Name
+
+`!Return`
+
+    # INPUT
+    <<: !Return
+      Key1: !Ref Val1
+      Key2 Name=key2-${AWS::Region}: !Ref Val2
+
+    # RESULT
+    Outputs:
+      Key1:
+        Value:
+          Ref: Val1
+      Key2:
+        Value:
+          Ref: Val2
+        Name: !Sub key2-${AWS::Region}
+
+`!Shell`
+
+    # INPUT
+    Foo: !Shell uuidgen -t
+    Bar: !Shell
+      - echo "$GREET, $NAME!"
+      - GREET: hello
+        NAME: world
+
+    # RESULT
+    Foo: 53480aea-8c46-11eb-a4b0-61c2b0470324
+    Bar: hello, world!
+
+`!Tags`
+
+    # INPUT
+    Tags: !Tags
+      Foo: Bar
+      Baz: Baf
+
+    # RESULT
+    Tags:
+      - Key: Foo
+        Value: Bar
+      - Key: Baz
+        Value: Baf
+
+`!TemplateFile`
+
+    # FILE: ./foo/config.yml
+    Foo:
+      Bar: baz
+
+    # INPUT
+    Config: !TemplateFile ./foo/config.yml
+
+    # RESULT
+    Config:
+      Foo:
+        Bar: baz
+
+`!Var`
+
+    # INPUT
+    Foo: !Var supercollider-${AWS::Region}
+
+    # RESULT
+    Foo:
+      Fn::ImportValue:
+        !Sub supercollider-${AWS::Region}
+
+`!YamlDump`
+
+    # INPUT
+    Foo: !YamlDump
+      Bar:
+        Baz: baf
+
+    # RESULT
+    Foo: |
+      Bar:
+        Baz: baf
+
+`!YamlParse`
+
+    # INPUT
+    Foo: !YamlParse |
+      Bar:
+        Baz: baf
+
+    # RESULT
+    Foo:
+      Bar:
+        Baz: baf
+
+## BUGS
+
+Please open an issue: <https://github.com/daggerml/cfn-tool/issues>.
+
+## SEE ALSO
+
+Man pages for the `cfn-tool` commands:
+
+  * `cfn-tool`(1)
+  * `cfn-tool-deploy`(1)
+  * `cfn-tool-transform`(1)
+  * `cfn-tool-update`(1)
+
+## COPYRIGHT
+
+Copyright © ${YEAR} Micha Niskin `<micha.niskin@gmail.com>`, distributed under
+the following license:
+
+* <https://raw.githubusercontent.com/daggerml/cfn-tool/${VERSION}/LICENSE>
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.

@@ -4,8 +4,9 @@ BRANCH     = $(shell git symbolic-ref -q HEAD |grep ^refs/heads/ |cut -d/ -f3-)
 DIRTY      = $(shell git status --porcelain)
 TAG_EXISTS = $(shell git ls-remote --tags |awk '{print $$2}' |grep ^refs/tags/ |cut -d/ -f3- |grep $(VERSION))
 OBJS       = index.js $(shell find lib/ -name '*.coffee' |sed 's@coffee$$@js@')
-MANS       = $(shell find man/ -name '*.tpl' |sed 's@tpl$$@1@')
-HTMLS      = $(shell find man/ -name '*.tpl' |sed 's@tpl$$@html@')
+MAN1S      = $(shell find man/ -name '*.tpl1' |sed 's@tpl1$$@1@')
+MAN7S      = $(shell find man/ -name '*.tpl7' |sed 's@tpl7$$@7@')
+HTMLS      = $(shell find man/ -name '*.tpl?' |sed 's@tpl.$$@html@')
 YEAR       = $(shell date +%Y)
 
 .PHONY: all clean compile docs test push
@@ -14,13 +15,13 @@ all: compile docs test
 
 compile: $(OBJS)
 
-docs: README.md $(MANS) $(HTMLS)
+docs: README.md $(MAN1S) $(MAN7S) $(HTMLS)
 
 test: compile package-lock.json
 	npm test
 
 clean:
-	rm -f $(OBJS) $(MANS) $(HTMLS)
+	rm -f $(OBJS) $(MAN1S) $(HTMLS)
 
 push: all
 	[ -n "$(VERSION)" ]
@@ -41,7 +42,18 @@ print-%:
 %.md: %.tpl package-lock.json
 	VERSION=$(VERSION) YEAR=$(YEAR) envsubst '$${VERSION} $${YEAR}' < $< > $@
 
+%.md: %.tpl1 package-lock.json
+	VERSION=$(VERSION) YEAR=$(YEAR) envsubst '$${VERSION} $${YEAR}' < $< > $@
+
+%.md: %.tpl7 package-lock.json
+	VERSION=$(VERSION) YEAR=$(YEAR) envsubst '$${VERSION} $${YEAR}' < $< > $@
+
 %.1: %.md package-lock.json
+	docker run --rm -v $(PWD):/app -w /app msoap/ruby-ronn \
+		ronn -r --pipe --manual 'CloudFormation Tools' \
+			--organization 'CloudFormation Tools $(VERSION)' $< > $@
+
+%.7: %.md package-lock.json
 	docker run --rm -v $(PWD):/app -w /app msoap/ruby-ronn \
 		ronn -r --pipe --manual 'CloudFormation Tools' \
 			--organization 'CloudFormation Tools $(VERSION)' $< > $@

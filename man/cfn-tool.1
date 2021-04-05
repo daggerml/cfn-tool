@@ -1,7 +1,7 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "CFN\-TOOL" "1" "April 2021" "CloudFormation Tools 4.0.9" "CloudFormation Tools"
+.TH "CFN\-TOOL" "1" "April 2021" "CloudFormation Tools 4.0.10" "CloudFormation Tools"
 .
 .SH "NAME"
 \fBcfn\-tool\fR \- extra tools for working with aws cloudformation
@@ -10,13 +10,16 @@
 \fBcfn\-tool\fR [\fB\-h\fR|\fB\-\-help\fR|\fB\-V\fR|\fB\-\-version\fR]
 .
 .br
-\fBcfn\-tool\fR \fIcommand\fR [\fIoption\fR\.\.\.] [\fIargument\fR\.\.\.]
+\fBcfn\-tool\fR \fICOMMAND\fR [\fIOPTIONS\fR\.\.\.] [\fIARGUMENTS\fR\.\.\.]
 .
 .SH "DESCRIPTION"
 This program provides extra tools for working with AWS CloudFormation including a template macro preprocessor, resource packaging, extended support for nested stacks, additional stack deployment options (like template linting, for example), and more\.
 .
+.P
+The macro preprocessor provides a variety of generally useful, built\-in macros to handle common use cases, and can be extended via JavaScript modules loaded at macro expansion time (see \fBcfn\-tool\-macros\fR(7) for details)\.
+.
 .SH "COMMANDS"
-The first argument to \fBcfn\-tool\fR is the \fBcommand\fR\. Each command has its own set of options and required positional parameters, as described in its manual page\.
+The first argument to \fBcfn\-tool\fR is the \fICOMMAND\fR\. Each command has its own set of options and required positional parameters, as described in its manual page\.
 .
 .SH "BASH COMPLETION"
 Add the following to your \fBbash\fR(1) configuration:
@@ -30,6 +33,9 @@ complete \-o default \-C $(which cfn\-tool\-completer) cfn\-tool
 .fi
 .
 .IP "" 0
+.
+.SH "BUGS"
+Please open an issue: \fIhttps://github\.com/daggerml/cfn\-tool/issues\fR\.
 .
 .SH "SEE ALSO"
 Each command has its own man page:
@@ -45,14 +51,19 @@ Each command has its own man page:
 .
 .IP "" 0
 .
-.SH "BUGS"
-Please open an issue: \fIhttps://github\.com/daggerml/cfn\-tool/issues\fR\.
+.P
+Documentation for built\-in macros:
+.
+.IP "\(bu" 4
+\fBcfn\-tool\-macros\fR(7)
+.
+.IP "" 0
 .
 .SH "COPYRIGHT"
 Copyright © 2021 Micha Niskin \fB<micha\.niskin@gmail\.com>\fR, distributed under the following license:
 .
 .IP "\(bu" 4
-\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/4\.0\.9/LICENSE\fR
+\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/4\.0\.10/LICENSE\fR
 .
 .IP "" 0
 .
