@@ -144,6 +144,13 @@ accomplish various common CloudFormation template patterns.
 These macros bind values to names which can be referenced from multiple places
 within a template.
 
+  * `!Mappings` <MAPPING>:
+    Establishes global mappings and returns a CloudFormation `Mappings` section.
+    When this macro is used in a nested stack the global mappings established
+    in the parent stack are deep-merged with the <MAPPING>, which can be `null`
+    when no new mappings are desired. Mappings set in the nested stack are not
+    propagated back to the parent.
+
   * `!Let` <MAPPING>:
     Binds each value of <MAPPING> to the name given by the associated key.
     These are dynamic bindings &mdash; the bound values are expanded when they
@@ -253,7 +260,7 @@ to generate values and names for use in templates.
     is set to the `CfnTransformer` instance (see the `TRANSFORMER API` section
     below).
 
-  * `!Js` `[` <BODY>, <MAPPING> `]`:
+  * `!Js` `[` <MAPPING>, <BODY> `]`:
     Evaluates the JavaScript function <BODY> string as above, with local
     variables set according to the given <MAPPING>.
 
@@ -263,7 +270,7 @@ to generate values and names for use in templates.
     a single trailing newline is removed &mdash; add an extra newline to the
     script's output if preserving the trailing newline is desired.
 
-  * `!Shell` `[` <SCRIPT>, <MAPPING> `]`:
+  * `!Shell` `[` <MAPPING>, <SCRIPT> `]`:
     Evaluates a shell <SCRIPT> in `bash`(1) as above, with variables set
     according to the given <MAPPING>.
 
@@ -306,6 +313,9 @@ Within the body of the `!Js` macro and in JavaScript modules loaded via the
 `!Require` macro the `this` object is bound to the `CfnTransformer` instance,
 which has the following API methods:
 
+  * `bindings`():
+    Returns the current bindings (see `Binding Macros` above).
+
   * `defmacro`(<NAME>, <FUNCTION>):
     Defines a new macro. The <FUNCTION> receives a single argument, the form
     to be expanded. The location in the template where the macro was called
@@ -319,6 +329,36 @@ which has the following API methods:
     been completely expanded and is suitable for consumption by CloudFormation.
     This method is used mostly by macros to process their arguments when code
     walking is necessary.
+
+  * `options`():
+    Returns the instance's configuration options. These options include command
+    line options set by the user and a few additional flags set internally by
+    `cfn-tool`.
+
+  * `tmpPath`(<NAME>):
+    Constructs a path for a file named <NAME> in the temporary directory
+    managed by `cfn-tool`. This directory is automatically deleted on exit.
+
+  * `userPath`(<PATH>):
+    Resolves <PATH> relative to `cfn-tool`'s working directory. This is the
+    path the user expects to see, as the working directory is set to the
+    template's directory during macro expansion.
+
+  * `withBindings`(<BINDINGS>, <FUNCTION>):
+    Creates a new scope with the <BINDINGS> and calls <FUNCTION> with no
+    arguments, then restores the previous scope and returns the <FUNCTION>'s
+    result.
+
+  * `withCache`(<KEY>, <FUNCTION>):
+    Given a <KEY> which can be any JSON-able data and a <FUNCTION> of no
+    arguments, checks the cache for <KEY> (as JSON). If <KEY> is found the
+    cached value is returned, otherwise the <FUNCTION> is called and the
+    result is added to the cache and returned.
+
+  * `withCwd`(<DIR>, <FUNCTION>):
+    Sets the current working directory to <DIR> and calls the <FUNCTION> with
+    no arguments. Then the previous working directory is restored and the
+    <FUNCTION>'s result is returned.
 
 ## EXAMPLES
 
@@ -377,9 +417,9 @@ section.
     # INPUT
     Foo: !Js "return 'hello, world!'"
     Bar: !Js
-      - "return GREET + ', ' + NAME + '!'"
       - GREET: salve
         NAME: orbis
+      - "return GREET + ', ' + NAME + '!'"
 
     # RESULT
     Foo: hello, world!
@@ -539,9 +579,9 @@ section.
     # INPUT
     Foo: !Shell uuidgen -t
     Bar: !Shell
-      - echo "$GREET, $NAME!"
       - GREET: hello
         NAME: world
+      - echo "$GREET, $NAME!"
 
     # RESULT
     Foo: 53480aea-8c46-11eb-a4b0-61c2b0470324

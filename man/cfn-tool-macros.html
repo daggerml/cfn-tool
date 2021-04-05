@@ -224,6 +224,11 @@ and <code>Value</code> properties.</p></dd>
 within a template.</p>
 
 <dl>
+<dt><code>!Mappings</code> <var>MAPPING</var></dt><dd><p>Establishes global mappings and returns a CloudFormation <code>Mappings</code> section.
+When this macro is used in a nested stack the global mappings established
+in the parent stack are deep-merged with the <var>MAPPING</var>, which can be <code>null</code>
+when no new mappings are desired. Mappings set in the nested stack are not
+propagated back to the parent.</p></dd>
 <dt><code>!Let</code> <var>MAPPING</var></dt><dd><p>Binds each value of <var>MAPPING</var> to the name given by the associated key.
 These are dynamic bindings &mdash; the bound values are expanded when they
 are referenced in the document, not when they are bound, and any references
@@ -319,13 +324,13 @@ to generate values and names for use in templates.</p>
 working directory is set to the template directory, and the <code>this</code> object
 is set to the <code>CfnTransformer</code> instance (see the <code>TRANSFORMER API</code> section
 below).</p></dd>
-<dt><code>!Js</code> <code>[</code> <var>BODY</var>, <var>MAPPING</var> <code>]</code></dt><dd><p>Evaluates the JavaScript function <var>BODY</var> string as above, with local
+<dt><code>!Js</code> <code>[</code> <var>MAPPING</var>, <var>BODY</var> <code>]</code></dt><dd><p>Evaluates the JavaScript function <var>BODY</var> string as above, with local
 variables set according to the given <var>MAPPING</var>.</p></dd>
 <dt><code>!Shell</code> <var>SCRIPT</var></dt><dd><p>Evaluates a shell <var>SCRIPT</var> string in <code>bash</code>(1), returning its output on
 <code>stdout</code> as a string. If the output ends with a newline it is removed. Only
 a single trailing newline is removed &mdash; add an extra newline to the
 script's output if preserving the trailing newline is desired.</p></dd>
-<dt><code>!Shell</code> <code>[</code> <var>SCRIPT</var>, <var>MAPPING</var> <code>]</code></dt><dd><p>Evaluates a shell <var>SCRIPT</var> in <code>bash</code>(1) as above, with variables set
+<dt><code>!Shell</code> <code>[</code> <var>MAPPING</var>, <var>SCRIPT</var> <code>]</code></dt><dd><p>Evaluates a shell <var>SCRIPT</var> in <code>bash</code>(1) as above, with variables set
 according to the given <var>MAPPING</var>.</p></dd>
 </dl>
 
@@ -372,6 +377,7 @@ document.</p></dd>
 which has the following API methods:</p>
 
 <dl>
+<dt><code>bindings</code>()</dt><dd><p>Returns the current bindings (see <code>Binding Macros</code> above).</p></dd>
 <dt><code>defmacro</code>(<var>NAME</var>, <var>FUNCTION</var>)</dt><dd><p>Defines a new macro. The <var>FUNCTION</var> receives a single argument, the form
 to be expanded. The location in the template where the macro was called
 is replaced by the value returned by <var>FUNCTION</var>. The returned value may
@@ -382,6 +388,24 @@ it was defined, but not in nested or parent templates.</p></dd>
 been completely expanded and is suitable for consumption by CloudFormation.
 This method is used mostly by macros to process their arguments when code
 walking is necessary.</p></dd>
+<dt><code>options</code>()</dt><dd><p>Returns the instance's configuration options. These options include command
+line options set by the user and a few additional flags set internally by
+<code>cfn-tool</code>.</p></dd>
+<dt><code>tmpPath</code>(<var>NAME</var>)</dt><dd><p>Constructs a path for a file named <var>NAME</var> in the temporary directory
+managed by <code>cfn-tool</code>. This directory is automatically deleted on exit.</p></dd>
+<dt><code>userPath</code>(<var>PATH</var>)</dt><dd><p>Resolves <var>PATH</var> relative to <code>cfn-tool</code>'s working directory. This is the
+path the user expects to see, as the working directory is set to the
+template's directory during macro expansion.</p></dd>
+<dt><code>withBindings</code>(<var>BINDINGS</var>, <var>FUNCTION</var>)</dt><dd><p>Creates a new scope with the <var>BINDINGS</var> and calls <var>FUNCTION</var> with no
+arguments, then restores the previous scope and returns the <var>FUNCTION</var>'s
+result.</p></dd>
+<dt><code>withCache</code>(<var>KEY</var>, <var>FUNCTION</var>)</dt><dd><p>Given a <var>KEY</var> which can be any JSON-able data and a <var>FUNCTION</var> of no
+arguments, checks the cache for <var>KEY</var> (as JSON). If <var>KEY</var> is found the
+cached value is returned, otherwise the <var>FUNCTION</var> is called and the
+result is added to the cache and returned.</p></dd>
+<dt><code>withCwd</code>(<var>DIR</var>, <var>FUNCTION</var>)</dt><dd><p>Sets the current working directory to <var>DIR</var> and calls the <var>FUNCTION</var> with
+no arguments. Then the previous working directory is restored and the
+<var>FUNCTION</var>'s result is returned.</p></dd>
 </dl>
 
 
@@ -445,9 +469,9 @@ Script: |
 <pre><code># INPUT
 Foo: !Js "return 'hello, world!'"
 Bar: !Js
-  - "return GREET + ', ' + NAME + '!'"
   - GREET: salve
     NAME: orbis
+  - "return GREET + ', ' + NAME + '!'"
 
 # RESULT
 Foo: hello, world!
@@ -620,9 +644,9 @@ Outputs:
 <pre><code># INPUT
 Foo: !Shell uuidgen -t
 Bar: !Shell
-  - echo "$GREET, $NAME!"
   - GREET: hello
     NAME: world
+  - echo "$GREET, $NAME!"
 
 # RESULT
 Foo: 53480aea-8c46-11eb-a4b0-61c2b0470324
@@ -718,7 +742,7 @@ Foo:
 the following license:</p>
 
 <ul>
-<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.0.10/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.0.10/LICENSE</a></li>
+<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.1.0/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.1.0/LICENSE</a></li>
 </ul>
 
 
@@ -732,7 +756,7 @@ THE SOFTWARE.</p>
 
 
   <ol class='man-decor man-foot man foot'>
-    <li class='tl'>CloudFormation Tools 4.0.10</li>
+    <li class='tl'>CloudFormation Tools 4.1.0</li>
     <li class='tc'>April 2021</li>
     <li class='tr'>cfn-tool-macros(7)</li>
   </ol>

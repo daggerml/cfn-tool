@@ -16,7 +16,33 @@ does not expand strings that look like dates implicitly:
   expected:
     Foo: 2021-03-29
 
-expands Fn::Parameters macros:
+binds !Mappings globally:
+
+  nested:
+    - test/cfn-transformer/data/template2.yaml
+
+  template:
+    <<: !Mappings
+      Foo:
+        Bar:
+          Baz: baf
+    File: !TemplateFile data/template2.yaml
+
+  expected:
+    Mappings:
+      Foo:
+        Bar:
+          Baz: baf
+    File:
+      Mappings:
+        Foo:
+          Bar:
+            Baz: baf
+            Quux: zxcv
+          Omg:
+            Lol: ok
+
+expands !Parameters macros:
 
   template:
     <<: !Parameters
@@ -30,7 +56,7 @@ expands Fn::Parameters macros:
       Bar:
         Type: CommaDelimitedList
 
-creates dynamic bindings with Fn::Let:
+creates dynamic bindings with !Let:
 
   template:
     <<: !Let
@@ -149,7 +175,7 @@ ignores Refs it cannot transform:
     Foo:
       Ref: Thing
 
-expands Fn::Sub macros:
+expands !Sub macros:
 
   template:
     <<: !Let
@@ -173,7 +199,7 @@ expands Fn::Sub macros:
               - ARN
           - Four:testval1
 
-merges strings in Fn::Join:
+merges strings in !Join:
 
   template:
     <<: !Let
@@ -184,7 +210,7 @@ merges strings in Fn::Join:
   expected:
     Foo: 'one=1,two=2,myval=3'
 
-expands Fn::Resources macros:
+expands !Resources macros:
 
   template:
     <<: !Let
@@ -275,7 +301,7 @@ expands bound templates:
           Parameters:
             Param1: goodbye world
 
-expands Fn::Return macros:
+expands !Return macros:
 
   template:
     <<: !Return
@@ -298,29 +324,33 @@ expands Fn::Return macros:
         Export:
           Name: test-us-east-1-bazp
 
-executes Fn::Shell commands:
+executes !Shell commands:
 
   template:
     Foo: !Shell echo hello, world!
     Bar: !Shell
-      - echo $ZOOP
       - ZOOP: floop
+        QOOP: bloop
+      - echo $ZOOP $QOOP
 
   expected:
     Foo: hello, world!
-    Bar: floop
+    Bar: floop bloop
 
-executes Fn::Js commands:
+executes !Js commands:
 
   template:
     Foo: !Js "return 'hello, world!'"
     Bar: !Js
-      - return ZOOP
       - ZOOP: floop
+        QOOP: bloop
+      - return [ZOOP, QOOP]
 
   expected:
     Foo: hello, world!
-    Bar: floop
+    Bar:
+      - floop
+      - bloop
 
 packages regular files:
 
@@ -340,7 +370,7 @@ packages regular files:
         S3Key: 6f5902ac237024bdd0c176cb93063dc4.txt
       Baf: s3://foop/6f5902ac237024bdd0c176cb93063dc4.txt
 
-expands Fn::Do macros:
+expands !Do macros:
 
   template:
     Foo: !Do
@@ -397,7 +427,7 @@ recursively packages templates:
     Foo:
       Bar: https://s3.amazonaws.com/foop/14108f8899cbb3dc6629d94c22b2119c.yaml
 
-deep merges objects with Fn::DeepMerge:
+deep merges objects with !DeepMerge:
 
   template:
     Test1: !DeepMerge
@@ -412,7 +442,7 @@ deep merges objects with Fn::DeepMerge:
         Bar: 2
         Baz: 3
 
-loads template files with Fn::TemplateFile:
+loads template files with !TemplateFile:
 
   nested:
     -  test/cfn-transformer/data/config1.yaml
@@ -445,7 +475,7 @@ loads template files with Fn::TemplateFile:
           baz: 300
           baf: 500
 
-adds macros with Fn::Require:
+adds macros with !Require:
 
   template:
     <<: !Require ./lib/case-macros

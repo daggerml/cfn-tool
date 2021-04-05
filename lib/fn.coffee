@@ -123,12 +123,17 @@ rmCR = module.exports.rmCR = (x='') ->
 #------------------------------------------------------------------------------
 
 typeOf = module.exports.typeOf = (thing) ->
-  Object::toString.call(thing).slice(8,-1)
+  Object::toString.call(thing).slice(8, 11)
 
-isString  = module.exports.isString  = (x) -> typeOf(x) is 'String'
-isArray   = module.exports.isArray   = (x) -> typeOf(x) is 'Array'
-isObject  = module.exports.isObject  = (x) -> typeOf(x) is 'Object'
-isBoolean = module.exports.isBoolean = (x) -> typeOf(x) is 'Boolean'
+isString      = module.exports.isString     = (x) -> typeOf(x) is 'Str'
+isNumber      = module.exports.isNumber     = (x) -> typeOf(x) is 'Num'
+isArray       = module.exports.isArray      = (x) -> typeOf(x) is 'Arr'
+isObject      = module.exports.isObject     = (x) -> typeOf(x) is 'Obj'
+isBoolean     = module.exports.isBoolean    = (x) -> typeOf(x) is 'Boo'
+isNull        = module.exports.isNull       = (x) -> typeOf(x) is 'Nul'
+isUndefined   = module.exports.isUndefined  = (x) -> typeOf(x) is 'Und'
+isScalar      = module.exports.isScalar     = (x) -> typeOf(x) in ['Str', 'Num', 'Boo', 'Nul']
+isCollection  = module.exports.isCollection = (x) -> typeOf(x) in ['Arr', 'Obj']
 
 #------------------------------------------------------------------------------
 # assertion functions
@@ -140,9 +145,8 @@ assertOk = module.exports.assertOk = (x, msg, body) ->
 
 assertObject = module.exports.assertObject = (thing) ->
   assert.ok(typeOf(thing) in [
-    'Object'
-    'Undefined'
-    'Null'
+    'Obj'
+    'Nul'
   ], "expected an Object, got #{JSON.stringify(thing)}")
   thing
 

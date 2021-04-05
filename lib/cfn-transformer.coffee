@@ -67,7 +67,7 @@ interpolateSub = (form) ->
 #=============================================================================#
 
 class CfnTransformer extends YamlTransformer
-  constructor: ({@basedir, @cache, @opts} = {}) ->
+  constructor: ({@basedir, @cache, @opts, @maps} = {}) ->
     super()
 
     @opts           ?= {}
@@ -76,6 +76,7 @@ class CfnTransformer extends YamlTransformer
     @basedir        ?= process.cwd()
     @template       = null
     @needBucket     = false
+    @maps           = JSON.parse JSON.stringify(@maps or {})
     @resourceMacros = []
     @bindstack      = []
     @nested         = []
@@ -129,7 +130,7 @@ class CfnTransformer extends YamlTransformer
     @defmacro 'Sub', (form) =>
       form = if fn.isArray(form) and form.length is 1 then form[0] else form
       switch fn.typeOf(form)
-        when 'String' then {'Fn::Join': ['', interpolateSub(form)]}
+        when 'Str' then {'Fn::Join': ['', interpolateSub(form)]}
         else {'Fn::Sub': form}
 
     #=========================================================================#
@@ -146,6 +147,10 @@ class CfnTransformer extends YamlTransformer
 
     @defspecial 'Do', (form) =>
       fn.assertArray(form).reduce(((xs, x) => @walk(x)), null)
+
+    @defspecial 'Mappings', (form = {}) =>
+      @maps = fn.deepMerge @maps, form
+      {Mappings: @maps}
 
     #=========================================================================#
     # Define custom macros.                                                   #
@@ -203,13 +208,21 @@ class CfnTransformer extends YamlTransformer
       {'Fn::ImportValue': {'Fn::Sub': form}}
 
     @defmacro 'Shell', (form) =>
-      [form='', vars={}] = if fn.isArray(form) then form else [form]
+      [vars={}, form=''] = switch
+        when fn.isArray(form) and form.length is 2  then form
+        when fn.isArray(form) and form.length is 1  then [null].concat(form)
+        when fn.isString(form)                      then [null, form]
+        else throw new CfnError '!Shell: expected <string> or [<object>, <string>]'
       env = Object.assign({}, process.env, vars)
       @withCache {shell: [@template, form]}, () =>
         (fn.execShell(form, {env}) or '').replace(/\n$/, '')
 
     @defmacro 'Js', (form) =>
-      [form='', vars={}] = if fn.isArray(form) then form else [form]
+      [vars={}, form=''] = switch
+        when fn.isArray(form) and form.length is 2  then form
+        when fn.isArray(form) and form.length is 1  then [{}].concat(form)
+        when fn.isString(form)                      then [{}, form]
+        else throw new CfnError '!Js: expected <string> or [<object>, <string>]'
       args = Object.keys(vars)
       vals = args.reduce(((xs, x) -> xs.concat(["(#{JSON.stringify(vars[x])})"])), [])
       form = "return (function(#{args.join ','}){#{form}})(#{vals.join ','})"
@@ -326,6 +339,12 @@ class CfnTransformer extends YamlTransformer
     @keystack = old
     ret
 
+  bindings: () ->
+    Object.assign {}, @bindstack[@bindstack.length - 1]
+
+  options: () ->
+    Object.assign {}, @opts
+
   withBindings: (bindings, f) ->
     @bindstack.push(fn.merge({}, fn.peek(@bindstack), fn.assertObject(bindings)))
     ret = f()
@@ -352,7 +371,7 @@ class CfnTransformer extends YamlTransformer
     ret
 
   transformTemplateFile: (file) ->
-    xformer = new @.constructor({@basedir, @cache, @opts})
+    xformer = new @.constructor({@basedir, @cache, @opts, @maps})
     ret = xformer.transformFile(file)
     @nested = @nested.concat xformer.nested
     ret

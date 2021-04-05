@@ -49,6 +49,8 @@ EOT
 Foo: 53480aea-8c46-11eb-a4b0-61c2b0470324
 ```
 
+> **Note:** There are many macro usage examples in the [unit tests YAML file][6].
+
 # MANUALS
 
 See the manual pages for complete usage and options info:
@@ -67,3 +69,4 @@ And the built-in macros reference manual page:
 [3]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/${VERSION}/man/cfn-tool-transform.html
 [4]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/${VERSION}/man/cfn-tool-update.html
 [5]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/${VERSION}/man/cfn-tool-macros.html
+[6]: https://github.com/daggerml/cfn-tool/blob/master/test/cfn-transformer/cfn-transformer.tests.yaml

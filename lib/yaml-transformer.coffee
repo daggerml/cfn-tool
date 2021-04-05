@@ -39,8 +39,8 @@ class YamlTransformer
 
   walk: (thing) ->
     ret = switch fn.typeOf(thing)
-      when 'Object' then @walkObject(thing)
-      when 'Array'  then @walkArray(thing)
+      when 'Obj' then @walkObject(thing)
+      when 'Arr' then @walkArray(thing)
       else thing
     if fn.deepEqual(thing, ret) then ret else @walk(ret)
 

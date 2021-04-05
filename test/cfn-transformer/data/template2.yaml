@@ -1,0 +1,6 @@
+<<: !Mappings
+  Foo:
+    Bar:
+      Quux: zxcv
+    Omg:
+      Lol: ok

@@ -17,7 +17,7 @@ compile: $(OBJS)
 
 docs: README.md $(MAN1S) $(MAN7S) $(HTMLS)
 
-test: compile package-lock.json
+test:
 	npm test
 
 clean:
