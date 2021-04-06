@@ -252,9 +252,9 @@ system.</p>
 <dt><code>!Ref</code> <var>NAME</var></dt><dd><p>The CloudFormation <code>!Ref</code> intrinsic function has been extended to support
 various new types of references in addition to its normal functionality.
 The type of reference is denoted by a sigil prefixing the name: <code>$</code> for
-environment variables, <code>%</code> for <code>Mapping</code> section lookup, and <code>@</code> for
-<code>!GetAtt</code> resource attributes. Bound names (see <code>Binding Macros</code> above) are
-referenced with no prefix.</p></dd>
+environment variables, <code>%</code> for <code>Mapping</code> section <code>FindInMap</code> lookups, <code>@</code>
+for <code>!GetAtt</code> resource attributes, and <code>*</code> for <code>ImportValue</code> lookups.
+Bound names (see <code>Binding Macros</code> above) are referenced with no prefix.</p></dd>
 <dt><code>!Sub</code> <var>TEMPLATE</var></dt><dd><p>References inside the curly-brace <code>${</code>...<code>}</code> in the <var>TEMPLATE</var> may be any
 name understood by <code>!Ref</code>. For example, <code>${$FOO}</code> in the <var>TEMPLATE</var> would
 be substituted with the value associated with the <code>FOO</code> environment variable,
@@ -756,7 +756,7 @@ Foo:
 the following license:</p>
 
 <ul>
-<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.2.1/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.2.1/LICENSE</a></li>
+<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.3.0/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.3.0/LICENSE</a></li>
 </ul>
 
 
@@ -770,7 +770,7 @@ THE SOFTWARE.</p>
 
 
   <ol class='man-decor man-foot man foot'>
-    <li class='tl'>CloudFormation Tools 4.2.1</li>
+    <li class='tl'>CloudFormation Tools 4.3.0</li>
     <li class='tc'>April 2021</li>
     <li class='tr'>cfn-tool-macros(7)</li>
   </ol>

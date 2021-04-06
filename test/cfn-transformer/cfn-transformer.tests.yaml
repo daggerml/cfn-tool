@@ -93,6 +93,23 @@ creates dynamic bindings with !Let:
       MyNameIs: nobody
       MyAgeIs: 0
 
+resolves indirect !Let bindings:
+
+  template:
+    <<: !Let
+      Key: !Shell echo Foo1
+      Foo1:
+        Bar:
+          Baz: 100
+      Foo2:
+        Bar:
+          Baz: 200
+      Foo: !Ref [ !Ref Key ]
+    Foo: !Ref Foo.Bar.Baz
+
+  expected:
+    Foo: 100
+
 substitites bindings in Refs and Subs:
 
   template:
@@ -162,8 +179,34 @@ substitutes GetAtt lookups in Refs and Subs:
         - ''
         - - 'hello '
           - Fn::GetAtt:
-            - Thing
-            - ARN
+              - Thing
+              - ARN
+          - ' world!'
+
+substitutes ImportValue lookups in Refs and Subs:
+
+  template:
+    Foo: !Ref '*Thing::${AWS::Region}::Arn'
+    Bar: !Sub 'hello ${*Thing::${AWS::Region}::Arn} world!'
+
+  expected:
+    Foo:
+      Fn::ImportValue:
+        Fn::Join:
+          - ''
+          - - 'Thing::'
+            - Ref: AWS::Region
+            - '::Arn'
+    Bar:
+      Fn::Join:
+        - ''
+        - - 'hello '
+          - Fn::ImportValue:
+              Fn::Join:
+                - ''
+                - - 'Thing::'
+                  - Ref: AWS::Region
+                  - '::Arn'
           - ' world!'
 
 ignores Refs it cannot transform:

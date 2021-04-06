@@ -1,7 +1,7 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "CFN\-TOOL\-MACROS" "7" "April 2021" "CloudFormation Tools 4.2.1" "CloudFormation Tools"
+.TH "CFN\-TOOL\-MACROS" "7" "April 2021" "CloudFormation Tools 4.3.0" "CloudFormation Tools"
 .
 .SH "NAME"
 \fBcfn\-tool\-macros\fR \- built\-in macros for common use cases
@@ -175,7 +175,7 @@ These macros are used to refer to resources, mappings, attributes, etc\., includ
 .
 .TP
 \fB!Ref\fR \fINAME\fR
-The CloudFormation \fB!Ref\fR intrinsic function has been extended to support various new types of references in addition to its normal functionality\. The type of reference is denoted by a sigil prefixing the name: \fB$\fR for environment variables, \fB%\fR for \fBMapping\fR section lookup, and \fB@\fR for \fB!GetAtt\fR resource attributes\. Bound names (see \fBBinding Macros\fR above) are referenced with no prefix\.
+The CloudFormation \fB!Ref\fR intrinsic function has been extended to support various new types of references in addition to its normal functionality\. The type of reference is denoted by a sigil prefixing the name: \fB$\fR for environment variables, \fB%\fR for \fBMapping\fR section \fBFindInMap\fR lookups, \fB@\fR for \fB!GetAtt\fR resource attributes, and \fB*\fR for \fBImportValue\fR lookups\. Bound names (see \fBBinding Macros\fR above) are referenced with no prefix\.
 .
 .TP
 \fB!Sub\fR \fITEMPLATE\fR
@@ -848,7 +848,7 @@ Man pages for the \fBcfn\-tool\fR commands:
 Copyright © 2021 Micha Niskin \fB<micha\.niskin@gmail\.com>\fR, distributed under the following license:
 .
 .IP "\(bu" 4
-\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/4\.2\.1/LICENSE\fR
+\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/4\.3\.0/LICENSE\fR
 .
 .IP "" 0
 .

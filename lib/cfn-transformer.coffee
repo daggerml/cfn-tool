@@ -116,14 +116,22 @@ class CfnTransformer extends YamlTransformer
       {Condition: if fn.isArray(form) then form[0] else form}
 
     @defmacro 'Ref', 'Ref', (form) =>
-      form = if fn.isArray(form) then form[0] else form
+      form  = if fn.isArray(form) then form[0] else form
+      bind  = fn.peek(@bindstack)
+      walk  = (x) => if fn.isRef(x) then @walk(x) else x
+      getin = (m, ks) =>
+        ret = ks.reduce(((xs, x) -> walk(xs?[x])), m)
+        fn.assertOk ret?, "!Ref: can't resolve: '#{ks.join('.')}'"
+        ret
       if fn.isString(form)
-        [ref, ks...] = form.split('.')
+        [ref, ks...] = segs = form.split('.')
+        refable = (bind[ref]? or segs.length > 1)
         switch
-          when form.startsWith('$')     then {'Fn::Env': form[1..]}
-          when form.startsWith('%')     then {'Fn::Get': form[1..]}
-          when form.startsWith('@')     then {'Fn::Attr': form[1..]}
-          when fn.peek(@bindstack)[ref]?   then fn.getIn(@walk(fn.peek(@bindstack)[ref]), ks)
+          when form.startsWith('$') then {'Fn::Env': form[1..]}
+          when form.startsWith('%') then {'Fn::Get': form[1..]}
+          when form.startsWith('@') then {'Fn::Attr': form[1..]}
+          when form.startsWith('*') then {'Fn::Var': form[1..]}
+          when refable              then getin(bind, segs)
           else {Ref: form}
       else form
 
@@ -142,7 +150,7 @@ class CfnTransformer extends YamlTransformer
       if fn.isArray(form)
         @withBindings(@walk(form[0]), => @walk(form[1]))
       else
-        fn.merge(fn.peek(@bindstack), fn.assertObject(@walk(form)))
+        fn.merge(fn.peek(@bindstack), fn.assertObject(form))
         null
 
     @defspecial 'Do', (form) =>

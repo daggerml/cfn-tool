@@ -221,6 +221,9 @@ tryExecRaw = module.exports.tryExecRaw = (cmd, msg) ->
 # misc functions
 #------------------------------------------------------------------------------
 
+isRef = module.exports.isRef = (x) ->
+  x and isObject(x) and deepEqual(objKeys(x), ['Ref']) and x.Ref isnt 'AWS::NoValue'
+
 identity = module.exports.identity = (x) -> x
 
 partial = module.exports.partial = (f, obj, args...) ->

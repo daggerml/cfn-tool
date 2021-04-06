@@ -175,9 +175,9 @@ system.
     The CloudFormation `!Ref` intrinsic function has been extended to support
     various new types of references in addition to its normal functionality.
     The type of reference is denoted by a sigil prefixing the name: `$` for
-    environment variables, `%` for `Mapping` section lookup, and `@` for
-    `!GetAtt` resource attributes. Bound names (see `Binding Macros` above) are
-    referenced with no prefix.
+    environment variables, `%` for `Mapping` section `FindInMap` lookups, `@`
+    for `!GetAtt` resource attributes, and `*` for `ImportValue` lookups.
+    Bound names (see `Binding Macros` above) are referenced with no prefix.
 
   * `!Sub` <TEMPLATE>:
     References inside the curly-brace `${`...`}` in the <TEMPLATE> may be any
