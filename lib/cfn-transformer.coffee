@@ -321,7 +321,7 @@ class CfnTransformer extends YamlTransformer
       when e.name is 'Error' then new CfnError(e.message)
       else new CfnError "#{e.name}: #{e.message}"
 
-  abort: (e, {warn}) ->
+  abort: (e, {warn} = {}) ->
     {message, body, aborting} = e = @wrapError(e)
     if not aborting
       errmsg = []
