@@ -16,7 +16,7 @@ does not expand strings that look like dates implicitly:
   expected:
     Foo: 2021-03-29
 
-binds !Mappings globally:
+binds Mappings globally:
 
   nested:
     - test/cfn-transformer/data/template2.yaml
@@ -42,7 +42,7 @@ binds !Mappings globally:
           Omg:
             Lol: ok
 
-expands !Parameters macros:
+expands Parameters macros:
 
   template:
     <<: !Parameters
@@ -56,7 +56,7 @@ expands !Parameters macros:
       Bar:
         Type: CommaDelimitedList
 
-creates dynamic bindings with !Let:
+creates dynamic bindings with Let:
 
   template:
     <<: !Let
@@ -93,7 +93,7 @@ creates dynamic bindings with !Let:
       MyNameIs: nobody
       MyAgeIs: 0
 
-resolves indirect !Let bindings:
+resolves indirect Let bindings:
 
   template:
     <<: !Let
@@ -209,7 +209,7 @@ substitutes ImportValue lookups in Refs and Subs:
                   - '::Arn'
           - ' world!'
 
-ignores Refs it cannot transform:
+passes unresolved Refs through verbatim:
 
   template:
     Foo: !Ref Thing
@@ -218,42 +218,47 @@ ignores Refs it cannot transform:
     Foo:
       Ref: Thing
 
-expands !Sub macros:
+throws an exception when the argument to Ref is not a string:
+
+  template: |
+    !Ref [ !Sub 'Foo.${@Bar}.Baz' ]
+
+  throws: expected a String
+
+expands Sub macros:
 
   template:
     <<: !Let
       Test1: testval1
-    Foo: !Sub '${!Literal}One${Foo}Two${%${AWS::Region}.Vpc.CidrBlock}Three${@Bar.ARN}Four:${Test1}'
+    Foo: !Sub ${!Literal}${Foo}${%${AWS::Region}.Vpc.CidrBlock}${@Bar.ARN}${Test1}
 
   expected:
     Foo:
       Fn::Join:
         - ''
-        - - ${!Literal}One
+        - - ${Literal}
           - Ref: Foo
-          - Two
           - Fn::FindInMap:
               - Ref: AWS::Region
               - Vpc
               - CidrBlock
-          - Three
           - Fn::GetAtt:
               - Bar
               - ARN
-          - Four:testval1
+          - testval1
 
-merges strings in !Join:
+merges strings in Join:
 
   template:
     <<: !Let
       Bind1: one
       Bind2: two
-    Foo: !Sub '${Bind1}=1,${Bind2}=2,${$MY_ENV_VAR}=3'
+    Foo: !Sub ${Bind1}=1,${Bind2}=2,${$MY_ENV_VAR}=3
 
   expected:
-    Foo: 'one=1,two=2,myval=3'
+    Foo: one=1,two=2,myval=3
 
-expands !Resources macros:
+expands Resources macros:
 
   template:
     <<: !Let
@@ -344,7 +349,7 @@ expands bound templates:
           Parameters:
             Param1: goodbye world
 
-expands !Outputs macros:
+expands Outputs macros:
 
   template:
     <<: !Outputs
@@ -367,7 +372,7 @@ expands !Outputs macros:
         Export:
           Name: test-us-east-1-bazp
 
-executes !Shell commands:
+executes Shell commands:
 
   template:
     Foo: !Shell echo hello, world!
@@ -380,7 +385,21 @@ executes !Shell commands:
     Foo: hello, world!
     Bar: floop bloop
 
-executes !Js commands:
+caches Shell results:
+
+  template:
+    <<: !Let
+      Foo: !Shell echo $RANDOM
+      Bar: !Shell echo $RANDOM
+    Baz: !Shell
+      - FOO: !Ref Foo
+        BAR: !Ref Bar
+      - '[ $FOO = $BAR ] && echo ok'
+
+  expected:
+    Baz: ok
+
+executes Js commands:
 
   template:
     Foo: !Js "return 'hello, world!'"
@@ -394,6 +413,20 @@ executes !Js commands:
     Bar:
       - floop
       - bloop
+
+caches Js results:
+
+  template:
+    <<: !Let
+      Foo: !Js return Math.random()
+      Bar: !Js return Math.random()
+    Baz: !Js
+      - Foo: !Ref Foo
+        Bar: !Ref Bar
+      - return Foo == Bar
+
+  expected:
+    Baz: true
 
 packages regular files:
 
@@ -413,7 +446,7 @@ packages regular files:
         S3Key: 6f5902ac237024bdd0c176cb93063dc4.txt
       Baf: s3://foop/6f5902ac237024bdd0c176cb93063dc4.txt
 
-expands !Do macros:
+expands Do macros:
 
   template:
     Foo: !Do
@@ -470,7 +503,7 @@ recursively packages templates:
     Foo:
       Bar: https://s3.amazonaws.com/foop/14108f8899cbb3dc6629d94c22b2119c.yaml
 
-deep merges objects with !DeepMerge:
+deep merges objects with DeepMerge:
 
   template:
     Test1: !DeepMerge
@@ -485,7 +518,7 @@ deep merges objects with !DeepMerge:
         Bar: 2
         Baz: 3
 
-loads template files with !TemplateFile:
+loads template files with TemplateFile:
 
   nested:
     -  test/cfn-transformer/data/config1.yaml
@@ -518,7 +551,7 @@ loads template files with !TemplateFile:
           baz: 300
           baf: 500
 
-adds macros with !Require:
+adds macros with Require:
 
   template:
     <<: !Require ./lib/case-macros

@@ -317,7 +317,9 @@ out in YAML when writing the template).</p>
 <h3 id="Shell-Command-Macros">Shell Command Macros</h3>
 
 <p>These macros provide the user with the ability to evaluate commands in a shell
-to generate values and names for use in templates.</p>
+to generate values and names for use in templates. The results are cached with
+a compound cache key derived from the template path, the <var>MAPPING</var> (if present),
+and the <var>BODY</var>.</p>
 
 <dl>
 <dt><code>!Js</code> <var>BODY</var></dt><dd><p>Evaluates a JavaScript function <var>BODY</var> string, returning the result. The
@@ -347,8 +349,8 @@ according to the given <var>MAPPING</var>.</p></dd>
 
 <h3 id="Macro-Combinators">Macro Combinators</h3>
 
-<p>These macros provide the means to combine other macro expressions in various
-ways.</p>
+<p>These macros comprise the control flow and special forms provided by the macro
+expansion environment.</p>
 
 <dl>
 <dt><code>!Do</code> <code>[</code> <var>EXPR</var>, ... <code>]</code></dt><dd>Expands each <var>EXPR</var> in the sequence in order (presumably for side-effects),
@@ -756,7 +758,7 @@ Foo:
 the following license:</p>
 
 <ul>
-<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.3.0/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.3.0/LICENSE</a></li>
+<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.3.1/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.3.1/LICENSE</a></li>
 </ul>
 
 
@@ -770,7 +772,7 @@ THE SOFTWARE.</p>
 
 
   <ol class='man-decor man-foot man foot'>
-    <li class='tl'>CloudFormation Tools 4.3.0</li>
+    <li class='tl'>CloudFormation Tools 4.3.1</li>
     <li class='tc'>April 2021</li>
     <li class='tr'>cfn-tool-macros(7)</li>
   </ol>

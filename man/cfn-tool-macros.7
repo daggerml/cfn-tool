@@ -1,7 +1,7 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "CFN\-TOOL\-MACROS" "7" "April 2021" "CloudFormation Tools 4.3.0" "CloudFormation Tools"
+.TH "CFN\-TOOL\-MACROS" "7" "April 2021" "CloudFormation Tools 4.3.1" "CloudFormation Tools"
 .
 .SH "NAME"
 \fBcfn\-tool\-macros\fR \- built\-in macros for common use cases
@@ -239,7 +239,7 @@ Returns a YAML string representing the given \fIDATA\fR\.
 Parses a \fIYAML\fR string and returns the resulting data\.
 .
 .SS "Shell Command Macros"
-These macros provide the user with the ability to evaluate commands in a shell to generate values and names for use in templates\.
+These macros provide the user with the ability to evaluate commands in a shell to generate values and names for use in templates\. The results are cached with a compound cache key derived from the template path, the \fIMAPPING\fR (if present), and the \fIBODY\fR\.
 .
 .TP
 \fB!Js\fR \fIBODY\fR
@@ -269,7 +269,7 @@ Performs a deep merge of two or more mappings, returning the result\.
 Performs a shallow merge of two or more mappings and returns the result\.
 .
 .SS "Macro Combinators"
-These macros provide the means to combine other macro expressions in various ways\.
+These macros comprise the control flow and special forms provided by the macro expansion environment\.
 .
 .TP
 \fB!Do\fR \fB[\fR \fIEXPR\fR, \.\.\. \fB]\fR
@@ -848,7 +848,7 @@ Man pages for the \fBcfn\-tool\fR commands:
 Copyright © 2021 Micha Niskin \fB<micha\.niskin@gmail\.com>\fR, distributed under the following license:
 .
 .IP "\(bu" 4
-\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/4\.3\.0/LICENSE\fR
+\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/4\.3\.1/LICENSE\fR
 .
 .IP "" 0
 .

@@ -46,7 +46,7 @@ interpolateSub = (form) ->
   ret = []
   while true
     if form.startsWith('${!')
-      ret.push(form[0...3])
+      ret.push(form[0...2])
       form = form[3..]
     else if form.startsWith('${')
       i = indexOfClosingCurly(form[2..])
@@ -116,24 +116,22 @@ class CfnTransformer extends YamlTransformer
       {Condition: if fn.isArray(form) then form[0] else form}
 
     @defmacro 'Ref', 'Ref', (form) =>
-      form  = if fn.isArray(form) then form[0] else form
-      bind  = fn.peek(@bindstack)
-      walk  = (x) => if fn.isRef(x) then @walk(x) else x
-      getin = (m, ks) =>
+      form    = fn.assertString(if fn.isArray(form) then form[0] else form)
+      segs    = [ref, ks...] = form.split('.')
+      bind    = fn.peek(@bindstack)
+      refable = (bind[ref]? or segs.length > 1)
+      walk    = (x) => if fn.isRef(x) then @walk(x) else x
+      getin   = (m, ks) =>
         ret = ks.reduce(((xs, x) -> walk(xs?[x])), m)
         fn.assertOk ret?, "!Ref: can't resolve: '#{ks.join('.')}'"
         ret
-      if fn.isString(form)
-        [ref, ks...] = segs = form.split('.')
-        refable = (bind[ref]? or segs.length > 1)
-        switch
-          when form.startsWith('$') then {'Fn::Env': form[1..]}
-          when form.startsWith('%') then {'Fn::Get': form[1..]}
-          when form.startsWith('@') then {'Fn::Attr': form[1..]}
-          when form.startsWith('*') then {'Fn::Var': form[1..]}
-          when refable              then getin(bind, segs)
-          else {Ref: form}
-      else form
+      switch
+        when form.startsWith('$') then {'Fn::Env': form[1..]}
+        when form.startsWith('%') then {'Fn::Get': form[1..]}
+        when form.startsWith('@') then {'Fn::Attr': form[1..]}
+        when form.startsWith('*') then {'Fn::Var': form[1..]}
+        when refable              then getin(bind, segs)
+        else {Ref: form}
 
     @defmacro 'Sub', (form) =>
       form = if fn.isArray(form) and form.length is 1 then form[0] else form
@@ -226,7 +224,7 @@ class CfnTransformer extends YamlTransformer
         when fn.isString(form)                      then [null, form]
         else throw new CfnError '!Shell: expected <string> or [<object>, <string>]'
       env = Object.assign({}, process.env, vars)
-      @withCache {shell: [@template, form]}, () =>
+      @withCache {shell: [@template, vars, form]}, () =>
         (fn.execShell(form, {env}) or '').replace(/\n$/, '')
 
     @defmacro 'Js', (form) =>
@@ -235,12 +233,13 @@ class CfnTransformer extends YamlTransformer
         when fn.isArray(form) and form.length is 1  then [{}].concat(form)
         when fn.isString(form)                      then [{}, form]
         else throw new CfnError '!Js: expected <string> or [<object>, <string>]'
-      args = Object.keys(vars)
-      vals = args.reduce(((xs, x) -> xs.concat(["(#{JSON.stringify(vars[x])})"])), [])
-      form = "return (function(#{args.join ','}){#{form}})(#{vals.join ','})"
-      ret = @walk(new Function(form).call(@))
-      throw new CfnError('!Js must not return null', form) if not ret?
-      ret
+      @withCache {js: [@template, vars, form]}, () =>
+        args = Object.keys(vars)
+        vals = args.reduce(((xs, x) -> xs.concat(["(#{JSON.stringify(vars[x])})"])), [])
+        form = "return (function(#{args.join ','}){#{form}})(#{vals.join ','})"
+        ret = @walk(new Function(form).call(@))
+        throw new CfnError('!Js must not return null', form) if not ret?
+        ret
 
     @defmacro 'Package', (form) =>
       @packageMacro form
@@ -361,7 +360,7 @@ class CfnTransformer extends YamlTransformer
     ret
 
   bindings: () ->
-    Object.assign {}, @bindstack[@bindstack.length - 1]
+    Object.assign {}, fn.peek(@bindstack)
 
   options: () ->
     Object.assign {}, @opts

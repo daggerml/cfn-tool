@@ -154,6 +154,10 @@ assertArray = module.exports.assertArray = (thing) ->
   assert.ok(isArray(thing), "expected an Array, got #{JSON.stringify(thing)}")
   thing
 
+assertString = module.exports.assertString = (thing) ->
+  assert.ok(isString(thing), "expected a String, got #{JSON.stringify(thing)}")
+  thing
+
 #------------------------------------------------------------------------------
 # filesystem I/O functions
 #------------------------------------------------------------------------------

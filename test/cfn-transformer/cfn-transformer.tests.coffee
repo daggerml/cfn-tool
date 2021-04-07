@@ -4,6 +4,7 @@ fs              = require 'fs'
 os              = require 'os'
 path            = require 'path'
 {execSync}      = require 'child_process'
+fn              = require '../../lib/fn'
 log             = require '../../lib/log'
 CfnTransformer  = require '../../lib/cfn-transformer'
 tmpdir          = fs.mkdtempSync([os.tmpdir(), 'cfn-tool-'].join('/'))
@@ -31,9 +32,13 @@ testCase = (file) ->
       it k, ->
         xf = new CfnTransformer({opts})
         v  = yaml.safeLoad(xf.transformFile(file, v))
-        assert(v.template and v.expected, JSON.stringify(v))
-        assert.deepEqual(v.template, v.expected)
-        assert.deepEqual(v.nested or [], xf.nested.slice(1))
+        if v.throws
+          f = () -> new CfnTransformer({opts}).transformFile(file, v.template)
+          assert.throws f, new RegExp(v.throws)
+        else
+          assert(v.template and v.expected, JSON.stringify(v))
+          assert.deepEqual(v.template, v.expected)
+          assert.deepEqual(v.nested or [], xf.nested.slice(1))
 
 for f in fs.readdirSync(__dirname, {withFileTypes: true})
   if f.isFile() and f.name.match(/\.(yml|yaml)$/)
