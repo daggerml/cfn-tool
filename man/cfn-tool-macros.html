@@ -60,7 +60,7 @@
     <a href="#NAME">NAME</a>
     <a href="#SYNOPSIS">SYNOPSIS</a>
     <a href="#DESCRIPTION">DESCRIPTION</a>
-    <a href="#SHORT-VS-FULL-TAGS">SHORT VS. FULL TAGS</a>
+    <a href="#YAML-SYNTAX">YAML SYNTAX</a>
     <a href="#MACRO-REFERENCE">MACRO REFERENCE</a>
     <a href="#TRANSFORMER-API">TRANSFORMER API</a>
     <a href="#EXAMPLES">EXAMPLES</a>
@@ -121,12 +121,19 @@ in the amount of typing required to define a CloudFormation template. All of the
 macros described in this manual are optional; <code>cfn-tool</code> is compatible with pure
 vanilla CloudFormation.</p>
 
-<h2 id="SHORT-VS-FULL-TAGS">SHORT VS. FULL TAGS</h2>
+<h2 id="YAML-SYNTAX">YAML SYNTAX</h2>
 
-<p>All of the macros in this manual may be invoked as <em>short tags</em> (eg. <code>!Sub</code>),
-or as <em>full tags</em> (eg. <code>Fn::Sub</code>). The first pass during macro expansion
-replaces all short tags with the corresponding full tag, so they can be used
-interchangeably in a template.</p>
+<p>The YAML schema supoprted by <code>cfn-tool</code> includes the JSON types (ie. <code>null</code>,
+<code>bool</code>, <code>int</code>, <code>float</code>, <code>str</code>, <code>seq</code>, and <code>map</code>) plus the YAML merge type (the
+merge key, <code>&lt;&lt;</code>).</p>
+
+<h3 id="Short-Tags-vs-Full-Tags">Short Tags vs. Full Tags</h3>
+
+<p>All of the macros in this manual may be invoked as <em>short tags</em> (like <code>!Sub</code>
+<var>ARG</var>), or as <em>full tags</em> (like <code>{ Fn::Sub:</code> <var>ARG</var> <code>}</code>). The first pass during
+macro expansion replaces all short tags with the corresponding full tag, so
+they can be used interchangeably in a template, although there are issues with
+YAML syntax which are described below.</p>
 
 <h3 id="Chaining-Short-Tags">Chaining Short Tags</h3>
 
@@ -154,37 +161,6 @@ provided by CloudFormation itself. The above example can be achieved with
 CloudFormation template, but this does actually make sense when <code>Thing</code> is a
 dynamic binding (via <code>!Let</code> below) bound to a string which can be resolved at
 macro expansion time.</p>
-
-<h3 id="Short-Tags-In-Merge-Context">Short Tags In Merge Context</h3>
-
-<p>Macros which expand to objects will be automatically merged when applied in
-a merge context. For example, the following <code>!Parameters</code> macro:</p>
-
-<pre><code>Fn::Parameters:
-  - Foo
-  - Bar
-</code></pre>
-
-<p>expands to the more verbose CloudFormation <code>Parameters</code> structure, and is
-merged into the document in place:</p>
-
-<pre><code>Parameters:
-  Foo:
-    Type: String
-  Bar:
-    Type: String
-</code></pre>
-
-<p>Note that the full tag was required there, as the YAML syntax does not support
-short tags in a merge context. However, the special YAML merge syntax (the <code>&lt;&lt;</code>
-property name) can be applied to use a short tag. The above example then becomes:</p>
-
-<pre><code>&lt;&lt;: !Parameters
-  - Foo
-  - Bar
-</code></pre>
-
-<p>which is equivalent to the full tag expression.</p>
 
 <h2 id="MACRO-REFERENCE">MACRO REFERENCE</h2>
 
@@ -368,8 +344,8 @@ capabilities of the built-in macro system within the scope of the template.</p>
 module is called with two arguments: the <code>CfnTransformer</code> instance (see the
 <code>TRANSFORMER API</code> section below), and a unique namespace string. The user
 may define custom macros in this module with the transformer instance's
-<code>defmacro</code>() method. The namespace string is provided for inclusion in
-cache keys passed to the instance's <code>withCache</code>() method. The <var>FILE</var> path
+<code>defmacro()</code> method. The namespace string is provided for inclusion in
+cache keys passed to the instance's <code>withCache()</code> method. The <var>FILE</var> path
 is relative to the template's directory. The <code>!Require</code> macro itself expands
 to <code>null</code> and does not appear in the final document.</p></dd>
 <dt><code>!Require</code> <code>[</code> <var>FILE</var>, ... <code>]</code></dt><dd><p>As above, but loads multiple JavaScript files.</p></dd>
@@ -386,41 +362,41 @@ export of the module. The <code>CfnTransformer</code> instance has the following
 API methods:</p>
 
 <dl>
-<dt><code>bindings</code>()</dt><dd><p>Returns the current bindings (see <code>Binding Macros</code> above).</p></dd>
-<dt><code>defmacro</code>(<var>NAME</var>, <var>FUNCTION</var>)</dt><dd><p>Defines a new macro. The <var>FUNCTION</var> receives a single argument, the form
+<dt><code>bindings()</code></dt><dd><p>Returns the current bindings (see <code>Binding Macros</code> above).</p></dd>
+<dt><code>defmacro(</code><var>NAME</var>, <var>FUNCTION</var><code>)</code></dt><dd><p>Defines a new macro. The <var>FUNCTION</var> receives a single argument, the form
 to be expanded. The location in the template where the macro was called
 is replaced by the value returned by <var>FUNCTION</var>. The returned value may
 also contain macro calls, which are automatically expanded as required.
 The new macros is immediately available anywhere in the template in which
 it was defined, but not in nested or parent templates.</p></dd>
-<dt><code>info</code>(<var>MESSAGE</var>[, <var>BODY</var>])</dt><dd><p>Logs an info level <var>MESSAGE</var>, with an optional <var>BODY</var> string containing
+<dt><code>info(</code><var>MESSAGE</var>[, <var>BODY</var>]<code>)</code></dt><dd><p>Logs an info level <var>MESSAGE</var>, with an optional <var>BODY</var> string containing
 additional information to be displayed when the user has specified the
 <code>--verbose</code> option.</p></dd>
-<dt><code>macroexpand</code>(<var>FORM</var>)</dt><dd><p>Expands all macros in <var>FORM</var>, recursively and repeatedly, until <var>FORM</var> has
+<dt><code>macroexpand(</code><var>FORM</var><code>)</code></dt><dd><p>Expands all macros in <var>FORM</var>, recursively and repeatedly, until <var>FORM</var> has
 been completely expanded and is suitable for consumption by CloudFormation.
 This method is used mostly by macros to process their arguments when code
 walking is necessary.</p></dd>
-<dt><code>options</code>()</dt><dd><p>Returns the instance's configuration options. These options include command
+<dt><code>options()</code></dt><dd><p>Returns the instance's configuration options. These options include command
 line options set by the user and a few additional flags set internally by
 <code>cfn-tool</code>.</p></dd>
-<dt><code>tmpPath</code>(<var>NAME</var>)</dt><dd><p>Constructs a path for a file named <var>NAME</var> in the temporary directory
+<dt><code>tmpPath(</code><var>NAME</var><code>)</code></dt><dd><p>Constructs a path for a file named <var>NAME</var> in the temporary directory
 managed by <code>cfn-tool</code>. This directory is automatically deleted on exit.</p></dd>
-<dt><code>userPath</code>(<var>PATH</var>)</dt><dd><p>Resolves <var>PATH</var> relative to <code>cfn-tool</code>'s working directory. This is the
+<dt><code>userPath(</code><var>PATH</var><code>)</code></dt><dd><p>Resolves <var>PATH</var> relative to <code>cfn-tool</code>'s working directory. This is the
 path the user expects to see, as the working directory is set to the
 template's directory during macro expansion.</p></dd>
-<dt><code>verbose</code>(<var>MESSAGE</var>[, <var>BODY</var>])</dt><dd><p>Logs a verbose level <var>MESSAGE</var>, with an optional <var>BODY</var> string containing
+<dt><code>verbose(</code><var>MESSAGE</var>[, <var>BODY</var>]<code>)</code></dt><dd><p>Logs a verbose level <var>MESSAGE</var>, with an optional <var>BODY</var> string containing
 additional information.</p></dd>
-<dt><code>warn</code>(<var>MESSAGE</var>[, <var>BODY</var>])</dt><dd><p>Logs a warning level <var>MESSAGE</var>, with an optional <var>BODY</var> string containing
+<dt><code>warn(</code><var>MESSAGE</var>[, <var>BODY</var>]<code>)</code></dt><dd><p>Logs a warning level <var>MESSAGE</var>, with an optional <var>BODY</var> string containing
 additional information to be displayed when the user has specified the
 <code>--verbose</code> option.</p></dd>
-<dt><code>withBindings</code>(<var>BINDINGS</var>, <var>FUNCTION</var>)</dt><dd><p>Creates a new scope with the <var>BINDINGS</var> and calls <var>FUNCTION</var> with no
+<dt><code>withBindings(</code><var>BINDINGS</var>, <var>FUNCTION</var><code>)</code></dt><dd><p>Creates a new scope with the <var>BINDINGS</var> and calls <var>FUNCTION</var> with no
 arguments, then restores the previous scope and returns the <var>FUNCTION</var>'s
 result.</p></dd>
-<dt><code>withCache</code>(<var>KEY</var>, <var>FUNCTION</var>)</dt><dd><p>Given a <var>KEY</var> which can be any JSON-able data and a <var>FUNCTION</var> of no
+<dt><code>withCache(</code><var>KEY</var>, <var>FUNCTION</var><code>)</code></dt><dd><p>Given a <var>KEY</var> which can be any JSON-able data and a <var>FUNCTION</var> of no
 arguments, checks the cache for <var>KEY</var> (as JSON). If <var>KEY</var> is found the
 cached value is returned, otherwise the <var>FUNCTION</var> is called and the
 result is added to the cache and returned.</p></dd>
-<dt><code>withCwd</code>(<var>DIR</var>, <var>FUNCTION</var>)</dt><dd><p>Sets the current working directory to <var>DIR</var> and calls the <var>FUNCTION</var> with
+<dt><code>withCwd(</code><var>DIR</var>, <var>FUNCTION</var><code>)</code></dt><dd><p>Sets the current working directory to <var>DIR</var> and calls the <var>FUNCTION</var> with
 no arguments, then restores the previous working directory and returns the
 <var>FUNCTION</var>'s result.</p></dd>
 </dl>
@@ -765,7 +741,7 @@ Foo:
 the following license:</p>
 
 <ul>
-<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.3.3/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.3.3/LICENSE</a></li>
+<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.3.4/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.3.4/LICENSE</a></li>
 </ul>
 
 
@@ -779,7 +755,7 @@ THE SOFTWARE.</p>
 
 
   <ol class='man-decor man-foot man foot'>
-    <li class='tl'>CloudFormation Tools 4.3.3</li>
+    <li class='tl'>CloudFormation Tools 4.3.4</li>
     <li class='tc'>April 2021</li>
     <li class='tr'>cfn-tool-macros(7)</li>
   </ol>

@@ -44,12 +44,19 @@ in the amount of typing required to define a CloudFormation template. All of the
 macros described in this manual are optional; `cfn-tool` is compatible with pure
 vanilla CloudFormation.
 
-## SHORT VS. FULL TAGS
+## YAML SYNTAX
 
-All of the macros in this manual may be invoked as _short tags_ (eg. `!Sub`),
-or as _full tags_ (eg. `Fn::Sub`). The first pass during macro expansion
-replaces all short tags with the corresponding full tag, so they can be used
-interchangeably in a template.
+The YAML schema supoprted by `cfn-tool` includes the JSON types (ie. `null`,
+`bool`, `int`, `float`, `str`, `seq`, and `map`) plus the YAML merge type (the
+merge key, `<<`).
+
+### Short Tags vs. Full Tags
+
+All of the macros in this manual may be invoked as _short tags_ (like `!Sub`
+<ARG>), or as _full tags_ (like `{ Fn::Sub:` <ARG> `}`). The first pass during
+macro expansion replaces all short tags with the corresponding full tag, so
+they can be used interchangeably in a template, although there are issues with
+YAML syntax which are described below.
 
 ### Chaining Short Tags
 
@@ -74,34 +81,6 @@ This may seem pointless because the above is not a valid reference in a
 CloudFormation template, but this does actually make sense when `Thing` is a
 dynamic binding (via `!Let` below) bound to a string which can be resolved at
 macro expansion time.
-
-### Short Tags In Merge Context
-
-Macros which expand to objects will be automatically merged when applied in
-a merge context. For example, the following `!Parameters` macro:
-
-    Fn::Parameters:
-      - Foo
-      - Bar
-
-expands to the more verbose CloudFormation `Parameters` structure, and is
-merged into the document in place:
-
-    Parameters:
-      Foo:
-        Type: String
-      Bar:
-        Type: String
-
-Note that the full tag was required there, as the YAML syntax does not support
-short tags in a merge context. However, the special YAML merge syntax (the `<<`
-property name) can be applied to use a short tag. The above example then becomes:
-
-    <<: !Parameters
-      - Foo
-      - Bar
-
-which is equivalent to the full tag expression.
 
 ## MACRO REFERENCE
 
@@ -305,8 +284,8 @@ capabilities of the built-in macro system within the scope of the template.
     module is called with two arguments: the `CfnTransformer` instance (see the
     `TRANSFORMER API` section below), and a unique namespace string. The user
     may define custom macros in this module with the transformer instance's
-    `defmacro`() method. The namespace string is provided for inclusion in
-    cache keys passed to the instance's `withCache`() method. The <FILE> path
+    `defmacro()` method. The namespace string is provided for inclusion in
+    cache keys passed to the instance's `withCache()` method. The <FILE> path
     is relative to the template's directory. The `!Require` macro itself expands
     to `null` and does not appear in the final document.
 
@@ -322,10 +301,10 @@ bound to `this`, and for `!Require` it is passed as an argument to the default
 export of the module. The `CfnTransformer` instance has the following public
 API methods:
 
-  * `bindings`():
+  * `bindings()`:
     Returns the current bindings (see `Binding Macros` above).
 
-  * `defmacro`(<NAME>, <FUNCTION>):
+  * `defmacro(`<NAME>, <FUNCTION>`)`:
     Defines a new macro. The <FUNCTION> receives a single argument, the form
     to be expanded. The location in the template where the macro was called
     is replaced by the value returned by <FUNCTION>. The returned value may
@@ -333,52 +312,52 @@ API methods:
     The new macros is immediately available anywhere in the template in which
     it was defined, but not in nested or parent templates.
 
-  * `info`(<MESSAGE>[, <BODY>]):
+  * `info(`<MESSAGE>[, <BODY>]`)`:
     Logs an info level <MESSAGE>, with an optional <BODY> string containing
     additional information to be displayed when the user has specified the
     `--verbose` option.
 
-  * `macroexpand`(<FORM>):
+  * `macroexpand(`<FORM>`)`:
     Expands all macros in <FORM>, recursively and repeatedly, until <FORM> has
     been completely expanded and is suitable for consumption by CloudFormation.
     This method is used mostly by macros to process their arguments when code
     walking is necessary.
 
-  * `options`():
+  * `options()`:
     Returns the instance's configuration options. These options include command
     line options set by the user and a few additional flags set internally by
     `cfn-tool`.
 
-  * `tmpPath`(<NAME>):
+  * `tmpPath(`<NAME>`)`:
     Constructs a path for a file named <NAME> in the temporary directory
     managed by `cfn-tool`. This directory is automatically deleted on exit.
 
-  * `userPath`(<PATH>):
+  * `userPath(`<PATH>`)`:
     Resolves <PATH> relative to `cfn-tool`'s working directory. This is the
     path the user expects to see, as the working directory is set to the
     template's directory during macro expansion.
 
-  * `verbose`(<MESSAGE>[, <BODY>]):
+  * `verbose(`<MESSAGE>[, <BODY>]`)`:
     Logs a verbose level <MESSAGE>, with an optional <BODY> string containing
     additional information.
 
-  * `warn`(<MESSAGE>[, <BODY>]):
+  * `warn(`<MESSAGE>[, <BODY>]`)`:
     Logs a warning level <MESSAGE>, with an optional <BODY> string containing
     additional information to be displayed when the user has specified the
     `--verbose` option.
 
-  * `withBindings`(<BINDINGS>, <FUNCTION>):
+  * `withBindings(`<BINDINGS>, <FUNCTION>`)`:
     Creates a new scope with the <BINDINGS> and calls <FUNCTION> with no
     arguments, then restores the previous scope and returns the <FUNCTION>'s
     result.
 
-  * `withCache`(<KEY>, <FUNCTION>):
+  * `withCache(`<KEY>, <FUNCTION>`)`:
     Given a <KEY> which can be any JSON-able data and a <FUNCTION> of no
     arguments, checks the cache for <KEY> (as JSON). If <KEY> is found the
     cached value is returned, otherwise the <FUNCTION> is called and the
     result is added to the cache and returned.
 
-  * `withCwd`(<DIR>, <FUNCTION>):
+  * `withCwd(`<DIR>, <FUNCTION>`)`:
     Sets the current working directory to <DIR> and calls the <FUNCTION> with
     no arguments, then restores the previous working directory and returns the
     <FUNCTION>'s result.

@@ -1,7 +1,7 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "CFN\-TOOL\-MACROS" "7" "April 2021" "CloudFormation Tools 4.3.3" "CloudFormation Tools"
+.TH "CFN\-TOOL\-MACROS" "7" "April 2021" "CloudFormation Tools 4.3.4" "CloudFormation Tools"
 .
 .SH "NAME"
 \fBcfn\-tool\-macros\fR \- built\-in macros for common use cases
@@ -38,8 +38,11 @@ The philosophy is not to create a layer of abstraction on top of the one already
 .P
 Instead, the \fBcfn\-tool\fR macro preprocessor is designed to facilitate a reduction in the amount of typing required to define a CloudFormation template\. All of the macros described in this manual are optional; \fBcfn\-tool\fR is compatible with pure vanilla CloudFormation\.
 .
-.SH "SHORT VS\. FULL TAGS"
-All of the macros in this manual may be invoked as \fIshort tags\fR (eg\. \fB!Sub\fR), or as \fIfull tags\fR (eg\. \fBFn::Sub\fR)\. The first pass during macro expansion replaces all short tags with the corresponding full tag, so they can be used interchangeably in a template\.
+.SH "YAML SYNTAX"
+The YAML schema supoprted by \fBcfn\-tool\fR includes the JSON types (ie\. \fBnull\fR, \fBbool\fR, \fBint\fR, \fBfloat\fR, \fBstr\fR, \fBseq\fR, and \fBmap\fR) plus the YAML merge type (the merge key, \fB<<\fR)\.
+.
+.SS "Short Tags vs\. Full Tags"
+All of the macros in this manual may be invoked as \fIshort tags\fR (like \fB!Sub\fR \fIARG\fR), or as \fIfull tags\fR (like \fB{ Fn::Sub:\fR \fIARG\fR \fB}\fR)\. The first pass during macro expansion replaces all short tags with the corresponding full tag, so they can be used interchangeably in a template, although there are issues with YAML syntax which are described below\.
 .
 .SS "Chaining Short Tags"
 Short tags applied to scalar arguments (eg\. \fB!Ref Thing\fR) can not be chained, as the YAML syntax does not support this\. For example, the following will raise a syntax error:
@@ -82,56 +85,6 @@ Which expands to:
 .
 .P
 This may seem pointless because the above is not a valid reference in a CloudFormation template, but this does actually make sense when \fBThing\fR is a dynamic binding (via \fB!Let\fR below) bound to a string which can be resolved at macro expansion time\.
-.
-.SS "Short Tags In Merge Context"
-Macros which expand to objects will be automatically merged when applied in a merge context\. For example, the following \fB!Parameters\fR macro:
-.
-.IP "" 4
-.
-.nf
-
-Fn::Parameters:
-  \- Foo
-  \- Bar
-.
-.fi
-.
-.IP "" 0
-.
-.P
-expands to the more verbose CloudFormation \fBParameters\fR structure, and is merged into the document in place:
-.
-.IP "" 4
-.
-.nf
-
-Parameters:
-  Foo:
-    Type: String
-  Bar:
-    Type: String
-.
-.fi
-.
-.IP "" 0
-.
-.P
-Note that the full tag was required there, as the YAML syntax does not support short tags in a merge context\. However, the special YAML merge syntax (the \fB<<\fR property name) can be applied to use a short tag\. The above example then becomes:
-.
-.IP "" 4
-.
-.nf
-
-<<: !Parameters
-  \- Foo
-  \- Bar
-.
-.fi
-.
-.IP "" 0
-.
-.P
-which is equivalent to the full tag expression\.
 .
 .SH "MACRO REFERENCE"
 The following are macros provided by \fBcfn\-tool\fR, and extensions to the macros provided by CloudFormation in some cases\. CloudFormation\-provided macros which are not extended by \fBcfn\-tool\fR are not described here\. See the \fBEXAMPLES\fR section below for a demonstration of how to use each macro\.
@@ -280,7 +233,7 @@ These macros allow the user to add his own custom macros or extend the capabilit
 .
 .TP
 \fB!Require\fR \fIFILE\fR
-Loads the given \fIFILE\fR as a JavaScript module\. The default export of this module is called with two arguments: the \fBCfnTransformer\fR instance (see the \fBTRANSFORMER API\fR section below), and a unique namespace string\. The user may define custom macros in this module with the transformer instance\'s \fBdefmacro\fR() method\. The namespace string is provided for inclusion in cache keys passed to the instance\'s \fBwithCache\fR() method\. The \fIFILE\fR path is relative to the template\'s directory\. The \fB!Require\fR macro itself expands to \fBnull\fR and does not appear in the final document\.
+Loads the given \fIFILE\fR as a JavaScript module\. The default export of this module is called with two arguments: the \fBCfnTransformer\fR instance (see the \fBTRANSFORMER API\fR section below), and a unique namespace string\. The user may define custom macros in this module with the transformer instance\'s \fBdefmacro()\fR method\. The namespace string is provided for inclusion in cache keys passed to the instance\'s \fBwithCache()\fR method\. The \fIFILE\fR path is relative to the template\'s directory\. The \fB!Require\fR macro itself expands to \fBnull\fR and does not appear in the final document\.
 .
 .TP
 \fB!Require\fR \fB[\fR \fIFILE\fR, \.\.\. \fB]\fR
@@ -290,51 +243,51 @@ As above, but loads multiple JavaScript files\.
 JavaScript evaluated during macroexpansion (ie\. via \fB!Js\fR, \fB!Require\fR, and by custom macro implementations loaded via \fB!Require\fR) are passed a reference to the \fBCfnTransformer\fR instance\. In the \fIBODY\fR of a \fB!Js\fR macro the instance is bound to \fBthis\fR, and for \fB!Require\fR it is passed as an argument to the default export of the module\. The \fBCfnTransformer\fR instance has the following public API methods:
 .
 .TP
-\fBbindings\fR()
+\fBbindings()\fR
 Returns the current bindings (see \fBBinding Macros\fR above)\.
 .
 .TP
-\fBdefmacro\fR(\fINAME\fR, \fIFUNCTION\fR)
+\fBdefmacro(\fR\fINAME\fR, \fIFUNCTION\fR\fB)\fR
 Defines a new macro\. The \fIFUNCTION\fR receives a single argument, the form to be expanded\. The location in the template where the macro was called is replaced by the value returned by \fIFUNCTION\fR\. The returned value may also contain macro calls, which are automatically expanded as required\. The new macros is immediately available anywhere in the template in which it was defined, but not in nested or parent templates\.
 .
 .TP
-\fBinfo\fR(\fIMESSAGE\fR[, \fIBODY\fR])
+\fBinfo(\fR\fIMESSAGE\fR[, \fIBODY\fR]\fB)\fR
 Logs an info level \fIMESSAGE\fR, with an optional \fIBODY\fR string containing additional information to be displayed when the user has specified the \fB\-\-verbose\fR option\.
 .
 .TP
-\fBmacroexpand\fR(\fIFORM\fR)
+\fBmacroexpand(\fR\fIFORM\fR\fB)\fR
 Expands all macros in \fIFORM\fR, recursively and repeatedly, until \fIFORM\fR has been completely expanded and is suitable for consumption by CloudFormation\. This method is used mostly by macros to process their arguments when code walking is necessary\.
 .
 .TP
-\fBoptions\fR()
+\fBoptions()\fR
 Returns the instance\'s configuration options\. These options include command line options set by the user and a few additional flags set internally by \fBcfn\-tool\fR\.
 .
 .TP
-\fBtmpPath\fR(\fINAME\fR)
+\fBtmpPath(\fR\fINAME\fR\fB)\fR
 Constructs a path for a file named \fINAME\fR in the temporary directory managed by \fBcfn\-tool\fR\. This directory is automatically deleted on exit\.
 .
 .TP
-\fBuserPath\fR(\fIPATH\fR)
+\fBuserPath(\fR\fIPATH\fR\fB)\fR
 Resolves \fIPATH\fR relative to \fBcfn\-tool\fR\'s working directory\. This is the path the user expects to see, as the working directory is set to the template\'s directory during macro expansion\.
 .
 .TP
-\fBverbose\fR(\fIMESSAGE\fR[, \fIBODY\fR])
+\fBverbose(\fR\fIMESSAGE\fR[, \fIBODY\fR]\fB)\fR
 Logs a verbose level \fIMESSAGE\fR, with an optional \fIBODY\fR string containing additional information\.
 .
 .TP
-\fBwarn\fR(\fIMESSAGE\fR[, \fIBODY\fR])
+\fBwarn(\fR\fIMESSAGE\fR[, \fIBODY\fR]\fB)\fR
 Logs a warning level \fIMESSAGE\fR, with an optional \fIBODY\fR string containing additional information to be displayed when the user has specified the \fB\-\-verbose\fR option\.
 .
 .TP
-\fBwithBindings\fR(\fIBINDINGS\fR, \fIFUNCTION\fR)
+\fBwithBindings(\fR\fIBINDINGS\fR, \fIFUNCTION\fR\fB)\fR
 Creates a new scope with the \fIBINDINGS\fR and calls \fIFUNCTION\fR with no arguments, then restores the previous scope and returns the \fIFUNCTION\fR\'s result\.
 .
 .TP
-\fBwithCache\fR(\fIKEY\fR, \fIFUNCTION\fR)
+\fBwithCache(\fR\fIKEY\fR, \fIFUNCTION\fR\fB)\fR
 Given a \fIKEY\fR which can be any JSON\-able data and a \fIFUNCTION\fR of no arguments, checks the cache for \fIKEY\fR (as JSON)\. If \fIKEY\fR is found the cached value is returned, otherwise the \fIFUNCTION\fR is called and the result is added to the cache and returned\.
 .
 .TP
-\fBwithCwd\fR(\fIDIR\fR, \fIFUNCTION\fR)
+\fBwithCwd(\fR\fIDIR\fR, \fIFUNCTION\fR\fB)\fR
 Sets the current working directory to \fIDIR\fR and calls the \fIFUNCTION\fR with no arguments, then restores the previous working directory and returns the \fIFUNCTION\fR\'s result\.
 .
 .SH "EXAMPLES"
@@ -848,7 +801,7 @@ Man pages for the \fBcfn\-tool\fR commands:
 Copyright © 2021 Micha Niskin \fB<micha\.niskin@gmail\.com>\fR, distributed under the following license:
 .
 .IP "\(bu" 4
-\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/4\.3\.3/LICENSE\fR
+\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/4\.3\.4/LICENSE\fR
 .
 .IP "" 0
 .

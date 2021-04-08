@@ -216,7 +216,7 @@ module.exports = (completionArgs) ->
       if res.nested.length > 1
         throw new CfnError('bucket required for nested stacks') unless opts.bucket
         log.info 'uploading templates to S3'
-        fn.execShell "aws s3 sync --size-only '#{cfn.tmpdir}' 's3://#{opts.bucket}/'"
+        fn.execShell "aws s3 sync --size-only '#{opts.tmpdir}' 's3://#{opts.bucket}/'"
 
       bucketarg = "--s3-bucket '#{opts.bucket}' --s3-prefix aws/" if opts.bucket
       paramsarg = "--parameter-overrides #{opts.parameters}"      if opts.parameters

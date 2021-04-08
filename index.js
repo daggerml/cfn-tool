@@ -246,7 +246,7 @@ See the manpage:
             throw new CfnError('bucket required for nested stacks');
           }
           log.info('uploading templates to S3');
-          fn.execShell(`aws s3 sync --size-only '${cfn.tmpdir}' 's3://${opts.bucket}/'`);
+          fn.execShell(`aws s3 sync --size-only '${opts.tmpdir}' 's3://${opts.bucket}/'`);
         }
         if (opts.bucket) {
           bucketarg = `--s3-bucket '${opts.bucket}' --s3-prefix aws/`;
