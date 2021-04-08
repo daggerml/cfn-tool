@@ -3,6 +3,7 @@ fs              = require 'fs'
 os              = require 'os'
 path            = require 'path'
 assert          = require 'assert'
+uuid            = require 'uuid'
 fn              = require './fn'
 log             = require './log'
 CfnError        = require './CfnError'
@@ -67,9 +68,10 @@ interpolateSub = (form) ->
 #=============================================================================#
 
 class CfnTransformer extends YamlTransformer
-  constructor: ({@basedir, @cache, @opts, @maps} = {}) ->
+  constructor: ({@ns, @basedir, @cache, @opts, @maps} = {}) ->
     super()
 
+    @ns             ?= uuid.v4()
     @opts           ?= {}
     @opts.s3prefix  ?= ''
     @cache          ?= {}
@@ -164,7 +166,7 @@ class CfnTransformer extends YamlTransformer
 
     @defmacro 'Require', (form) =>
       form = [form] unless fn.isArray(form)
-      require(path.resolve(v))(@) for v in form
+      require(path.resolve(v))(@, uuid.v4()) for v in form
       null
 
     @defmacro 'Parameters', (form) =>
@@ -224,7 +226,7 @@ class CfnTransformer extends YamlTransformer
         when fn.isString(form)                      then [null, form]
         else throw new CfnError '!Shell: expected <string> or [<object>, <string>]'
       env = Object.assign({}, process.env, vars)
-      @withCache {shell: [@template, vars, form]}, () =>
+      @withCache {shell: [@ns, @template, vars, form]}, () =>
         (fn.execShell(form, {env}) or '').replace(/\n$/, '')
 
     @defmacro 'Js', (form) =>
@@ -233,7 +235,7 @@ class CfnTransformer extends YamlTransformer
         when fn.isArray(form) and form.length is 1  then [{}].concat(form)
         when fn.isString(form)                      then [{}, form]
         else throw new CfnError '!Js: expected <string> or [<object>, <string>]'
-      @withCache {js: [@template, vars, form]}, () =>
+      @withCache {js: [@ns, @template, vars, form]}, () =>
         args = Object.keys(vars)
         vals = args.reduce(((xs, x) -> xs.concat(["(#{JSON.stringify(vars[x])})"])), [])
         form = "return (function(#{args.join ','}){#{form}})(#{vals.join ','})"
@@ -311,7 +313,7 @@ class CfnTransformer extends YamlTransformer
     {Path, CacheKey, Parse} = form
     if @opts.dopackage
       @needBucket = true
-      @withCache {package: [@userPath(Path), CacheKey, Parse]}, () =>
+      @withCache {package: [@ns, @userPath(Path), CacheKey, Parse]}, () =>
         (
           switch
             when fn.isDirectory(Path) then @writeDir(Path, CacheKey)
@@ -391,7 +393,7 @@ class CfnTransformer extends YamlTransformer
     ret
 
   transformTemplateFile: (file) ->
-    xformer = new @.constructor({@basedir, @cache, @opts, @maps})
+    xformer = new @.constructor({@ns, @basedir, @cache, @opts, @maps})
     ret = xformer.transformFile(file)
     @nested = @nested.concat xformer.nested
     ret
@@ -449,7 +451,7 @@ class CfnTransformer extends YamlTransformer
     ret
 
   pushFileCaching: (file, f) ->
-    @withCache {pushFileCaching: @userPath(file)}, () => @pushFile(file, f)
+    @withCache {pushFileCaching: [@ns, @userPath(file)]}, () => @pushFile(file, f)
 
   defresource: (type, emit) ->
     @resourceMacros[type] = emit

@@ -148,6 +148,9 @@ See the manpage:
 
   bashCompletion = function([$0, prefix, prev]) {
     var c, command, i, len, opts, ref, spec, words, x;
+    log.transports.forEach(function(x) {
+      return x.silent = true;
+    });
     words = sq.parse(process.env.COMP_LINE).slice(1);
     if (prefix) {
       words.pop();
@@ -177,7 +180,6 @@ See the manpage:
         if (opts[x]) {
           continue;
         }
-        fs.writeFileSync('/tmp/t', JSON.stringify({opts, x}));
         if ((c = options.master.complete[x])) {
           quit(c(prefix));
         }

@@ -147,6 +147,7 @@ version = () ->
   quit VERSION
 
 bashCompletion = ([$0, prefix, prev]) ->
+  log.transports.forEach((x) -> x.silent = true)
   words = sq.parse(process.env.COMP_LINE).slice(1)
   words.pop() if prefix
   command = words[0]
@@ -164,7 +165,6 @@ bashCompletion = ([$0, prefix, prev]) ->
     opts = options.parse words, {noenv: true}
     for x in options.config.positional
       continue if opts[x]
-      fs.writeFileSync '/tmp/t', JSON.stringify {opts, x}
       quit(c(prefix)) if (c = options.master.complete[x])
     quit()
   quit completions.file prefix

@@ -301,19 +301,26 @@ These macros allow the user to add his own custom macros or extend the
 capabilities of the built-in macro system within the scope of the template.
 
   * `!Require` <FILE>:
-    Loads the given JavaScript <FILE>. The user may define custom macros in
-    this file. The <FILE> path is relative to the template's directory. The
-    `!Require` macro itself expands to `null` and does not appear in the final
-    document.
+    Loads the given <FILE> as a JavaScript module. The default export of this
+    module is called with two arguments: the `CfnTransformer` instance (see the
+    `TRANSFORMER API` section below), and a unique namespace string. The user
+    may define custom macros in this module with the transformer instance's
+    `defmacro`() method. The namespace string is provided for inclusion in
+    cache keys passed to the instance's `withCache`() method. The <FILE> path
+    is relative to the template's directory. The `!Require` macro itself expands
+    to `null` and does not appear in the final document.
 
   * `!Require` `[` <FILE>, ... `]`:
     As above, but loads multiple JavaScript files.
 
 ## TRANSFORMER API
 
-Within the body of the `!Js` macro and in JavaScript modules loaded via the
-`!Require` macro the `this` object is bound to the `CfnTransformer` instance,
-which has the following API methods:
+JavaScript evaluated during macroexpansion (ie. via `!Js`, `!Require`, and by
+custom macro implementations loaded via `!Require`) are passed a reference to
+the `CfnTransformer` instance. In the <BODY> of a `!Js` macro the instance is
+bound to `this`, and for `!Require` it is passed as an argument to the default
+export of the module. The `CfnTransformer` instance has the following public
+API methods:
 
   * `bindings`():
     Returns the current bindings (see `Binding Macros` above).
@@ -373,8 +380,8 @@ which has the following API methods:
 
   * `withCwd`(<DIR>, <FUNCTION>):
     Sets the current working directory to <DIR> and calls the <FUNCTION> with
-    no arguments. Then the previous working directory is restored and the
-    <FUNCTION>'s result is returned.
+    no arguments, then restores the previous working directory and returns the
+    <FUNCTION>'s result.
 
 ## EXAMPLES
 
@@ -462,7 +469,7 @@ section.
     Foo: !JsonParse '{"Bar":{"Baz":"baf"}}'
 
     # RESULT
-    Foo1:
+    Foo:
       Bar:
         Baz: baf
 
@@ -546,7 +553,7 @@ section.
 `!Require`
 
     # FILE: ./lib/case-macros.js
-    module.exports = (compiler) => {
+    module.exports = (compiler, cacheNamespace) => {
       compiler.defmacro('UpperCase', (form) => form.toUpperCase());
       compiler.defmacro('LowerCase', (form) => form.toLowerCase());
     };

@@ -16,13 +16,13 @@ class GetOpts
   #
 
   allOpts: () ->
-    @config.boolean.concat(@config.string).sort()
+    @config.boolean.concat(@config.string)
 
   allPos: () ->
-    @config.positional.sort()
+    @config.positional
 
   allVars: () ->
-    Object.keys(@var2opt()).sort()
+    Object.keys(@var2opt())
 
   configVars: () ->
     Object.keys(fn.invertObj(fn.selectKeys(@opt2var(), @allOpts())))
@@ -31,7 +31,7 @@ class GetOpts
     Object.keys(@var2opt()).reduce(
       (xs, x) -> if process.env[x]? then xs.concat [x] else xs
       []
-    ).sort()
+    )
 
   opt2var: (x) ->
     if x
@@ -104,7 +104,8 @@ class GetOpts
 
   getopts: (argv, dfl) ->
     opts = getopts argv, dfl
-    (opts[k] = arg if (k = @config.positional[i])) for arg, i in opts._
+    args = @config.positional
+    (opts[k] = arg if (k = args[i])) for arg, i in opts._
     fn.selectKeys opts, @allOpts().concat(@allPos())
 
   #

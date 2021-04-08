@@ -364,19 +364,26 @@ returning the expansion of the last one as the result.</dd>
 capabilities of the built-in macro system within the scope of the template.</p>
 
 <dl>
-<dt><code>!Require</code> <var>FILE</var></dt><dd><p>Loads the given JavaScript <var>FILE</var>. The user may define custom macros in
-this file. The <var>FILE</var> path is relative to the template's directory. The
-<code>!Require</code> macro itself expands to <code>null</code> and does not appear in the final
-document.</p></dd>
+<dt><code>!Require</code> <var>FILE</var></dt><dd><p>Loads the given <var>FILE</var> as a JavaScript module. The default export of this
+module is called with two arguments: the <code>CfnTransformer</code> instance (see the
+<code>TRANSFORMER API</code> section below), and a unique namespace string. The user
+may define custom macros in this module with the transformer instance's
+<code>defmacro</code>() method. The namespace string is provided for inclusion in
+cache keys passed to the instance's <code>withCache</code>() method. The <var>FILE</var> path
+is relative to the template's directory. The <code>!Require</code> macro itself expands
+to <code>null</code> and does not appear in the final document.</p></dd>
 <dt><code>!Require</code> <code>[</code> <var>FILE</var>, ... <code>]</code></dt><dd><p>As above, but loads multiple JavaScript files.</p></dd>
 </dl>
 
 
 <h2 id="TRANSFORMER-API">TRANSFORMER API</h2>
 
-<p>Within the body of the <code>!Js</code> macro and in JavaScript modules loaded via the
-<code>!Require</code> macro the <code>this</code> object is bound to the <code>CfnTransformer</code> instance,
-which has the following API methods:</p>
+<p>JavaScript evaluated during macroexpansion (ie. via <code>!Js</code>, <code>!Require</code>, and by
+custom macro implementations loaded via <code>!Require</code>) are passed a reference to
+the <code>CfnTransformer</code> instance. In the <var>BODY</var> of a <code>!Js</code> macro the instance is
+bound to <code>this</code>, and for <code>!Require</code> it is passed as an argument to the default
+export of the module. The <code>CfnTransformer</code> instance has the following public
+API methods:</p>
 
 <dl>
 <dt><code>bindings</code>()</dt><dd><p>Returns the current bindings (see <code>Binding Macros</code> above).</p></dd>
@@ -414,8 +421,8 @@ arguments, checks the cache for <var>KEY</var> (as JSON). If <var>KEY</var> is f
 cached value is returned, otherwise the <var>FUNCTION</var> is called and the
 result is added to the cache and returned.</p></dd>
 <dt><code>withCwd</code>(<var>DIR</var>, <var>FUNCTION</var>)</dt><dd><p>Sets the current working directory to <var>DIR</var> and calls the <var>FUNCTION</var> with
-no arguments. Then the previous working directory is restored and the
-<var>FUNCTION</var>'s result is returned.</p></dd>
+no arguments, then restores the previous working directory and returns the
+<var>FUNCTION</var>'s result.</p></dd>
 </dl>
 
 
@@ -510,7 +517,7 @@ Foo: '{"Bar":{"Baz":"baf"}}'
 Foo: !JsonParse '{"Bar":{"Baz":"baf"}}'
 
 # RESULT
-Foo1:
+Foo:
   Bar:
     Baz: baf
 </code></pre>
@@ -602,7 +609,7 @@ Parameters:
 <p><code>!Require</code></p>
 
 <pre><code># FILE: ./lib/case-macros.js
-module.exports = (compiler) =&gt; {
+module.exports = (compiler, cacheNamespace) =&gt; {
   compiler.defmacro('UpperCase', (form) =&gt; form.toUpperCase());
   compiler.defmacro('LowerCase', (form) =&gt; form.toLowerCase());
 };
@@ -758,7 +765,7 @@ Foo:
 the following license:</p>
 
 <ul>
-<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.3.1/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.3.1/LICENSE</a></li>
+<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.3.3/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.3.3/LICENSE</a></li>
 </ul>
 
 
@@ -772,7 +779,7 @@ THE SOFTWARE.</p>
 
 
   <ol class='man-decor man-foot man foot'>
-    <li class='tl'>CloudFormation Tools 4.3.1</li>
+    <li class='tl'>CloudFormation Tools 4.3.3</li>
     <li class='tc'>April 2021</li>
     <li class='tr'>cfn-tool-macros(7)</li>
   </ol>
