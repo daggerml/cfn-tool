@@ -9,7 +9,6 @@ CfnError  = require './CfnError'
 
 class GetOpts
   constructor: (@master) ->
-    @fixRegion()
 
   #
   # HELPER METHODS
@@ -29,7 +28,7 @@ class GetOpts
 
   useVars: () ->
     Object.keys(@var2opt()).reduce(
-      (xs, x) -> if process.env[x]? then xs.concat [x] else xs
+      (xs, x) => if @env[x]? then xs.concat [x] else xs
       []
     )
 
@@ -49,7 +48,7 @@ class GetOpts
   getVars: () ->
     @allOpts().reduce(
       (xs, x) =>
-        v = process.env[@opt2var(x)]
+        v = @env[@opt2var(x)]
         if v? then fn.assoc(xs, x, @config2opt(x, v)) else xs
       {}
     )
@@ -57,20 +56,20 @@ class GetOpts
   setVars: (opts, {clobber = false} = {}) ->
     for o, v of @opt2var()
       if opts[o]? and (clobber or not (v in @useVars()))
-        process.env[v] = "#{opts[o]}"
+        @env[v] = "#{opts[o]}"
     @fixRegion()
 
   setLogLevel: (opts) ->
-    log.level = switch
+    log.level switch
       when opts.verbose then 'verbose'
       when opts.quiet   then 'error'
       else              'info'
     opts
 
   fixRegion: () ->
-    [r1, r2] = [process.env.AWS_REGION, process.env.AWS_DEFAULT_REGION]
-    process.env.AWS_REGION = r2 if (r2 and not r1) or (r1 and r2 and r1 isnt r2)
-    process.env.AWS_DEFAULT_REGION  = r1 if (r1 and not r2)
+    [r1, r2] = [@env.AWS_REGION, @env.AWS_DEFAULT_REGION]
+    @env.AWS_REGION = r2 if (r2 and not r1) or (r1 and r2 and r1 isnt r2)
+    @env.AWS_DEFAULT_REGION  = r1 if (r1 and not r2)
 
   loadConfig: (opts, file) ->
     return unless (vars = @configVars())?.length
@@ -112,13 +111,15 @@ class GetOpts
   # EXTERNAL API
   #
 
-  configure: (opts = [], abort = true) ->
-    optFilter = (x) -> x in opts
+  configure: (opts = [], env, abort = true) ->
+    @env = env
+    optf = (x) -> x in opts
+    @fixRegion()
     @config =
       alias: fn.selectKeys(@master.alias, opts)
-      boolean: @master.boolean.slice().filter optFilter
-      string: Object.keys(@master.string).filter optFilter
-      positional: Object.keys(@master.positional).filter optFilter
+      boolean: @master.boolean.slice().filter optf
+      string: Object.keys(@master.string).filter optf
+      positional: Object.keys(@master.positional).filter optf
       unknown: if abort then @master.unknown else ((x) ->)
 
   usage: () ->

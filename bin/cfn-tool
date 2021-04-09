@@ -1,2 +1,4 @@
 #!/usr/bin/env node
-require('../')();
+const CfnTool = require('../');
+const t = new CfnTool();
+t.prod(function() { t.main(process.argv, process.env) });

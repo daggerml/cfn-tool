@@ -437,7 +437,8 @@ class CfnTransformer extends YamlTransformer
     ret
 
   userPath: (file) ->
-    path.relative(@basedir, file)
+    ret = path.relative(@basedir, file)
+    if ret.startsWith('../') then path.resolve(ret) else ret
 
   tmpPath: (name) ->
     path.join(@opts.tmpdir, name)

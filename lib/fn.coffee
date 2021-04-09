@@ -11,6 +11,13 @@ CfnError    = require './CfnError'
 # debugging functions
 #------------------------------------------------------------------------------
 
+TESTING = false
+
+testing = module.exports.testing = (enable) ->
+  return TESTING unless enable?
+  log.silence !!enable
+  TESTING = !!enable
+
 dbg = module.exports.dbg = (x) ->
   console.log require('util').inspect {dbg: x}, {depth: null}
   x
@@ -188,6 +195,14 @@ abortOnException = module.exports.abortOnException = (abort, lib, fn) ->
 # child process functions
 #------------------------------------------------------------------------------
 
+MOCKS = []
+mockSpawn = module.exports.mockSpawn = (f) -> MOCKS.push(f)
+
+getMock = (cmd) ->
+  for f in MOCKS
+    return ret if (ret = f(cmd))
+  null
+
 handleShell = module.exports.handleShell = (cmd, res, raw) ->
   cmd = prependLines cmd, 'cmd'
   stdout = rmCR res.stdout?.toString('utf-8')
@@ -204,12 +219,19 @@ handleShell = module.exports.handleShell = (cmd, res, raw) ->
     else
       throw new CfnError("bash: exit status #{res.status}", "#{cmd}\n#{res.all}")
 
+spawn = (cmd, args...) ->
+  if TESTING
+    log.spawn cmd
+    getMock(cmd) or {status: 0, stdout: "bogus stdout", stderr: "bogus stderr"}
+  else
+    spawnSync.apply null, [cmd].concat(args)
+
 execShell = module.exports.execShell = (cmd, opts, raw=false) ->
-  res = spawnSync(cmd, merge({stdio: 'pipe', shell: '/bin/bash'}, opts))
+  res = spawn(cmd, merge({stdio: 'pipe', shell: '/bin/bash'}, opts))
   handleShell cmd, res, raw
 
 execShellArgs = module.exports.execShellArgs = (cmd, args, opts, raw=false) ->
-  res = spawnSync(cmd, args, merge({stdio: 'pipe', shell: '/bin/bash'}, opts))
+  res = spawn(cmd, args, merge({stdio: 'pipe', shell: '/bin/bash'}, opts))
   handleShell cmd, res, raw
 
 tryExecRaw = module.exports.tryExecRaw = (cmd, msg) ->

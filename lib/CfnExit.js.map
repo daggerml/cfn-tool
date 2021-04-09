@@ -1,0 +1,13 @@
+{
+  "version": 3,
+  "file": "CfnExit.js",
+  "sourceRoot": "..",
+  "sources": [
+    "lib/CfnExit.coffee"
+  ],
+  "names": [],
+  "mappings": ";AAAA;AAAA,MAAA;;EAAM,UAAN,MAAA,QAAA,QAAsB,MAAtB;IACE,WAAa,OAAA,CAAA;;MAAC,IAAC,CAAA;MAEb,IAAC,CAAA,IAAD,GAAQ;IAFG;;EADf;;EAKA,MAAM,CAAC,OAAP,GAAiB;AALjB",
+  "sourcesContent": [
+    "class CfnExit extends Error\n  constructor: (@status) ->\n    super \"exit\"\n    @name = 'CfnExit'\n\nmodule.exports = CfnExit\n"
+  ]
+}

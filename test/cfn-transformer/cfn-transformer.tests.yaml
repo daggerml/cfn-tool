@@ -110,6 +110,13 @@ resolves indirect Let bindings:
   expected:
     Foo: 100
 
+throws an exception when a multi-segment Ref can't be resolved:
+
+  template: |
+    Foo: !Ref Bar.Baz
+
+  throws: can't resolve
+
 substitites bindings in Refs and Subs:
 
   template:

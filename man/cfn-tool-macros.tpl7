@@ -564,10 +564,10 @@ section.
         Properties:
           BucketName: !Ref Name
 
-`!Return`
+`!Outputs`
 
     # INPUT
-    <<: !Return
+    <<: !Outputs
       Key1: !Ref Val1
       Key2 Name=key2-${AWS::Region}: !Ref Val2
 
