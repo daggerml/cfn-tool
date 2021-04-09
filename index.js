@@ -88,8 +88,8 @@
           template: completions.none,
           stackname: completions.none
         },
-        unknown: function(x) {
-          return abort(new CfnError(`unknown option: '${x}'`));
+        unknown: (x) => {
+          return this.abort(new CfnError(`unknown option: '${x}'`));
         }
       });
       this.defaultOptionsSpec = ['help', 'version', 'command'];
@@ -99,6 +99,7 @@
         update: ['config', 'help', 'parameters', 'profile', 'quiet', 'region', 'verbose', 'command', 'stackname']
       };
       this.allCmds = Object.keys(this.optionsSpecs);
+      this.DEFAULT_CONFIG = '.cfn-tool';
     }
 
     test(f) {
@@ -223,7 +224,7 @@ See the manpage:
       return this.quit(completions.file(prefix));
     }
 
-    main(argv, env, cfg = '.cfn-tool') {
+    main(argv, env, cfg = this.DEFAULT_CONFIG) {
       var bucketarg, cfn, cmdKnown, haveOverride, i, k, len, params, paramsarg, prog, ref, ref1, ref2, ref3, ref4, ref5, res, spec, tagsarg, v, x;
       this.env = env;
       if ((spec = this.optionsSpecs[argv[2]])) {

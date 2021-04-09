@@ -64,7 +64,7 @@ class CfnTool
         tags:       completions.none
         template:   completions.none
         stackname:  completions.none
-      unknown: (x) -> abort new CfnError("unknown option: '#{x}'")
+      unknown: (x) => @abort new CfnError("unknown option: '#{x}'")
     )
 
     @defaultOptionsSpec = [
@@ -115,6 +115,7 @@ class CfnTool
       ]
 
     @allCmds = Object.keys(@optionsSpecs)
+    @DEFAULT_CONFIG = '.cfn-tool'
 
   test: (f) ->
     fn.testing true
@@ -187,7 +188,7 @@ class CfnTool
       @quit()
     @quit completions.file prefix
 
-  main: (argv, @env, cfg='.cfn-tool') ->
+  main: (argv, @env, cfg=@DEFAULT_CONFIG) ->
     if (spec = @optionsSpecs[argv[2]]) then @options.configure(spec, @env)
     else @options.configure(@defaultOptionsSpec, @env, false)
 

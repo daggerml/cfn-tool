@@ -7,10 +7,11 @@ log                 = require '../../lib/log'
 CfnTool             = require '../../'
 {version: VERSION}  = require '../../package.json'
 
-cfn_tool = (args=[], env=[], cfg='/dev/null') ->
+cfn_tool = (args=[], env=[], cfg) ->
   tool = new CfnTool()
+  tool.DEFAULT_CONFIG = cfg
   tool: tool.test(-> tool.main([null, null].concat(args), env))
-  tmpd: tool.opts.tmpdir
+  tmpd: tool.opts?.tmpdir
   logs: tool.sideEffects.map((x) -> x.message)
   opts: tool.opts
   exit: tool.exitStatus
@@ -54,14 +55,22 @@ describe 'cfn-tool', ->
     cmd   = 'transform'
     file  = 'test/cfn-transformer/data/config1.yaml'
     args  = [cmd, file]
-    {tool, exit, tmpd, logs} = cfn_tool(args)
     yaml  = """
       us-west-2:
         foo:
           bar: 100
     """
+    {tool, exit, tmpd, logs} = cfn_tool(args)
     assert.equal(0,                                    exit)
     assert.equal(yaml,                              logs[4])
+
+  it 'cfn-tool transform --keep <template-file>', ->
+    cmd   = 'transform'
+    file  = 'test/cfn-transformer/data/config1.yaml'
+    args  = [cmd, '--keep', file]
+    {tool, exit, tmpd, logs} = cfn_tool(args)
+    assert.equal(1,                                    exit)
+    assert.equal("unknown option: 'keep'",          logs[0])
 
   it 'cfn-tool transform --linter <command> <template-file>', ->
     cmd   = 'transform'
