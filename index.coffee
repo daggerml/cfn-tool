@@ -19,7 +19,6 @@ class CfnTool
     @options = new GetOpts(
       alias:
         bucket:     'b'
-        config:     'c'
         help:       'h'
         keep:       'k'
         linter:     'l'
@@ -39,7 +38,6 @@ class CfnTool
       ]
       string:
         bucket:     '<name>'
-        config:     '<file>'
         linter:     '<command>'
         parameters: '"<key>=<val> ..."'
         profile:    '<name>'
@@ -56,7 +54,6 @@ class CfnTool
           else "CFN_TOOL_#{opt.toUpperCase()}"
       complete:
         bucket:     completions.none
-        config:     completions.none
         linter:     completions.none
         parameters: completions.none
         profile:    completions.profile
@@ -76,7 +73,6 @@ class CfnTool
     @optionsSpecs =
       deploy: [
         'bucket'
-        'config'
         'help'
         'keep'
         'linter'
@@ -91,19 +87,16 @@ class CfnTool
         'stackname'
       ]
       transform: [
-        'config'
         'help'
         'linter'
         'profile'
         'quiet'
         'region'
-        'tags'
         'verbose'
         'command'
         'template'
       ]
       update: [
-        'config'
         'help'
         'parameters'
         'profile'
@@ -114,21 +107,8 @@ class CfnTool
         'stackname'
       ]
 
-    @allCmds = Object.keys(@optionsSpecs)
-    @DEFAULT_CONFIG = '.cfn-tool'
-
-  test: (f) ->
-    fn.testing true
-    try f() catch e
-      if e.name is 'CfnExit'
-        fn.testing(false) or @
-      else @test => @abort(e)
-
-  prod: (f) ->
-    try f() catch e
-      if e.name is 'CfnExit'
-        process.exit(e.status)
-      else @prod => @abort(e)
+    @opts     = {}
+    @allCmds  = Object.keys(@optionsSpecs)
 
   exit: (status = 0) ->
     @exitStatus   = status
@@ -149,7 +129,9 @@ class CfnTool
     @options.configure((if cmd then @optionsSpecs[cmd] else @defaultOptionsSpec), @env)
     lpad  = (x) -> "  #{x}"
     opts  = @options.usage().map(lpad).join("\n")
-    "#{prog}#{if cmd then " #{cmd}" else ''}#{if opts then "\n#{opts}" else ''}"
+    cmd   = if cmd then " #{cmd}" else ''
+    opts  = if opts then "\n#{opts}" else ''
+    "#{prog}#{cmd}#{opts}"
 
   usage: (prog, cmd, status) ->
     manp  = [prog].concat(if cmd then [cmd] else []).join('-')
@@ -165,12 +147,51 @@ class CfnTool
 
   version: () -> @quit VERSION
 
-  bashCompletion: (argv, @env) ->
+  setAwsEnv: (opts) ->
+    (@env.AWS_REGION = @env.AWS_DEFAULT_REGION = opts.region) if opts.region
+    (@env.AWS_PROFILE = opts.profile) if opts.profile
+    [r1, r2] = [@env.AWS_REGION, @env.AWS_DEFAULT_REGION]
+    @env.AWS_REGION = r2 if (r2 and not r1) or (r1 and r2 and r1 isnt r2)
+    @env.AWS_DEFAULT_REGION  = r1 if (r1 and not r2)
+    opts
+
+  setLogLevel: (opts) ->
+    log.level switch
+      when opts.verbose then 'verbose'
+      when opts.quiet   then 'error'
+      else                   'info'
+    opts
+
+  #----------------------------------------------------------------------------
+  # PUBLIC API
+  #----------------------------------------------------------------------------
+
+  test: (f) ->
+    fn.testing true
+    try f() catch e
+      if e.name is 'CfnExit'
+        fn.testing(false) or @
+      else @test => @abort(e)
+
+  prod: (f) ->
+    try f() catch e
+      if e.name is 'CfnExit'
+        process.exit(e.status)
+      else @prod => @abort(e)
+
+  complete: (argv, @env) ->
     log.level('console')
     [$0, prefix, prev] = argv.slice(2)
-    words = sq.parse(@env.COMP_LINE).slice(1)
-    words.pop() if prefix
+    cl      = @env.COMP_LINE
+    cp      = parseInt(@env.COMP_POINT)
+    suffix  = cl.slice(cp).match(/[^ ]*/)
+    left    = cl.slice(0, cp - prefix.length)
+    right   = cl.slice(cp + suffix.length)
+    words   = sq.parse([left, right].filter((x) -> x).join(' ')).slice(1)
     command = words[0]
+
+    fs.writeFileSync '/tmp/t', JSON.stringify {$0, prefix, prev, words}, 2
+
     if $0 is prev and words.length < 2
       @options.configure @defaultOptionsSpec, @env, false
       @quit completions.list prefix, @allCmds.concat(@options.completeOpt(words))
@@ -188,13 +209,13 @@ class CfnTool
       @quit()
     @quit completions.file prefix
 
-  main: (argv, @env, cfg=@DEFAULT_CONFIG) ->
-    if (spec = @optionsSpecs[argv[2]]) then @options.configure(spec, @env)
-    else @options.configure(@defaultOptionsSpec, @env, false)
+  cli: (argv, @env) ->
+    if (spec = @optionsSpecs[argv[2]]) then @options.configure(spec)
+    else @options.configure(@defaultOptionsSpec)
 
     prog          = log.PROG
     argv          = argv.slice(2)
-    @opts         = @options.parse argv, {key: 'config', file: cfg}
+    @opts         = @setLogLevel @setAwsEnv @options.parse argv
     @opts.tmpdir  = fn.tmpdir 'cfn-tool-', @opts.keep
     cmdKnown      = (@opts.command in @allCmds) or not @opts.command
 

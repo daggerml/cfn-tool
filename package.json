@@ -1,6 +1,6 @@
 {
   "name": "cfn-tool",
-  "version": "4.3.6",
+  "version": "5.0.0",
   "description": "AWS CloudFormation template processing and stack deployment tool.",
   "main": "index.js",
   "directories": {
@@ -35,6 +35,13 @@
       "lib/**",
       "test/**"
     ]
+  },
+  "coffeelintConfig": {
+    "max_line_length": {
+      "value": 120,
+      "level": "error",
+      "limitComments": true
+    }
   },
   "bin": {
     "cfn-tool": "bin/cfn-tool",

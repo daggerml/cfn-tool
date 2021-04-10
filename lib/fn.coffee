@@ -195,14 +195,6 @@ abortOnException = module.exports.abortOnException = (abort, lib, fn) ->
 # child process functions
 #------------------------------------------------------------------------------
 
-MOCKS = []
-mockSpawn = module.exports.mockSpawn = (f) -> MOCKS.push(f)
-
-getMock = (cmd) ->
-  for f in MOCKS
-    return ret if (ret = f(cmd))
-  null
-
 handleShell = module.exports.handleShell = (cmd, res, raw) ->
   cmd = prependLines cmd, 'cmd'
   stdout = rmCR res.stdout?.toString('utf-8')
@@ -219,10 +211,16 @@ handleShell = module.exports.handleShell = (cmd, res, raw) ->
     else
       throw new CfnError("bash: exit status #{res.status}", "#{cmd}\n#{res.all}")
 
+MOCKS       = {}
+WHITELIST   = []
+mockShell   = module.exports.mockShell = (cmd, res) -> MOCKS[cmd] = res
+noMockShell = module.exports.noMockShell = (re) -> WHITELIST.push re
+whiteListed = (cmd) -> WHITELIST.reduce(((xs, x) -> xs or x.test(cmd)), false)
+
 spawn = (cmd, args...) ->
-  if TESTING
-    log.spawn cmd
-    getMock(cmd) or {status: 0, stdout: "bogus stdout", stderr: "bogus stderr"}
+  log.spawn(cmd)
+  if TESTING and not whiteListed(cmd)
+    MOCKS[cmd] or {status: 0, stdout: "bogus stdout", stderr: "bogus stderr"}
   else
     spawnSync.apply null, [cmd].concat(args)
 

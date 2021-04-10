@@ -62,8 +62,6 @@
     <a href="#DESCRIPTION">DESCRIPTION</a>
     <a href="#OPTIONS">OPTIONS</a>
     <a href="#EXAMPLES">EXAMPLES</a>
-    <a href="#ENVIRONMENT">ENVIRONMENT</a>
-    <a href="#FILES">FILES</a>
     <a href="#EXIT-STATUS">EXIT STATUS</a>
     <a href="#BUGS">BUGS</a>
     <a href="#SEE-ALSO">SEE ALSO</a>
@@ -94,33 +92,9 @@ is deployed. This can be useful for debugging.</p>
 
 <h2 id="OPTIONS">OPTIONS</h2>
 
-<p>Options are configured in the following ways (from lowest to highest priority):
-configuration file, environment variables, and command line options.</p>
-
-<p>Each command line option (except for <code>--profile</code> and <code>--region</code>) is associated
-with a corresponding environment variable according to the following pattern:
-the <code>--bucket</code> option, for example, is associated with the <code>CFN_TOOL_BUCKET</code>
-environment variable. The <code>--profile</code> and <code>--region</code> options are special
-&mdash; they are associated with the AWS environment variables <code>AWS_PROFILE</code>
-and <code>AWS_DEFAULT_REGION</code>.</p>
-
-<p>Environment variables associated with boolean options must have a value of
-either <code>true</code> or <code>false</code>. String options are specified identically via the
-command line and environment variables.</p>
-
-<p>Options provided via the command line will be automatically exported as their
-corresponding environment variables, and will be in the environment of any
-shell commands executed during macro expansion. For example, when the
-<code>--profile</code> option is specified on the command line there is no need to use it
-in shell commands using the <code>aws</code>(1) CLI tool, as the <code>AWS_PROFILE</code> environment
-variable is exported by <code>cfn-tool</code> to the environment in which the shell
-commands are executed.</p>
+<p>The <code>transform</code> command accepts the following options:</p>
 
 <dl>
-<dt><code>-c</code>, <code>--config</code>=<var>FILE</var></dt><dd><p>Specify the config file load environment variables from. If this option is
-not specified <code>cfn-tool</code> will look for a file named <em>.cfn-tool</em> in the
-current directory. This file will be sourced in the <code>bash</code>(1) shell.
-Environment variables defined here will be applied as default options.</p></dd>
 <dt><code>-l</code>, <code>--linter</code>=<var>COMMAND</var></dt><dd><p>Run <var>COMMAND</var> on each processed template file, aborting if the <var>COMMAND</var>
 fails. The template file path is appended to the <var>COMMAND</var> string and the
 resulting command line is evaluated in the <code>bash</code>(1) shell (see the
@@ -128,9 +102,14 @@ resulting command line is evaluated in the <code>bash</code>(1) shell (see the
 directory set to the current directory (ie. the directory in which the
 <code>cfn-tool</code> program runs).</p></dd>
 <dt><code>-p</code>, <code>--profile</code>=<var>NAME</var></dt><dd><p>Use the AWS profile given by <var>NAME</var> to configure the AWS credentials
-provider chain.</p></dd>
+provider chain. When this option is specified the <var>NAME</var> is propagated to
+child processes via the <code>AWS_PROFILE</code> environment variable (eg. when the
+<code>aws</code>(1) tool is called from a template).</p></dd>
 <dt><code>-q</code>, <code>--quiet</code></dt><dd><p>Suppress all informational, diagnostic, and warning output.</p></dd>
-<dt><code>-r</code>, <code>--region</code>=<var>NAME</var></dt><dd><p>Use the AWS region given by <var>NAME</var> for all AWS API calls.</p></dd>
+<dt><code>-r</code>, <code>--region</code>=<var>NAME</var></dt><dd><p>Use the AWS region given by <var>NAME</var> for all AWS API calls. When this option
+is specified the <var>NAME</var> is propagated to child processes via the
+<code>AWS_REGION</code> and <code>AWS_DEFAULT_REGION</code> environment variables (eg. when the
+<code>aws</code>(1) tool is called from a template).</p></dd>
 <dt><code>-v</code>, <code>--verbose</code></dt><dd><p>Print extra diagnostic output while processing.</p></dd>
 </dl>
 
@@ -142,31 +121,6 @@ and print the result to <code>stdout</code>:</p>
 
 <pre><code>cfn-tool transform --linter "cfn-lint -f pretty" infra/my-template.yml
 </code></pre>
-
-<h2 id="ENVIRONMENT">ENVIRONMENT</h2>
-
-<p>Each command line option is associated with a corresponding environment
-variable. See the <code>OPTIONS</code> section above.</p>
-
-<h2 id="FILES">FILES</h2>
-
-<p>The <code>cfn-tool</code> program will look for a configuration file specified by the
-<code>--config</code> option, the <code>CFN_TOOL_CONFIG</code> environment variable, or the default
-<code>.cfn-tool</code> file in the current working directory. When this file exists it is
-sourced in the <code>bash</code>(1) shell and any configuration environment variables
-defined are used as defaults. Here is an example configuration file:</p>
-
-<pre><code>CFN_TOOL_BUCKET=my-infra-${AWS_DEFAULT_REGION:?}
-CFN_TOOL_KEEP=true
-CFN_TOOL_LINTER="cfn-lint -f pretty -i W1007 --"
-CFN_TOOL_PARAMETERS="Zone=${ZONE:?} Service=RestAPI"
-CFN_TOOL_TAGS="Zone=${ZONE:?} Service=RestAPI"
-</code></pre>
-
-<p>Note that environment variables associated with options specified on the
-command line, such as the <code>AWS_DEFAULT_REGION</code> variable above (associated with
-the <code>--region</code> command line option), are defined in the environment in which
-the configuration file is evaluated when that command line option is specified.</p>
 
 <h2 id="EXIT-STATUS">EXIT STATUS</h2>
 
@@ -200,7 +154,7 @@ the configuration file is evaluated when that command line option is specified.<
 the following license:</p>
 
 <ul>
-<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/4.3.6/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/4.3.6/LICENSE</a></li>
+<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/5.0.0/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/5.0.0/LICENSE</a></li>
 </ul>
 
 
@@ -214,7 +168,7 @@ THE SOFTWARE.</p>
 
 
   <ol class='man-decor man-foot man foot'>
-    <li class='tl'>CloudFormation Tools 4.3.6</li>
+    <li class='tl'>CloudFormation Tools 5.0.0</li>
     <li class='tc'>April 2021</li>
     <li class='tr'>cfn-tool-transform(1)</li>
   </ol>

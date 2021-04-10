@@ -19,7 +19,7 @@ does not expand strings that look like dates implicitly:
 binds Mappings globally:
 
   nested:
-    - test/cfn-transformer/data/template2.yaml
+    - test/data/template2.yaml
 
   template:
     <<: !Mappings
@@ -447,7 +447,7 @@ packages regular files:
 
   expected:
     Foo:
-      Bar: https://s3.amazonaws.com/foop/184f0b4349405c9f9ed61df4b23434b2.txt
+      Bar: https://s3.amazonaws.com/foop/d5c53bfdcd97503bd0f3ebe1eca56f4e.txt
       Baz:
         S3Bucket: foop
         S3Key: 6f5902ac237024bdd0c176cb93063dc4.txt
@@ -499,8 +499,8 @@ compresses directories before packaging:
 recursively packages templates:
 
   nested:
-    - test/cfn-transformer/data/template.yaml
-    - test/cfn-transformer/data/dir/template.yaml
+    - test/data/template.yaml
+    - test/data/dir/template.yaml
 
   template:
     Foo:
@@ -528,9 +528,9 @@ deep merges objects with DeepMerge:
 loads template files with TemplateFile:
 
   nested:
-    -  test/cfn-transformer/data/config1.yaml
-    -  test/cfn-transformer/data/config2.yaml
-    -  test/cfn-transformer/data/config3.yaml
+    -  test/data/config1.yaml
+    -  test/data/config2.yaml
+    -  test/data/config3.yaml
 
   template:
     <<: !Let

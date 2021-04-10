@@ -15,33 +15,7 @@ is deployed. This can be useful for debugging.
 
 ## OPTIONS
 
-Options are configured in the following ways (from lowest to highest priority):
-configuration file, environment variables, and command line options.
-
-Each command line option (except for `--profile` and `--region`) is associated
-with a corresponding environment variable according to the following pattern:
-the `--bucket` option, for example, is associated with the `CFN_TOOL_BUCKET`
-environment variable. The `--profile` and `--region` options are special
-&mdash; they are associated with the AWS environment variables `AWS_PROFILE`
-and `AWS_DEFAULT_REGION`.
-
-Environment variables associated with boolean options must have a value of
-either `true` or `false`. String options are specified identically via the
-command line and environment variables.
-
-Options provided via the command line will be automatically exported as their
-corresponding environment variables, and will be in the environment of any
-shell commands executed during macro expansion. For example, when the
-`--profile` option is specified on the command line there is no need to use it
-in shell commands using the `aws`(1) CLI tool, as the `AWS_PROFILE` environment
-variable is exported by `cfn-tool` to the environment in which the shell
-commands are executed.
-
-  * `-c`, `--config`=<FILE>:
-    Specify the config file load environment variables from. If this option is
-    not specified `cfn-tool` will look for a file named _.cfn-tool_ in the
-    current directory. This file will be sourced in the `bash`(1) shell.
-    Environment variables defined here will be applied as default options.
+The `transform` command accepts the following options:
 
   * `-l`, `--linter`=<COMMAND>:
     Run <COMMAND> on each processed template file, aborting if the <COMMAND>
@@ -53,13 +27,18 @@ commands are executed.
 
   * `-p`, `--profile`=<NAME>:
     Use the AWS profile given by <NAME> to configure the AWS credentials
-    provider chain.
+    provider chain. When this option is specified the <NAME> is propagated to
+    child processes via the `AWS_PROFILE` environment variable (eg. when the
+    `aws`(1) tool is called from a template).
 
   * `-q`, `--quiet`:
     Suppress all informational, diagnostic, and warning output.
 
   * `-r`, `--region`=<NAME>:
-    Use the AWS region given by <NAME> for all AWS API calls.
+    Use the AWS region given by <NAME> for all AWS API calls. When this option
+    is specified the <NAME> is propagated to child processes via the
+    `AWS_REGION` and `AWS_DEFAULT_REGION` environment variables (eg. when the
+    `aws`(1) tool is called from a template).
 
   * `-v`, `--verbose`:
     Print extra diagnostic output while processing.
@@ -70,30 +49,6 @@ Transform the template _infra/my-template.yml_, lint it with `cfn-lint`(1),
 and print the result to `stdout`:
 
     cfn-tool transform --linter "cfn-lint -f pretty" infra/my-template.yml
-
-## ENVIRONMENT
-
-Each command line option is associated with a corresponding environment
-variable. See the `OPTIONS` section above.
-
-## FILES
-
-The `cfn-tool` program will look for a configuration file specified by the
-`--config` option, the `CFN_TOOL_CONFIG` environment variable, or the default
-`.cfn-tool` file in the current working directory. When this file exists it is
-sourced in the `bash`(1) shell and any configuration environment variables
-defined are used as defaults. Here is an example configuration file:
-
-    CFN_TOOL_BUCKET=my-infra-${AWS_DEFAULT_REGION:?}
-    CFN_TOOL_KEEP=true
-    CFN_TOOL_LINTER="cfn-lint -f pretty -i W1007 --"
-    CFN_TOOL_PARAMETERS="Zone=${ZONE:?} Service=RestAPI"
-    CFN_TOOL_TAGS="Zone=${ZONE:?} Service=RestAPI"
-
-Note that environment variables associated with options specified on the
-command line, such as the `AWS_DEFAULT_REGION` variable above (associated with
-the `--region` command line option), are defined in the environment in which
-the configuration file is evaluated when that command line option is specified.
 
 ## EXIT STATUS
 

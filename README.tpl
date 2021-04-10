@@ -69,4 +69,4 @@ And the built-in macros reference manual page:
 [3]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/${VERSION}/man/cfn-tool-transform.html
 [4]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/${VERSION}/man/cfn-tool-update.html
 [5]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/${VERSION}/man/cfn-tool-macros.html
-[6]: https://github.com/daggerml/cfn-tool/blob/master/test/cfn-transformer/cfn-transformer.tests.yaml
+[6]: https://github.com/daggerml/cfn-tool/blob/${VERSION}/test/macro.tests.yaml

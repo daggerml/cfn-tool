@@ -40,7 +40,6 @@
       this.options = new GetOpts({
         alias: {
           bucket: 'b',
-          config: 'c',
           help: 'h',
           keep: 'k',
           linter: 'l',
@@ -55,7 +54,6 @@
         boolean: ['help', 'keep', 'quiet', 'verbose', 'version'],
         string: {
           bucket: '<name>',
-          config: '<file>',
           linter: '<command>',
           parameters: '"<key>=<val> ..."',
           profile: '<name>',
@@ -79,7 +77,6 @@
         },
         complete: {
           bucket: completions.none,
-          config: completions.none,
           linter: completions.none,
           parameters: completions.none,
           profile: completions.profile,
@@ -94,14 +91,98 @@
       });
       this.defaultOptionsSpec = ['help', 'version', 'command'];
       this.optionsSpecs = {
-        deploy: ['bucket', 'config', 'help', 'keep', 'linter', 'parameters', 'profile', 'quiet', 'region', 'tags', 'verbose', 'command', 'template', 'stackname'],
-        transform: ['config', 'help', 'linter', 'profile', 'quiet', 'region', 'tags', 'verbose', 'command', 'template'],
-        update: ['config', 'help', 'parameters', 'profile', 'quiet', 'region', 'verbose', 'command', 'stackname']
+        deploy: ['bucket', 'help', 'keep', 'linter', 'parameters', 'profile', 'quiet', 'region', 'tags', 'verbose', 'command', 'template', 'stackname'],
+        transform: ['help', 'linter', 'profile', 'quiet', 'region', 'verbose', 'command', 'template'],
+        update: ['help', 'parameters', 'profile', 'quiet', 'region', 'verbose', 'command', 'stackname']
       };
+      this.opts = {};
       this.allCmds = Object.keys(this.optionsSpecs);
-      this.DEFAULT_CONFIG = '.cfn-tool';
     }
 
+    exit(status = 0) {
+      this.exitStatus = status;
+      this.sideEffects = log.sideEffects();
+      throw new CfnExit(status);
+    }
+
+    quit(msg, status = 0) {
+      log.console(msg);
+      return this.exit(status);
+    }
+
+    abort(e) {
+      var body;
+      if (e.code === 'ENOENT') {
+        e = new CfnError(e.message);
+      }
+      body = e instanceof CfnError ? e.body : e.body || e.stack;
+      log.error(e.message, {body});
+      return this.exit(1);
+    }
+
+    usageCmd(prog, cmd) {
+      var lpad, opts;
+      this.options.configure((cmd ? this.optionsSpecs[cmd] : this.defaultOptionsSpec), this.env);
+      lpad = function(x) {
+        return `  ${x}`;
+      };
+      opts = this.options.usage().map(lpad).join("\n");
+      cmd = cmd ? ` ${cmd}` : '';
+      opts = opts ? `\n${opts}` : '';
+      return `${prog}${cmd}${opts}`;
+    }
+
+    usage(prog, cmd, status) {
+      var manp, text, ucmd;
+      manp = [prog].concat(cmd ? [cmd] : []).join('-');
+      ucmd = fn.partial(this.usageCmd, this, prog);
+      text = cmd ? ucmd(cmd) : [null].concat(this.allCmds).map(ucmd).join("\n\n");
+      return this.quit(`${text}
+
+See the manpage:
+* cmd: man ${manp}
+* url: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/${VERSION}/man/${manp}.html`, status);
+    }
+
+    version() {
+      return this.quit(VERSION);
+    }
+
+    setAwsEnv(opts) {
+      var r1, r2;
+      if (opts.region) {
+        (this.env.AWS_REGION = this.env.AWS_DEFAULT_REGION = opts.region);
+      }
+      if (opts.profile) {
+        (this.env.AWS_PROFILE = opts.profile);
+      }
+      [r1, r2] = [this.env.AWS_REGION, this.env.AWS_DEFAULT_REGION];
+      if ((r2 && !r1) || (r1 && r2 && r1 !== r2)) {
+        this.env.AWS_REGION = r2;
+      }
+      if (r1 && !r2) {
+        this.env.AWS_DEFAULT_REGION = r1;
+      }
+      return opts;
+    }
+
+    setLogLevel(opts) {
+      log.level((function() {
+        switch (false) {
+          case !opts.verbose:
+            return 'verbose';
+          case !opts.quiet:
+            return 'error';
+          default:
+            return 'info';
+        }
+      })());
+      return opts;
+    }
+
+    //----------------------------------------------------------------------------
+    // PUBLIC API
+    //----------------------------------------------------------------------------
     test(f) {
       var e;
       fn.testing(true);
@@ -135,63 +216,21 @@
       }
     }
 
-    exit(status = 0) {
-      this.exitStatus = status;
-      this.sideEffects = log.sideEffects();
-      throw new CfnExit(status);
-    }
-
-    quit(msg, status = 0) {
-      log.console(msg);
-      return this.exit(status);
-    }
-
-    abort(e) {
-      var body;
-      if (e.code === 'ENOENT') {
-        e = new CfnError(e.message);
-      }
-      body = e instanceof CfnError ? e.body : e.body || e.stack;
-      log.error(e.message, {body});
-      return this.exit(1);
-    }
-
-    usageCmd(prog, cmd) {
-      var lpad, opts;
-      this.options.configure((cmd ? this.optionsSpecs[cmd] : this.defaultOptionsSpec), this.env);
-      lpad = function(x) {
-        return `  ${x}`;
-      };
-      opts = this.options.usage().map(lpad).join("\n");
-      return `${prog}${cmd ? ` ${cmd}` : ''}${opts ? `\n${opts}` : ''}`;
-    }
-
-    usage(prog, cmd, status) {
-      var manp, text, ucmd;
-      manp = [prog].concat(cmd ? [cmd] : []).join('-');
-      ucmd = fn.partial(this.usageCmd, this, prog);
-      text = cmd ? ucmd(cmd) : [null].concat(this.allCmds).map(ucmd).join("\n\n");
-      return this.quit(`${text}
-
-See the manpage:
-* cmd: man ${manp}
-* url: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/${VERSION}/man/${manp}.html`, status);
-    }
-
-    version() {
-      return this.quit(VERSION);
-    }
-
-    bashCompletion(argv, env) {
-      var $0, c, command, i, len, prefix, prev, ref, spec, words, x;
+    complete(argv, env) {
+      var $0, c, cl, command, cp, i, left, len, prefix, prev, ref, right, spec, suffix, words, x;
       this.env = env;
       log.level('console');
       [$0, prefix, prev] = argv.slice(2);
-      words = sq.parse(this.env.COMP_LINE).slice(1);
-      if (prefix) {
-        words.pop();
-      }
+      cl = this.env.COMP_LINE;
+      cp = parseInt(this.env.COMP_POINT);
+      suffix = cl.slice(cp).match(/[^ ]*/);
+      left = cl.slice(0, cp - prefix.length);
+      right = cl.slice(cp + suffix.length);
+      words = sq.parse([left, right].filter(function(x) {
+        return x;
+      }).join(' ')).slice(1);
       command = words[0];
+      fs.writeFileSync('/tmp/t', JSON.stringify({$0, prefix, prev, words}, 2));
       if ($0 === prev && words.length < 2) {
         this.options.configure(this.defaultOptionsSpec, this.env, false);
         this.quit(completions.list(prefix, this.allCmds.concat(this.options.completeOpt(words))));
@@ -224,20 +263,17 @@ See the manpage:
       return this.quit(completions.file(prefix));
     }
 
-    main(argv, env, cfg = this.DEFAULT_CONFIG) {
+    cli(argv, env) {
       var bucketarg, cfn, cmdKnown, haveOverride, i, k, len, params, paramsarg, prog, ref, ref1, ref2, ref3, ref4, ref5, res, spec, tagsarg, v, x;
       this.env = env;
       if ((spec = this.optionsSpecs[argv[2]])) {
-        this.options.configure(spec, this.env);
+        this.options.configure(spec);
       } else {
-        this.options.configure(this.defaultOptionsSpec, this.env, false);
+        this.options.configure(this.defaultOptionsSpec);
       }
       prog = log.PROG;
       argv = argv.slice(2);
-      this.opts = this.options.parse(argv, {
-        key: 'config',
-        file: cfg
-      });
+      this.opts = this.setLogLevel(this.setAwsEnv(this.options.parse(argv)));
       this.opts.tmpdir = fn.tmpdir('cfn-tool-', this.opts.keep);
       cmdKnown = (ref = this.opts.command, indexOf.call(this.allCmds, ref) >= 0) || !this.opts.command;
       fn.assertOk(cmdKnown, `unknown command: '${this.opts.command}'`);

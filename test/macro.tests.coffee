@@ -4,9 +4,9 @@ fs              = require 'fs'
 os              = require 'os'
 path            = require 'path'
 {execSync}      = require 'child_process'
-fn              = require '../../lib/fn'
-log             = require '../../lib/log'
-CfnTransformer  = require '../../lib/cfn-transformer'
+fn              = require '../lib/fn'
+log             = require '../lib/log'
+CfnTransformer  = require '../lib/cfn-transformer'
 tmpdir          = fs.mkdtempSync([os.tmpdir(), 'cfn-tool-'].join('/'))
 
 process.on 'exit', () ->
@@ -42,4 +42,4 @@ testCase = (file) ->
 
 for f in fs.readdirSync(__dirname, {withFileTypes: true})
   if f.isFile() and f.name.match(/\.(yml|yaml)$/)
-    describe f.name.split('.').shift(), -> testCase("#{__dirname}/#{f.name}")
+    describe "#{f.name.split('.').shift()} tests", -> testCase("#{__dirname}/#{f.name}")

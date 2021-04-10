@@ -3,16 +3,16 @@
 { MESSAGE }       = require 'triple-beam'
 { basename }      = require 'path'
 
+levels =
+  console:  0
+  error:    0
+  warn:     1
+  info:     2
+  verbose:  3
+  spawn:    4
+
 class Logger
   constructor: ->
-    levels =
-      console:  0
-      error:    0
-      warn:     1
-      info:     2
-      verbose:  3
-      spawn:    4
-
     format = (
       winston.format (info, opts) =>
         colors =
@@ -61,11 +61,7 @@ class Logger
 
   sideEffects: -> @SIDE_EFFECTS
 
-  console:  (xs...) -> if xs?[0] then @logger.console.apply(@logger, xs)
-  error:    (xs...) -> if xs?[0] then @logger.error.apply(@logger, xs)
-  warn:     (xs...) -> if xs?[0] then @logger.warn.apply(@logger, xs)
-  info:     (xs...) -> if xs?[0] then @logger.info.apply(@logger, xs)
-  verbose:  (xs...) -> if xs?[0] then @logger.verbose.apply(@logger, xs)
-  spawn:    (xs...) -> if xs?[0] then @logger.spawn.apply(@logger, xs)
+Object.keys(levels).forEach (x) ->
+  Logger::[x] = (xs...) -> if xs?[0] then @logger[x].apply(@logger, xs)
 
 module.exports = new Logger()

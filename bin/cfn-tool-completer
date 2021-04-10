@@ -1,4 +1,4 @@
 #!/usr/bin/env node
 const CfnTool = require('../');
 const t = new CfnTool();
-t.prod(function() { t.bashCompletion(process.argv, process.env) });
+t.prod(function() { t.complete(process.argv, process.env) });

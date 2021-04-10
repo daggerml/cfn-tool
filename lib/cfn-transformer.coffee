@@ -125,7 +125,7 @@ class CfnTransformer extends YamlTransformer
       walk    = (x) => if fn.isRef(x) then @walk(x) else x
       getin   = (m, ks) =>
         ret = ks.reduce(((xs, x) -> walk(xs?[x])), m)
-        fn.assertOk ret?, "!Ref: can't resolve: '#{ks.join('.')}'"
+        fn.assertOk ret?, "can't resolve: '#{ks.join('.')}'"
         ret
       switch
         when form.startsWith('$') then {'Fn::Env': form[1..]}

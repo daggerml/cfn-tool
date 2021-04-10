@@ -1,4 +1,4 @@
 #!/usr/bin/env node
 const CfnTool = require('../');
 const t = new CfnTool();
-t.prod(function() { t.main(process.argv, process.env) });
+t.prod(function() { t.cli(process.argv, process.env) });
