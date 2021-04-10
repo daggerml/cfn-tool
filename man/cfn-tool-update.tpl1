@@ -15,7 +15,7 @@ not specified will retain their previous values.
 
 The `update` command accepts the following options:
 
-  * `-p`, `--parameters`="<KEY>=<VALUE> [<KEY>=<VALUE> ...]":
+  * `-P`, `--parameters`="<KEY>=<VALUE> [<KEY>=<VALUE> ...]":
     Set template input parameter overrides. When updating an existing stack the
     values of any unspecified parameters will be preserved.
 

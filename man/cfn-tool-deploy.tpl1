@@ -41,7 +41,7 @@ The `deploy` command accepts the following options:
     directory set to the current directory (ie. the directory in which the
     `cfn-tool` program runs).
 
-  * `-p`, `--parameters`="<KEY>=<VALUE> [<KEY>=<VALUE> ...]":
+  * `-P`, `--parameters`="<KEY>=<VALUE> [<KEY>=<VALUE> ...]":
     Set template input parameter overrides. When updating an existing stack the
     values of any unspecified parameters will be preserved.
 
