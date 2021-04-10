@@ -9,7 +9,7 @@ MAN7S      = $(shell find man/ -name '*.tpl7' |sed 's@tpl7$$@7@')
 HTMLS      = $(shell find man/ -name '*.tpl?' |sed 's@tpl.$$@html@')
 YEAR       = $(shell date +%Y)
 
-.PHONY: all clean compile docs test push
+.PHONY: all clean distclean compile docs test push
 
 all: compile docs test
 
@@ -21,7 +21,10 @@ test:
 	npm test
 
 clean:
-	rm -f $(OBJS) $(MAN1S) $(HTMLS)
+	rm -f $(OBJS)
+
+distclean: clean
+	rm -f $(MAN1S) $(MAN7S) $(HTMLS)
 
 push: all
 	[ -n "$(VERSION)" ]

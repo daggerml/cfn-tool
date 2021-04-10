@@ -47,11 +47,6 @@ class CfnTool
         command:    null
         template:   '<template-file>'
         stackname:  '<stack-name>'
-      opt2var: (opt) ->
-        switch opt
-          when 'profile' then 'AWS_PROFILE'
-          when 'region' then 'AWS_REGION'
-          else "CFN_TOOL_#{opt.toUpperCase()}"
       complete:
         bucket:     completions.none
         linter:     completions.none

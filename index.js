@@ -65,16 +65,6 @@
           template: '<template-file>',
           stackname: '<stack-name>'
         },
-        opt2var: function(opt) {
-          switch (opt) {
-            case 'profile':
-              return 'AWS_PROFILE';
-            case 'region':
-              return 'AWS_REGION';
-            default:
-              return `CFN_TOOL_${opt.toUpperCase()}`;
-          }
-        },
         complete: {
           bucket: completions.none,
           linter: completions.none,
