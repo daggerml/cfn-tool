@@ -63,12 +63,72 @@ interpolateSub = (form) ->
         form = form[i..]
   ret
 
+clone = (jsonable) -> JSON.parse JSON.stringify jsonable
+
+#=============================================================================#
+# TRANSFORMER CLASS FOR USE IN REQUIRED MACRO MODULES                         #
+#=============================================================================#
+
+class CfnModule
+  constructor: (@transformer, @id) ->
+    @transformer.state[@id] ?= {} if @id
+
+  bindings: ->
+    clone fn.peek @transformer.bindstack
+
+  options: ->
+    clone @transformer.opts
+
+  state: ->
+    fn.assertOk @id, 'defmacro: only allowed in !Require modules'
+    @transformer.state[@id]
+
+  defmacro: (name, args...) ->
+    fn.assertOk @id, 'defmacro: only allowed in !Require modules'
+    args[args.length - 1] = args[args.length - 1].bind(@)
+    @transformer.defmacro.apply @transformer, [name].concat(args)
+
+  defresource: (name, long, f) ->
+    args[args.length - 1] = args[args.length - 1].bind(@)
+    @transformer.defresource.apply @transformer, [name].concat(args)
+
+  macroexpand: (form) ->
+    @transformer.walk(form)
+
+  tmpPath: (name) ->
+    @transformer.tmpPath name
+
+  userPath: (path) ->
+    @transformer.userPath path
+
+  error: (message, body) ->
+    @transformer.abort new CfnError(message, body)
+
+  warn: (message, body) ->
+    log.warn @transformer.atLocation(message), {body}
+
+  info: (message, body) ->
+    log.info message, {body}
+
+  verbose: (message, body) ->
+    log.verbose message, {body}
+
+  withBindings: (bindings, f) ->
+    @transformer.withBindings bindings, f
+
+  withCache: (key, f) ->
+    fn.assertOk @id, 'withCache: only allowed in !Require modules'
+    @transformer.withCache {module: @id, key}, f
+
+  withCwd: (dir, f) ->
+    @transformer.withCwd dir, f
+
 #=============================================================================#
 # AWS CLOUDFORMATION YAML TRANSFORMER BASE CLASS                              #
 #=============================================================================#
 
 class CfnTransformer extends YamlTransformer
-  constructor: ({@ns, @basedir, @cache, @opts, @maps} = {}) ->
+  constructor: ({@ns, @basedir, @cache, @opts, @maps, @state} = {}) ->
     super()
 
     @ns             ?= uuid.v4()
@@ -78,7 +138,8 @@ class CfnTransformer extends YamlTransformer
     @basedir        ?= process.cwd()
     @template       = null
     @needBucket     = false
-    @maps           = JSON.parse JSON.stringify(@maps or {})
+    @maps           = clone(@maps or {})
+    @state          = clone(@state or {})
     @resourceMacros = []
     @bindstack      = []
     @nested         = []
@@ -165,8 +226,9 @@ class CfnTransformer extends YamlTransformer
     #=========================================================================#
 
     @defmacro 'Require', (form) =>
-      form = [form] unless fn.isArray(form)
-      require(path.resolve(v))(@, uuid.v4()) for v in form
+      for v in (if fn.isArray(form) then form else [form])
+        v = path.resolve(v)
+        require(v)(new CfnModule(@, v))
       null
 
     @defmacro 'Parameters', (form) =>
@@ -177,7 +239,7 @@ class CfnTransformer extends YamlTransformer
       ), {})
 
     @defmacro 'Return', (form) =>
-      @warn '!Return was deprecated in 4.2.0: use !Outputs instead'
+      log.warn @atLocation '!Return was deprecated in 4.2.0: use !Outputs instead'
       {'Fn::Outputs': form}
 
     @defmacro 'Outputs', (form) =>
@@ -224,7 +286,7 @@ class CfnTransformer extends YamlTransformer
         when fn.isArray(form) and form.length is 2  then form
         when fn.isArray(form) and form.length is 1  then [null].concat(form)
         when fn.isString(form)                      then [null, form]
-        else throw new CfnError '!Shell: expected <string> or [<object>, <string>]'
+        else throw new CfnError 'expected <string> or [<object>, <string>]'
       env = Object.assign({}, process.env, vars)
       @withCache {shell: [@ns, @template, vars, form]}, () =>
         (fn.execShell(form, {env}) or '').replace(/\n$/, '')
@@ -234,13 +296,17 @@ class CfnTransformer extends YamlTransformer
         when fn.isArray(form) and form.length is 2  then form
         when fn.isArray(form) and form.length is 1  then [{}].concat(form)
         when fn.isString(form)                      then [{}, form]
-        else throw new CfnError '!Js: expected <string> or [<object>, <string>]'
+        else throw new CfnError 'expected <string> or [<object>, <string>]'
       @withCache {js: [@ns, @template, vars, form]}, () =>
         args = Object.keys(vars)
         vals = args.reduce(((xs, x) -> xs.concat(["(#{JSON.stringify(vars[x])})"])), [])
-        form = "return (function(#{args.join ','}){#{form}})(#{vals.join ','})"
-        ret = @walk(new Function(form).call(@))
-        throw new CfnError('!Js must not return null', form) if not ret?
+        form = """
+          return (function(#{args.join ', '}) {
+            #{form}
+          }).bind(arguments[0]).call(null, #{vals.join ', '})
+        """
+        ret = @walk (new Function(form)).call(null, new CfnModule(@))
+        throw new CfnError('expected non-null result', form) unless ret?
         ret
 
     @defmacro 'Package', (form) =>
@@ -300,8 +366,6 @@ class CfnTransformer extends YamlTransformer
         (if k in stackProps then Properties else Parameters)[k] = v
       fn.merge(form, {Type, Properties})
 
-  macroexpand: (form) -> @walk(form)
-
   withCache: (key, f) ->
     key = JSON.stringify key
     (@cache[key] or (@cache[key] = [f()]))[0]
@@ -330,25 +394,18 @@ class CfnTransformer extends YamlTransformer
       when e.name is 'Error' then new CfnError(e.message)
       else new CfnError "#{e.name}: #{e.message}"
 
-  abort: (e, {warn} = {}) ->
-    {message, body, aborting} = e = @wrapError(e)
-    if not aborting
-      errmsg = []
-      errmsg.push(message) if message
-      errmsg.push("in #{@template}") if @template
-      errmsg.push("at #{@keystack.join('/')}") if @keystack.length
-      e.message = errmsg.join('\n')
+  atLocation: (message) ->
+    msg = []
+    msg.push(message) if message
+    msg.push("in #{@template}") if @template
+    msg.push("at #{@keystack.join('/')}") if @keystack.length
+    msg.join('\n')
+
+  abort: (e) ->
+    e = @wrapError(e)
+    e.message = @atLocation e.message unless e.aborting
     e.aborting = true
-    if warn then log.warn e.message else throw e
-
-  verbose: (message, body) ->
-    log.verbose message {body}
-
-  info: (message, body) ->
-    log.info message, {body}
-
-  warn: (message, body) ->
-    @abort new CfnError(message, body), {warn: true}
+    throw e
 
   withCwd: (dir, f) ->
     old = process.cwd()
@@ -360,12 +417,6 @@ class CfnTransformer extends YamlTransformer
     ret = f()
     @keystack = old
     ret
-
-  bindings: () ->
-    Object.assign {}, fn.peek(@bindstack)
-
-  options: () ->
-    Object.assign {}, @opts
 
   withBindings: (bindings, f) ->
     @bindstack.push(fn.merge({}, fn.peek(@bindstack), fn.assertObject(bindings)))
@@ -393,7 +444,7 @@ class CfnTransformer extends YamlTransformer
     ret
 
   transformTemplateFile: (file) ->
-    xformer = new @.constructor({@ns, @basedir, @cache, @opts, @maps})
+    xformer = new @.constructor({@ns, @basedir, @cache, @opts, @maps, @state})
     ret = xformer.transformFile(file)
     @nested = @nested.concat xformer.nested
     ret

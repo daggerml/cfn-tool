@@ -15,26 +15,26 @@ fn                  = require '../lib/fn'
   assertResult
 }                   = require './util'
 
-TPL = 'test/data/config1.yaml'
+TPL = 'test/data/config1.yml'
 STK = 'mystack'
 LNT = 'cat'
 
 validateCmd = (tool, tpl) ->
   """
     aws cloudformation validate-template \
-    --template-body \"$(cat '#{tool.opts.tmpdir}/#{fn.md5File tpl}.yaml')\"
+    --template-body \"$(cat '#{tool.opts.tmpdir}/#{fn.md5File tpl}.yml')\"
   """
 
 deployCmd = (tool, tpl, stack) ->
   """
     aws cloudformation deploy \
-    --template-file '#{tool.opts.tmpdir}/#{fn.md5File tpl}.yaml' \
+    --template-file '#{tool.opts.tmpdir}/#{fn.md5File tpl}.yml' \
     --stack-name '#{stack}' \
     --capabilities CAPABILITY_NAMED_IAM CAPABILITY_IAM CAPABILITY_AUTO_EXPAND
   """
 
 lintCmd = (tool, tpl, cmd) ->
-  "#{cmd} #{tool.opts.tmpdir}/#{fn.md5File tpl}.yaml"
+  "#{cmd} #{tool.opts.tmpdir}/#{fn.md5File tpl}.yml"
 
 testcase = (spec, cfg, f) ->
   [f, cfg]  = [cfg, f] unless f

@@ -19,14 +19,14 @@ does not expand strings that look like dates implicitly:
 binds Mappings globally:
 
   nested:
-    - test/data/template2.yaml
+    - test/data/template2.yml
 
   template:
     <<: !Mappings
       Foo:
         Bar:
           Baz: baf
-    File: !TemplateFile data/template2.yaml
+    File: !TemplateFile data/template2.yml
 
   expected:
     Mappings:
@@ -41,6 +41,29 @@ binds Mappings globally:
             Quux: zxcv
           Omg:
             Lol: ok
+
+allows empty object argument to Mappings:
+
+  nested:
+    - test/data/template3.yml
+
+  template:
+    <<: !Mappings
+      Foo:
+        Bar:
+          Baz: baf
+    File: !TemplateFile data/template3.yml
+
+  expected:
+    Mappings:
+      Foo:
+        Bar:
+          Baz: baf
+    File:
+      Mappings:
+        Foo:
+          Bar:
+            Baz: baf
 
 expands Parameters macros:
 
@@ -110,7 +133,7 @@ resolves indirect Let bindings:
   expected:
     Foo: 100
 
-throws an exception when a multi-segment Ref can't be resolved:
+throws when a multi-segment Ref can't be resolved:
 
   template: |
     Foo: !Ref Bar.Baz
@@ -166,8 +189,8 @@ substitutes mapping lookups in Refs and Subs:
         - ''
         - - 'hello '
           - Fn::FindInMap:
-            - key
-            - subkey
+              - key
+              - subkey
           - ' world!'
 
 substitutes GetAtt lookups in Refs and Subs:
@@ -225,7 +248,7 @@ passes unresolved Refs through verbatim:
     Foo:
       Ref: Thing
 
-throws an exception when the argument to Ref is not a string:
+throws when the argument to Ref is not a string:
 
   template: |
     !Ref [ !Sub 'Foo.${@Bar}.Baz' ]
@@ -421,6 +444,16 @@ executes Js commands:
       - floop
       - bloop
 
+Js commands can access the module API via this:
+
+  template:
+    Foo: !Let
+      - Doop: 4242
+      - !Js "return this.bindings().Doop"
+
+  expected:
+    Foo: 4242
+
 caches Js results:
 
   template:
@@ -434,6 +467,23 @@ caches Js results:
 
   expected:
     Baz: true
+
+module API is accessible from Js commands:
+
+  template:
+    Foo: !Js |
+      const result = this.macroexpand({"Fn::Sub": "Val=${Val}"});
+      return `result=${JSON.stringify(result)}`;
+
+  expected:
+    Foo: 'result={"Fn::Join":["",["Val=",{"Ref":"Val"}]]}'
+
+throws when module-only API method called in Js command:
+
+  template: |
+    Foo: !Js 'this.defmacro("Foop", (form) => form); return 42'
+
+  throws: only allowed in !Require modules
 
 packages regular files:
 
@@ -457,8 +507,8 @@ expands Do macros:
 
   template:
     Foo: !Do
-        - !Let { Greet: world }
-        - !Sub hello, ${Greet}!
+      - !Let { Greet: world }
+      - !Sub hello, ${Greet}!
 
   expected:
     Foo: hello, world!
@@ -494,21 +544,21 @@ compresses directories before packaging:
 
   expected:
     Foo:
-      Bar: https://s3.amazonaws.com/foop/877df79d4664aca15df11a668fdfdf78.zip
+      Bar: https://s3.amazonaws.com/foop/406c6249c02797097e4dcd57bf32acbd.zip
 
 recursively packages templates:
 
   nested:
-    - test/data/template.yaml
-    - test/data/dir/template.yaml
+    - test/data/template.yml
+    - test/data/dir/template.yml
 
   template:
     Foo:
-      Bar: !PackageTemplateURL data/template.yaml
+      Bar: !PackageTemplateURL data/template.yml
 
   expected:
     Foo:
-      Bar: https://s3.amazonaws.com/foop/14108f8899cbb3dc6629d94c22b2119c.yaml
+      Bar: https://s3.amazonaws.com/foop/6b5734f3c0d327082b58b60d79a639bb.yml
 
 deep merges objects with DeepMerge:
 
@@ -528,18 +578,18 @@ deep merges objects with DeepMerge:
 loads template files with TemplateFile:
 
   nested:
-    -  test/data/config1.yaml
-    -  test/data/config2.yaml
-    -  test/data/config3.yaml
+    - test/data/config1.yml
+    - test/data/config2.yml
+    - test/data/config3.yml
 
   template:
     <<: !Let
       Dir: data
       Name: config
 
-    Foo: !TemplateFile data/config1.yaml
-    Bar: !DeepMerge [ !TemplateFile data/config1.yaml, !TemplateFile data/config2.yaml ]
-    Baz: !TemplateFile [ !Sub '${Dir}/${Name}3.yaml' ]
+    Foo: !TemplateFile data/config1.yml
+    Bar: !DeepMerge [ !TemplateFile data/config1.yml, !TemplateFile data/config2.yml ]
+    Baz: !TemplateFile [ !Sub '${Dir}/${Name}3.yml' ]
 
   expected:
     Foo:
@@ -561,10 +611,27 @@ loads template files with TemplateFile:
 adds macros with Require:
 
   template:
-    <<: !Require ./lib/case-macros
+    <<: !Require lib/case-macros
     Foo: !UpperCase AsDf
     Bar: !LowerCase AsDf
 
   expected:
     Foo: ASDF
     Bar: asdf
+
+propagates module state to nested templates:
+
+  nested:
+    - test/data/template4.yml
+
+  template:
+    <<: !Require lib/state-macros
+    <<: !PutState [ Key, 4242 ]
+    Foo: !GetState [ Key, not-found ]
+    Bar: !TemplateFile data/template4.yml
+    Baz: !GetState [ Key2, not-found ]
+
+  expected:
+    Foo: 4242
+    Bar: 4242
+    Baz: not-found

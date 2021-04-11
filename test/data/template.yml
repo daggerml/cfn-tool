@@ -2,5 +2,5 @@ AWSTemplateFormatVersion: '2010-09-09'
 
 Fn::Resources:
   Foo Stack:
-    TemplateURL: !PackageTemplateURL dir/template.yaml
+    TemplateURL: !PackageTemplateURL dir/template.yml
     Whoops: omg

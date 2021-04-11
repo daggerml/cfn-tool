@@ -1,0 +1,5 @@
+!Do [
+  !Require ../lib/state-macros,
+  !PutState [ Key2, 1024 ],
+  !GetState [ Key, not-found ]
+]

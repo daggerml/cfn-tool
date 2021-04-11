@@ -9,9 +9,7 @@ exec = (cmd) ->
 none = module.exports.none = (prefix) ->
 
 file = module.exports.file = (prefix) ->
-  exec """
-    compgen -f '#{prefix}'
-  """
+  exec "compgen -f '#{prefix}'"
 
 list = module.exports.list = (prefix, words) ->
   prefixFilter prefix, words

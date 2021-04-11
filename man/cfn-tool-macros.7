@@ -1,7 +1,7 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "CFN\-TOOL\-MACROS" "7" "April 2021" "CloudFormation Tools 5.0.2" "CloudFormation Tools"
+.TH "CFN\-TOOL\-MACROS" "7" "April 2021" "CloudFormation Tools 5.0.3" "CloudFormation Tools"
 .
 .SH "NAME"
 \fBcfn\-tool\-macros\fR \- built\-in macros for common use cases
@@ -10,22 +10,19 @@
 Documentation for the built\-in macros provided by \fBcfn\-tool\fR(1)\.
 .
 .SH "DESCRIPTION"
-CloudFormation templates are structured \(em there are top\-level forms (eg\. the \fBResources\fR, \fBParameters\fR, \fBMappings\fR, and \fBOutputs\fR sections), and there are a few macros that the CloudFormation system knows how to expand (eg\. \fB!Sub\fR, \fB!Ref\fR, and \fB!Base64\fR)\.
-.
-.P
-The \fBcfn\-tool\fR(1) program provides the built\-in macros described in this manual to satisfy the needs of some common use cases, for example:
+The \fBcfn\-tool\fR(1) macro expander provides the built\-in macros described in this manual to satisfy the needs of some common use cases, for example:
 .
 .IP "\(bu" 4
-Dynamic bindings for expressions used in multiple places within a template, for a more DRY approach without admitting excessive logic to the process\.
+Bind expressions to names which may be referenced in multiple places within a template\.
 .
 .IP "\(bu" 4
-Evaluation of \fBbash\fR(1) or JavaScript snippets to generate resource names or content (eg\. UUIDs via \fBuuidgen\fR(1) or \fBgit\fR(1) SHAs, for example)\.
+Package files or directories from the local filesystem for upload to S3 and insert the S3 URI into the template\.
 .
 .IP "\(bu" 4
-Packaging of resources in the local filesystem \(em automatic \fBzip\fR(1) compression of directories and upload to AWS S3, with the S3 URI injected into the template (eg\. upload a lambda function directory from the local filesystem to S3 and inject the S3 URI as the \fBCode\fR property of the resource)\.
+Evaluate \fBbash\fR(1) or JavaScript snippets to generate content or perform side effects (eg\. generate a UUID with \fBuuidgen\fR(1) or run \fBnpm install\fR to prepare an AWS Lambda for packaging)\.
 .
 .IP "\(bu" 4
-Run a build script prior to packaging (eg\. run \fBnpm install\fR before zipping and uploading a lambda directory to S3)\.
+Load JavaScript modules to add custom macros to the macro expander\.
 .
 .IP "\(bu" 4
 And various other affordances to reduce the AWS CloudFormation boilerplate required for common use cases\.
@@ -33,16 +30,13 @@ And various other affordances to reduce the AWS CloudFormation boilerplate requi
 .IP "" 0
 .
 .P
-The philosophy is not to create a layer of abstraction on top of the one already provided by CloudFormation, as there really is no higher level abstraction that can be devised that would be any simpler \(em it would only be yet another layer of tooling that needs to be understood, in addition to the underlying CloudFormation template system\.
-.
-.P
-Instead, the \fBcfn\-tool\fR macro preprocessor is designed to facilitate a reduction in the amount of typing required to define a CloudFormation template\. All of the macros described in this manual are optional; \fBcfn\-tool\fR is compatible with pure vanilla CloudFormation\.
+The macro expander merely adds to the set of macros provided by AWS CloudFormation itself (eg\. \fB!Ref\fR, \fB!Sub\fR, etc\.) \(em plain vanilla CloudFormation templates are fully compatible with \fBcfn\-tool\fR\.
 .
 .SH "YAML SYNTAX"
-The YAML schema supoprted by \fBcfn\-tool\fR includes the JSON types (ie\. \fBnull\fR, \fBbool\fR, \fBint\fR, \fBfloat\fR, \fBstr\fR, \fBseq\fR, and \fBmap\fR) plus the YAML merge type (the merge key, \fB<<\fR)\.
+The YAML schema supoprted by \fBcfn\-tool\fR includes the JSON types (ie\. the JSON \fBnull\fR, \fBbool\fR, \fBint\fR, \fBfloat\fR, \fBstr\fR, \fBseq\fR, and \fBmap\fR types) plus the YAML merge type (the merge key, \fB<<\fR)\.
 .
 .SS "Short Tags vs\. Full Tags"
-All of the macros in this manual may be invoked as \fIshort tags\fR (like \fB!Sub\fR \fIARG\fR), or as \fIfull tags\fR (like \fB{ Fn::Sub:\fR \fIARG\fR \fB}\fR)\. The first pass during macro expansion replaces all short tags with the corresponding full tag, so they can be used interchangeably in a template, although there are issues with YAML syntax which are described below\.
+All of the macros in this manual may be invoked as "short tags" (like \fB!Sub\fR \fIARG\fR) or as "full tags" (like \fB{ Fn::Sub:\fR \fIARG\fR \fB}\fR)\. The YAML reader transforms short tags to their corresponding full tag forms; this happens before macros are expanded, so the macro expander sees only the full tags\. However, there are a few quirks to be aware of\. These are explained below\.
 .
 .SS "Chaining Short Tags"
 Short tags applied to scalar arguments (eg\. \fB!Ref Thing\fR) can not be chained, as the YAML syntax does not support this\. For example, the following will raise a syntax error:
@@ -84,13 +78,50 @@ Which expands to:
 .IP "" 0
 .
 .P
-This may seem pointless because the above is not a valid reference in a CloudFormation template, but this does actually make sense when \fBThing\fR is a dynamic binding (via \fB!Let\fR below) bound to a string which can be resolved at macro expansion time\.
+This may seem pointless because the above is not a valid reference in AWS CloudFormation, but it does actually make sense when \fBThing\fR is a dynamic binding (via \fB!Let\fR below) which resolves to a string at macro expansion time\.
+.
+.SS "Macros in Merge Context"
+Macros which return objects may be merged into a document with the YAML merge operator, \fB<<\fR\. For example, if the \fB!Baz baf\fR macro expands to \fB{Qux: zot}\fR it can be merged into a document as follows:
+.
+.IP "" 4
+.
+.nf
+
+Thing:
+  Foo: bar
+  <<: !Baz baf
+.
+.fi
+.
+.IP "" 0
+.
+.P
+Which expands to:
+.
+.IP "" 4
+.
+.nf
+
+Thing:
+  Foo: bar
+  Qux: zot
+.
+.fi
+.
+.IP "" 0
+.
+.P
+This syntax is also valid for top level forms in a template, of course\.
 .
 .SH "MACRO REFERENCE"
-The following are macros provided by \fBcfn\-tool\fR, and extensions to the macros provided by CloudFormation in some cases\. CloudFormation\-provided macros which are not extended by \fBcfn\-tool\fR are not described here\. See the \fBEXAMPLES\fR section below for a demonstration of how to use each macro\.
+The following are the macros provided by \fBcfn\-tool\fR, and extensions to some of the macros provided by AWS CloudFormation\. CloudFormation\-provided macros which are not extended by \fBcfn\-tool\fR are not described here\. See the \fBEXAMPLES\fR section below for a demonstration of how to use each macro\.
 .
 .SS "CloudFormation Boilerplate Macros"
 These macros are an attempt to reduce the amount of boilerplate required to accomplish various common CloudFormation template patterns\.
+.
+.TP
+\fB!Mappings\fR \fIMAPPING\fR
+Establishes global mappings and returns a CloudFormation \fBMappings\fR section\. When this macro is used in a nested stack the global mappings established in the parent stack are deep\-merged with the \fIMAPPING\fR, which can be \fB{}\fR when no new mappings are desired\. Mappings set in the nested stack are not propagated back to the parent\.
 .
 .TP
 \fB!Outputs\fR \fIMAPPING\fR
@@ -98,7 +129,7 @@ Populates the CloudFormation \fBOutputs\fR section from a simple \fIMAPPING\fR o
 .
 .TP
 \fB!Parameters\fR \fB[\fR \fINAME\-PROPS\fR, \.\.\. \fB]\fR
-Populates the CloudFormation \fBParameters\fR section from a sequence of \fINAME\-PROPS\fR\. Each \fINAME\-PROPS\fR in the sequence is a string of the parameter \fINAME\fR followed by optional \fIKEY\fR=\fIVALUE\fR properties, separated by spaces\. For example, a \fINAME\-PROPS\fR string could be \fB"Param1 Type=Number Default=42"\fR\. The default \fBType\fR is \fBString\fR, and only the name is required\.
+Populates the CloudFormation \fBParameters\fR section from a sequence of \fINAME\-PROPS\fR\. Each \fINAME\-PROPS\fR in the sequence is a string of the parameter \fINAME\fR followed by optional \fIKEY\fR=\fIVALUE\fR properties, separated by spaces\. For example, a \fINAME\-PROPS\fR string could be \fB"Param1 Type=Number Default=42"\fR\. The default \fBType\fR is \fBString\fR, and only the \fINAME\fR is required\.
 .
 .TP
 \fB!Resources\fR \fIMAPPING\fR
@@ -112,12 +143,8 @@ Expands a simple \fIMAPPING\fR to a list of resource tag structures with \fBKey\
 These macros bind values to names which can be referenced from multiple places within a template\.
 .
 .TP
-\fB!Mappings\fR \fIMAPPING\fR
-Establishes global mappings and returns a CloudFormation \fBMappings\fR section\. When this macro is used in a nested stack the global mappings established in the parent stack are deep\-merged with the \fIMAPPING\fR, which can be \fBnull\fR when no new mappings are desired\. Mappings set in the nested stack are not propagated back to the parent\.
-.
-.TP
 \fB!Let\fR \fIMAPPING\fR
-Binds each value of \fIMAPPING\fR to the name given by the associated key\. These are dynamic bindings \(em the bound values are expanded when they are referenced in the document, not when they are bound, and any references within the bound values themselves are resolved then, too\. The \fB!Let\fR expression itself expands to \fBnull\fR and does not appear in the final document\.
+Establishes bindings for the scope of the template\. Each value of \fIMAPPING\fR is bound to the name given by its key\. These are dynamic bindings \(em the bound values are expanded when they are referenced in the document, not when they are bound\. The \fB!Let\fR expression itself expands to \fBnull\fR and does not appear in the final document\.
 .
 .TP
 \fB!Let\fR \fB[\fR \fIMAPPING\fR, \fIEXPR\fR \fB]\fR
@@ -131,8 +158,12 @@ These macros are used to refer to resources, mappings, attributes, etc\., includ
 The CloudFormation \fB!Ref\fR intrinsic function has been extended to support various new types of references in addition to its normal functionality\. The type of reference is denoted by a sigil prefixing the name: \fB$\fR for environment variables, \fB%\fR for \fBMapping\fR section \fBFindInMap\fR lookups, \fB@\fR for \fB!GetAtt\fR resource attributes, and \fB*\fR for \fBImportValue\fR lookups\. Bound names (see \fBBinding Macros\fR above) are referenced with no prefix\.
 .
 .TP
+\fB!Ref\fR \fINAME\fR\fB\.\fR\fINAME\fR[\fB\.\fR\fINAME\fR\.\.\.]
+Multiple unprefixed \fINAME\fRs separated by dots references a value inside a complex data structure bound by a \fB!Let\fR binding, similar to the \fB!FindInMap\fR AWS CloudFormation intrinsic function\. An exception is thrown if the reference can not be resolved\.
+.
+.TP
 \fB!Sub\fR \fITEMPLATE\fR
-References inside the curly\-brace \fB${\fR\.\.\.\fB}\fR in the \fITEMPLATE\fR may be any name understood by \fB!Ref\fR\. For example, \fB${$FOO}\fR in the \fITEMPLATE\fR would be substituted with the value associated with the \fBFOO\fR environment variable, and \fB${@MyRole\.Arn}\fR would be substituted with \fB!GetAtt\fR \fBMyRole\.Arn\fR\.
+References inside the curly\-brace \fB${\fR\.\.\.\fB}\fR in the \fITEMPLATE\fR may be any name understood by \fB!Ref\fR\. For example, \fB${$FOO}\fR in the \fITEMPLATE\fR would be substituted with the value of the \fBFOO\fR environment variable and \fB${@MyRole\.Arn}\fR would be substituted with \fB!GetAtt\fR \fBMyRole\.Arn\fR\.
 .
 .TP
 \fB!Var\fR \fITEMPLATE\fR
@@ -143,23 +174,23 @@ These macros package files or directories from the local filesystem, upload them
 .
 .TP
 \fB!Package\fR \fIPATH\fR
-Returns a mapping with \fBS3Bucket\fR and \fBS3Key\fR properties, suitable for use with the \fBCode\fR property of an AWS Lambda function resource, for instance\.
+Returns a mapping with \fBS3Bucket\fR and \fBS3Key\fR properties, for example to use for the \fBCode\fR property of an \fBAWS::Lambda::Function\fR resource\.
 .
 .TP
 \fB!Package\fR \fB{\fR \fBPath\fR: \fIPATH\fR, \fBParse\fR: \fIBOOL\fR, \fBCacheKey\fR: \fIKEY\fR \fB}\fR
-Returns a mapping as above\. The \fBPath\fR property is required\. The \fBParse\fR property indicates whether the \fIPATH\fR is a YAML file that should be parsed and macro expanded prior to packaging\. The \fBCacheKey\fR property allows the user to provide a string which will be used instead of the MD5 hash of the package contents when determining the filename in S3\.
+Returns a mapping as above\. The \fBPath\fR property is required\. The \fBParse\fR property indicates whether the \fIPATH\fR is a YAML template that should be parsed and macroexpanded before packaging\. The \fBCacheKey\fR property allows the user to provide a string which will be used instead of the MD5 hash of the package contents when determining the filename in S3\.
 .
 .TP
 \fB!PackageURI\fR \fIPATH\-OR\-MAPPING\fR
-Returns a URI with the \fIs3://\fR protocol\. The \fIMAPPING\fR argument is as above\.
+Returns the S3 URI (ie\. the \fIs3://\fR protocol URI) of the package\.
 .
 .TP
 \fB!PackageURL\fR \fIPATH\-OR\-MAPPING\fR
-Returns the HTTPS URL of the S3 object\. The \fIMAPPING\fR argument is as above\.
+Returns the HTTPS URL (ie\. the \fIhttps://s3\.amazonaws\.com/\.\.\.\fR URL) of the object\.
 .
 .TP
 \fB!PackageTemplateURL\fR \fIPATH\-OR\-MAPPING\fR
-Like \fBPackageURL\fR above, but parses and expands macros before packaging\. The \fIMAPPING\fR argument is as above, as well\.
+Like \fBPackageURL\fR above, with the \fBParse\fR option set to \fBtrue\fR\.
 .
 .SS "File I/O Macros"
 These macros allow the user to read files from the local filesystem and incorporate the data into the template\.
@@ -196,7 +227,7 @@ These macros provide the user with the ability to evaluate commands in a shell t
 .
 .TP
 \fB!Js\fR \fIBODY\fR
-Evaluates a JavaScript function \fIBODY\fR string, returning the result\. The working directory is set to the template directory, and the \fBthis\fR object is set to the \fBCfnTransformer\fR instance (see the \fBTRANSFORMER API\fR section below)\.
+Evaluates a JavaScript function \fIBODY\fR string, returning the result\. The working directory is set to the template directory, and the \fBthis\fR object is set to the \fBCfnModule\fR instance (see the \fBMODULE API\fR section below)\.
 .
 .TP
 \fB!Js\fR \fB[\fR \fIMAPPING\fR, \fIBODY\fR \fB]\fR
@@ -215,52 +246,80 @@ These macros allow the user to merge objects in various ways, deep or shallow\.
 .
 .TP
 \fB!DeepMerge\fR \fB[\fR \fIMAPPING\fR, \.\.\. \fB]\fR
-Performs a deep merge of two or more mappings, returning the result\.
+Performs a deep merge of the \fIMAPPING\fRs and returns the result\.
 .
 .TP
 \fB!Merge\fR \fB[\fR \fIMAPPING\fR, \.\.\. \fB]\fR
-Performs a shallow merge of two or more mappings and returns the result\.
+Performs a shallow merge of the \fIMAPPING\fRs and returns the result\.
 .
 .SS "Macro Combinators"
 These macros comprise the control flow and special forms provided by the macro expansion environment\.
 .
 .TP
 \fB!Do\fR \fB[\fR \fIEXPR\fR, \.\.\. \fB]\fR
-Expands each \fIEXPR\fR in the sequence in order (presumably for side\-effects), returning the expansion of the last one as the result\.
+Expands each \fIEXPR\fR in the sequence (presumably for side\-effects) and returns the last expansion as the result\.
 .
 .SS "Extension Macros"
 These macros allow the user to add his own custom macros or extend the capabilities of the built\-in macro system within the scope of the template\.
 .
 .TP
 \fB!Require\fR \fIFILE\fR
-Loads the given \fIFILE\fR as a JavaScript module\. The default export of this module is called with two arguments: the \fBCfnTransformer\fR instance (see the \fBTRANSFORMER API\fR section below), and a unique namespace string\. The user may define custom macros in this module with the transformer instance\'s \fBdefmacro()\fR method\. The namespace string is provided for inclusion in cache keys passed to the instance\'s \fBwithCache()\fR method\. The \fIFILE\fR path is relative to the template\'s directory\. The \fB!Require\fR macro itself expands to \fBnull\fR and does not appear in the final document\.
+Loads the given \fIFILE\fR as a JavaScript module\. The default export of this module is called with one argument: the \fBCfnModule\fR instance (see the \fBMODULE API\fR section below)\. The \fIFILE\fR\'s path is resolved relative to the template\'s directory\. The \fB!Require\fR macro itself expands to \fBnull\fR and does not appear in the final document\.
 .
 .TP
 \fB!Require\fR \fB[\fR \fIFILE\fR, \.\.\. \fB]\fR
 As above, but loads multiple JavaScript files\.
 .
-.SH "TRANSFORMER API"
-JavaScript evaluated during macroexpansion (ie\. via \fB!Js\fR, \fB!Require\fR, and by custom macro implementations loaded via \fB!Require\fR) are passed a reference to the \fBCfnTransformer\fR instance\. In the \fIBODY\fR of a \fB!Js\fR macro the instance is bound to \fBthis\fR, and for \fB!Require\fR it is passed as an argument to the default export of the module\. The \fBCfnTransformer\fR instance has the following public API methods:
+.SH "MODULE API"
+The module API is provided for use by custom JavaScript that is evaluated during macro expansion\. The API is exposed by an instance of the \fBCfnModule\fR class that is passed to the JavaScript environment\. In the \fIBODY\fR of a \fB!Js\fR macro the API is bound to the \fBthis\fR object\. In a module loaded by the \fB!Require\fR macro the API is passed as an argument to the function exported by the module\. Note that some of the API methods are only available in modules loaded via \fB!Require\fR \(em these methods are indicated with an asterisk (\fB*\fR)\.
 .
 .TP
-\fBbindings()\fR
-Returns the current bindings (see \fBBinding Macros\fR above)\.
-.
-.TP
-\fBdefmacro(\fR\fINAME\fR, \fIFUNCTION\fR\fB)\fR
-Defines a new macro\. The \fIFUNCTION\fR receives a single argument, the form to be expanded\. The location in the template where the macro was called is replaced by the value returned by \fIFUNCTION\fR\. The returned value may also contain macro calls, which are automatically expanded as required\. The new macros is immediately available anywhere in the template in which it was defined, but not in nested or parent templates\.
-.
-.TP
-\fBinfo(\fR\fIMESSAGE\fR[, \fIBODY\fR]\fB)\fR
-Logs an info level \fIMESSAGE\fR, with an optional \fIBODY\fR string containing additional information to be displayed when the user has specified the \fB\-\-verbose\fR option\.
+\fBdefmacro(\fR\fINAME\fR, [\fILONG\fR, ]\fIFUNCTION\fR\fB)*\fR
+Defines a new macro with short tag \fB!\fR\fINAME\fR and long tag \fBFn::\fR\fINAME\fR, or \fILONG\fR if specified\. The \fIFUNCTION\fR receives a single argument, the form to be expanded\. The location in the template where the macro was called is replaced by the value returned by \fIFUNCTION\fR\. The returned value may also contain macro calls, which are automatically expanded as required\. The new macros is immediately available anywhere in the template in which it was defined, but not in nested or parent templates\.
 .
 .TP
 \fBmacroexpand(\fR\fIFORM\fR\fB)\fR
 Expands all macros in \fIFORM\fR, recursively and repeatedly, until \fIFORM\fR has been completely expanded and is suitable for consumption by CloudFormation\. This method is used mostly by macros to process their arguments when code walking is necessary\.
 .
 .TP
+\fBverbose(\fR\fIMESSAGE\fR[, \fIBODY\fR]\fB)\fR
+Logs a verbose level \fIMESSAGE\fR, with an optional \fIBODY\fR string containing additional information to be displayed\.
+.
+.TP
+\fBinfo(\fR\fIMESSAGE\fR[, \fIBODY\fR]\fB)\fR
+Logs an info level \fIMESSAGE\fR, with an optional \fIBODY\fR string containing additional information to be displayed (the \fIBODY\fR is suppressed except when the user has specified the \fB\-\-verbose\fR option)\.
+.
+.TP
+\fBwarn(\fR\fIMESSAGE\fR[, \fIBODY\fR]\fB)\fR
+Logs a warning level \fIMESSAGE\fR, with an optional \fIBODY\fR string containing additional information to be displayed\.
+.
+.TP
+\fBerror(\fR\fIMESSAGE\fR[, \fIBODY\fR]\fB)\fR
+Aborts the program, logging an error level \fIMESSAGE\fR with an optional \fIBODY\fR string containing additional information to be displayed\.
+.
+.TP
 \fBoptions()\fR
-Returns the instance\'s configuration options\. These options include command line options set by the user and a few additional flags set internally by \fBcfn\-tool\fR\.
+Returns the instance\'s configuration options\. These options include command line options set by the user and a few additional flags set internally by \fBcfn\-tool\fR\. Read only\.
+.
+.TP
+\fBstate()*\fR
+Returns the module\'s state object which can be used to store data\. This object is propagated to nested templates\. Changes to the state object are not propagated from nested templates back to the parent\.
+.
+.TP
+\fBbindings()\fR
+Returns the current bindings (see \fBBinding Macros\fR above)\. Read only\.
+.
+.TP
+\fBwithBindings(\fR\fIBINDINGS\fR, \fIFUNCTION\fR\fB)\fR
+Creates a new scope with the \fIBINDINGS\fR and calls \fIFUNCTION\fR with no arguments, then restores the previous scope and returns the \fIFUNCTION\fR\'s result\.
+.
+.TP
+\fBwithCache(\fR\fIKEY\fR, \fIFUNCTION\fR\fB)*\fR
+Each module is provided with its own cache\. If \fIKEY\fR, which can be any JSONable value, is found in the cache the associated value is returned\. Otherwise, \fIFUNCTION\fR is called with no arguments and the result is cached and returned\.
+.
+.TP
+\fBwithCwd(\fR\fIDIR\fR, \fIFUNCTION\fR\fB)\fR
+Sets the current working directory to \fIDIR\fR and calls the \fIFUNCTION\fR with no arguments, then restores the previous working directory and returns the \fIFUNCTION\fR\'s result\.
 .
 .TP
 \fBtmpPath(\fR\fINAME\fR\fB)\fR
@@ -269,26 +328,6 @@ Constructs a path for a file named \fINAME\fR in the temporary directory managed
 .TP
 \fBuserPath(\fR\fIPATH\fR\fB)\fR
 Resolves \fIPATH\fR relative to \fBcfn\-tool\fR\'s working directory\. This is the path the user expects to see, as the working directory is set to the template\'s directory during macro expansion\.
-.
-.TP
-\fBverbose(\fR\fIMESSAGE\fR[, \fIBODY\fR]\fB)\fR
-Logs a verbose level \fIMESSAGE\fR, with an optional \fIBODY\fR string containing additional information\.
-.
-.TP
-\fBwarn(\fR\fIMESSAGE\fR[, \fIBODY\fR]\fB)\fR
-Logs a warning level \fIMESSAGE\fR, with an optional \fIBODY\fR string containing additional information to be displayed when the user has specified the \fB\-\-verbose\fR option\.
-.
-.TP
-\fBwithBindings(\fR\fIBINDINGS\fR, \fIFUNCTION\fR\fB)\fR
-Creates a new scope with the \fIBINDINGS\fR and calls \fIFUNCTION\fR with no arguments, then restores the previous scope and returns the \fIFUNCTION\fR\'s result\.
-.
-.TP
-\fBwithCache(\fR\fIKEY\fR, \fIFUNCTION\fR\fB)\fR
-Given a \fIKEY\fR which can be any JSON\-able data and a \fIFUNCTION\fR of no arguments, checks the cache for \fIKEY\fR (as JSON)\. If \fIKEY\fR is found the cached value is returned, otherwise the \fIFUNCTION\fR is called and the result is added to the cache and returned\.
-.
-.TP
-\fBwithCwd(\fR\fIDIR\fR, \fIFUNCTION\fR\fB)\fR
-Sets the current working directory to \fIDIR\fR and calls the \fIFUNCTION\fR with no arguments, then restores the previous working directory and returns the \fIFUNCTION\fR\'s result\.
 .
 .SH "EXAMPLES"
 The following examples demonstrate how to use the macros described above\. Each example consists of an \fBINPUT\fR template (the source) and a \fBRESULT\fR template reflecting the final document with all macros expanded\. Some macros in the examples refer to a file in the local filesystem, in which case the contents and path of the file (relative to the \fBINPUT\fR template) is provided in a \fBFILE\fR section\.
@@ -331,8 +370,8 @@ Foo:
 
 # INPUT
 Foo: !Do
-  \- !Shell make build
-  \- !Package dist/
+  \- !Shell make \-C project build
+  \- !Package project/dist
 
 # RESULT
 Foo:
@@ -475,6 +514,32 @@ Foo:
 .IP "" 0
 .
 .P
+\fB!Outputs\fR
+.
+.IP "" 4
+.
+.nf
+
+# INPUT
+<<: !Outputs
+  Key1: !Ref Val1
+  Key2 Name=key2\-${AWS::Region}: !Ref Val2
+
+# RESULT
+Outputs:
+  Key1:
+    Value:
+      Ref: Val1
+  Key2:
+    Value:
+      Ref: Val2
+    Name: !Sub key2\-${AWS::Region}
+.
+.fi
+.
+.IP "" 0
+.
+.P
 \fB!Package\fR
 .
 .IP "" 4
@@ -576,9 +641,9 @@ Parameters:
 .nf
 
 # FILE: \./lib/case\-macros\.js
-module\.exports = (compiler, cacheNamespace) => {
-  compiler\.defmacro(\'UpperCase\', (form) => form\.toUpperCase());
-  compiler\.defmacro(\'LowerCase\', (form) => form\.toLowerCase());
+module\.exports = (api) => {
+  api\.defmacro(\'UpperCase\', (form) => form\.toUpperCase());
+  api\.defmacro(\'LowerCase\', (form) => form\.toLowerCase());
 };
 
 # INPUT
@@ -605,6 +670,7 @@ Bar: asdf
 <<: !Resources
   MyBucket AWS::S3::Bucket Condition=Create DependsOn=[Foo,Bar]:
     BucketName: !Ref Name
+    Tags: !Tags { System: core }
 
 # RESULT
 Resources:
@@ -616,32 +682,9 @@ Resources:
       \- Bar
     Properties:
       BucketName: !Ref Name
-.
-.fi
-.
-.IP "" 0
-.
-.P
-\fB!Outputs\fR
-.
-.IP "" 4
-.
-.nf
-
-# INPUT
-<<: !Outputs
-  Key1: !Ref Val1
-  Key2 Name=key2\-${AWS::Region}: !Ref Val2
-
-# RESULT
-Outputs:
-  Key1:
-    Value:
-      Ref: Val1
-  Key2:
-    Value:
-      Ref: Val2
-    Name: !Sub key2\-${AWS::Region}
+      Tags:
+        \- Key: System
+          Value: core
 .
 .fi
 .
@@ -801,7 +844,7 @@ Man pages for the \fBcfn\-tool\fR commands:
 Copyright © 2021 Micha Niskin \fB<micha\.niskin@gmail\.com>\fR, distributed under the following license:
 .
 .IP "\(bu" 4
-\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/5\.0\.2/LICENSE\fR
+\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/5\.0\.3/LICENSE\fR
 .
 .IP "" 0
 .

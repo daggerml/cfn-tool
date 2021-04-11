@@ -62,7 +62,7 @@
     <a href="#DESCRIPTION">DESCRIPTION</a>
     <a href="#YAML-SYNTAX">YAML SYNTAX</a>
     <a href="#MACRO-REFERENCE">MACRO REFERENCE</a>
-    <a href="#TRANSFORMER-API">TRANSFORMER API</a>
+    <a href="#MODULE-API">MODULE API</a>
     <a href="#EXAMPLES">EXAMPLES</a>
     <a href="#BUGS">BUGS</a>
     <a href="#SEE-ALSO">SEE ALSO</a>
@@ -86,54 +86,40 @@
 
 <h2 id="DESCRIPTION">DESCRIPTION</h2>
 
-<p>CloudFormation templates are structured &mdash; there are top-level forms (eg.
-the <code>Resources</code>, <code>Parameters</code>, <code>Mappings</code>, and <code>Outputs</code> sections), and there
-are a few macros that the CloudFormation system knows how to expand (eg.
-<code>!Sub</code>, <code>!Ref</code>, and <code>!Base64</code>).</p>
-
-<p>The <code>cfn-tool</code>(1) program provides the built-in macros described in this manual
-to satisfy the needs of some common use cases, for example:</p>
+<p>The <code>cfn-tool</code>(1) macro expander provides the built-in macros described in this
+manual to satisfy the needs of some common use cases, for example:</p>
 
 <ul>
-<li><p>Dynamic bindings for expressions used in multiple places within a template,
-for a more DRY approach without admitting excessive logic to the process.</p></li>
-<li><p>Evaluation of <code>bash</code>(1) or JavaScript snippets to generate resource names or
-content (eg. UUIDs via <code>uuidgen</code>(1) or <code>git</code>(1) SHAs, for example).</p></li>
-<li><p>Packaging of resources in the local filesystem &mdash; automatic <code>zip</code>(1)
-compression of directories and upload to AWS S3, with the S3 URI injected
-into the template (eg. upload a lambda function directory from the local
-filesystem to S3 and inject the S3 URI as the <code>Code</code> property of the resource).</p></li>
-<li><p>Run a build script prior to packaging (eg. run <code>npm install</code> before zipping
-and uploading a lambda directory to S3).</p></li>
+<li><p>Bind expressions to names which may be referenced in multiple places within a
+template.</p></li>
+<li><p>Package files or directories from the local filesystem for upload to S3 and
+insert the S3 URI into the template.</p></li>
+<li><p>Evaluate <code>bash</code>(1) or JavaScript snippets to generate content or perform side
+effects (eg. generate a UUID with <code>uuidgen</code>(1) or run <code>npm install</code> to
+prepare an AWS Lambda for packaging).</p></li>
+<li><p>Load JavaScript modules to add custom macros to the macro expander.</p></li>
 <li><p>And various other affordances to reduce the AWS CloudFormation boilerplate
 required for common use cases.</p></li>
 </ul>
 
 
-<p>The philosophy is not to create a layer of abstraction on top of the one already
-provided by CloudFormation, as there really is no higher level abstraction that
-can be devised that would be any simpler &mdash; it would only be yet another
-layer of tooling that needs to be understood, in addition to the underlying
-CloudFormation template system.</p>
-
-<p>Instead, the <code>cfn-tool</code> macro preprocessor is designed to facilitate a reduction
-in the amount of typing required to define a CloudFormation template. All of the
-macros described in this manual are optional; <code>cfn-tool</code> is compatible with pure
-vanilla CloudFormation.</p>
+<p>The macro expander merely adds to the set of macros provided by AWS CloudFormation
+itself (eg. <code>!Ref</code>, <code>!Sub</code>, etc.) &mdash; plain vanilla CloudFormation templates
+are fully compatible with <code>cfn-tool</code>.</p>
 
 <h2 id="YAML-SYNTAX">YAML SYNTAX</h2>
 
-<p>The YAML schema supoprted by <code>cfn-tool</code> includes the JSON types (ie. <code>null</code>,
-<code>bool</code>, <code>int</code>, <code>float</code>, <code>str</code>, <code>seq</code>, and <code>map</code>) plus the YAML merge type (the
-merge key, <code>&lt;&lt;</code>).</p>
+<p>The YAML schema supoprted by <code>cfn-tool</code> includes the JSON types (ie. the JSON
+<code>null</code>, <code>bool</code>, <code>int</code>, <code>float</code>, <code>str</code>, <code>seq</code>, and <code>map</code> types) plus the YAML
+merge type (the merge key, <code>&lt;&lt;</code>).</p>
 
 <h3 id="Short-Tags-vs-Full-Tags">Short Tags vs. Full Tags</h3>
 
-<p>All of the macros in this manual may be invoked as <em>short tags</em> (like <code>!Sub</code>
-<var>ARG</var>), or as <em>full tags</em> (like <code>{ Fn::Sub:</code> <var>ARG</var> <code>}</code>). The first pass during
-macro expansion replaces all short tags with the corresponding full tag, so
-they can be used interchangeably in a template, although there are issues with
-YAML syntax which are described below.</p>
+<p>All of the macros in this manual may be invoked as "short tags" (like <code>!Sub</code>
+<var>ARG</var>) or as "full tags" (like <code>{ Fn::Sub:</code> <var>ARG</var> <code>}</code>). The YAML reader
+transforms short tags to their corresponding full tag forms; this happens
+before macros are expanded, so the macro expander sees only the full tags.
+However, there are a few quirks to be aware of. These are explained below.</p>
 
 <h3 id="Chaining-Short-Tags">Chaining Short Tags</h3>
 
@@ -157,15 +143,34 @@ provided by CloudFormation itself. The above example can be achieved with
 <pre><code>{"Ref": {"Ref": "Thing"}}
 </code></pre>
 
-<p>This may seem pointless because the above is not a valid reference in a
-CloudFormation template, but this does actually make sense when <code>Thing</code> is a
-dynamic binding (via <code>!Let</code> below) bound to a string which can be resolved at
-macro expansion time.</p>
+<p>This may seem pointless because the above is not a valid reference in AWS
+CloudFormation, but it does actually make sense when <code>Thing</code> is a dynamic
+binding (via <code>!Let</code> below) which resolves to a string at macro expansion time.</p>
+
+<h3 id="Macros-in-Merge-Context">Macros in Merge Context</h3>
+
+<p>Macros which return objects may be merged into a document with the YAML merge
+operator, <code>&lt;&lt;</code>. For example, if the <code>!Baz baf</code> macro expands to <code>{Qux: zot}</code> it
+can be merged into a document as follows:</p>
+
+<pre><code>Thing:
+  Foo: bar
+  &lt;&lt;: !Baz baf
+</code></pre>
+
+<p>Which expands to:</p>
+
+<pre><code>Thing:
+  Foo: bar
+  Qux: zot
+</code></pre>
+
+<p>This syntax is also valid for top level forms in a template, of course.</p>
 
 <h2 id="MACRO-REFERENCE">MACRO REFERENCE</h2>
 
-<p>The following are macros provided by <code>cfn-tool</code>, and extensions to the macros
-provided by CloudFormation in some cases. CloudFormation-provided macros which
+<p>The following are the macros provided by <code>cfn-tool</code>, and extensions to some of
+the macros provided by AWS CloudFormation. CloudFormation-provided macros which
 are not extended by <code>cfn-tool</code> are not described here. See the <code>EXAMPLES</code>
 section below for a demonstration of how to use each macro.</p>
 
@@ -175,6 +180,11 @@ section below for a demonstration of how to use each macro.</p>
 accomplish various common CloudFormation template patterns.</p>
 
 <dl>
+<dt><code>!Mappings</code> <var>MAPPING</var></dt><dd><p>Establishes global mappings and returns a CloudFormation <code>Mappings</code> section.
+When this macro is used in a nested stack the global mappings established
+in the parent stack are deep-merged with the <var>MAPPING</var>, which can be <code>{}</code>
+when no new mappings are desired. Mappings set in the nested stack are not
+propagated back to the parent.</p></dd>
 <dt><code>!Outputs</code> <var>MAPPING</var></dt><dd><p>Populates the CloudFormation <code>Outputs</code> section from a simple <var>MAPPING</var> of
 keys and values. Additional directives can be provided in the keys of the
 <var>MAPPING</var> (such as the <code>Name</code> property), as shown in the <code>EXAMPLES</code> section
@@ -183,7 +193,7 @@ below. References in the keys are interpolated as with <code>!Sub</code>.</p></d
 <var>NAME-PROPS</var>. Each <var>NAME-PROPS</var> in the sequence is a string of the parameter
 <var>NAME</var> followed by optional <var>KEY</var>=<var>VALUE</var> properties, separated by spaces.
 For example, a <var>NAME-PROPS</var> string could be <code>"Param1 Type=Number Default=42"</code>.
-The default <code>Type</code> is <code>String</code>, and only the name is required.</p></dd>
+The default <code>Type</code> is <code>String</code>, and only the <var>NAME</var> is required.</p></dd>
 <dt><code>!Resources</code> <var>MAPPING</var></dt><dd><p>Populates the CloudFormation <code>Resources</code> section from the <var>MAPPING</var> whose
 keys may contain the <code>Type</code> and top-level properties, with the <code>Properties</code>
 of the resource provided by the value associated with this key. Note that
@@ -200,17 +210,11 @@ and <code>Value</code> properties.</p></dd>
 within a template.</p>
 
 <dl>
-<dt><code>!Mappings</code> <var>MAPPING</var></dt><dd><p>Establishes global mappings and returns a CloudFormation <code>Mappings</code> section.
-When this macro is used in a nested stack the global mappings established
-in the parent stack are deep-merged with the <var>MAPPING</var>, which can be <code>null</code>
-when no new mappings are desired. Mappings set in the nested stack are not
-propagated back to the parent.</p></dd>
-<dt><code>!Let</code> <var>MAPPING</var></dt><dd><p>Binds each value of <var>MAPPING</var> to the name given by the associated key.
-These are dynamic bindings &mdash; the bound values are expanded when they
-are referenced in the document, not when they are bound, and any references
-within the bound values themselves are resolved then, too. The <code>!Let</code>
-expression itself expands to <code>null</code> and does not appear in the final
-document.</p></dd>
+<dt><code>!Let</code> <var>MAPPING</var></dt><dd><p>Establishes bindings for the scope of the template. Each value of <var>MAPPING</var>
+is bound to the name given by its key. These are dynamic bindings &mdash;
+the bound values are expanded when they are referenced in the document, not
+when they are bound. The <code>!Let</code> expression itself expands to <code>null</code> and
+does not appear in the final document.</p></dd>
 <dt><code>!Let</code> <code>[</code> <var>MAPPING</var>, <var>EXPR</var> <code>]</code></dt><dd><p>Establishes bindings for the scope of a single expression. The first item
 in the sequence is the <var>MAPPING</var> of binding pairs, and the second item is
 the <var>EXPR</var> to be expanded within the scope of these bindings, and whose
@@ -231,10 +235,14 @@ The type of reference is denoted by a sigil prefixing the name: <code>$</code> f
 environment variables, <code>%</code> for <code>Mapping</code> section <code>FindInMap</code> lookups, <code>@</code>
 for <code>!GetAtt</code> resource attributes, and <code>*</code> for <code>ImportValue</code> lookups.
 Bound names (see <code>Binding Macros</code> above) are referenced with no prefix.</p></dd>
+<dt><code>!Ref</code> <var>NAME</var><code>.</code><var>NAME</var>[<code>.</code><var>NAME</var>...]</dt><dd><p>Multiple unprefixed <var>NAME</var>s separated by dots references a value inside
+a complex data structure bound by a <code>!Let</code> binding, similar to the
+<code>!FindInMap</code> AWS CloudFormation intrinsic function. An exception is thrown
+if the reference can not be resolved.</p></dd>
 <dt><code>!Sub</code> <var>TEMPLATE</var></dt><dd><p>References inside the curly-brace <code>${</code>...<code>}</code> in the <var>TEMPLATE</var> may be any
 name understood by <code>!Ref</code>. For example, <code>${$FOO}</code> in the <var>TEMPLATE</var> would
-be substituted with the value associated with the <code>FOO</code> environment variable,
-and <code>${@MyRole.Arn}</code> would be substituted with <code>!GetAtt</code> <code>MyRole.Arn</code>.</p></dd>
+be substituted with the value of the <code>FOO</code> environment variable and
+<code>${@MyRole.Arn}</code> would be substituted with <code>!GetAtt</code> <code>MyRole.Arn</code>.</p></dd>
 <dt><code>!Var</code> <var>TEMPLATE</var></dt><dd><p>Expands to an <code>!ImportValue</code> expression, with <code>!Sub</code> style interpolation of
 the <var>TEMPLATE</var>.</p></dd>
 </dl>
@@ -248,17 +256,17 @@ All of these macros accept an argument which can be either a <var>PATH</var> or 
 <var>MAPPING</var>.</p>
 
 <dl>
-<dt><code>!Package</code> <var>PATH</var></dt><dd><p>Returns a mapping with <code>S3Bucket</code> and <code>S3Key</code> properties, suitable for use with
-the <code>Code</code> property of an AWS Lambda function resource, for instance.</p></dd>
+<dt><code>!Package</code> <var>PATH</var></dt><dd><p>Returns a mapping with <code>S3Bucket</code> and <code>S3Key</code> properties, for example to
+use for the <code>Code</code> property of an <code>AWS::Lambda::Function</code> resource.</p></dd>
 <dt><code>!Package</code> <code>{</code> <code>Path</code>: <var>PATH</var>, <code>Parse</code>: <var>BOOL</var>, <code>CacheKey</code>: <var>KEY</var> <code>}</code></dt><dd><p>Returns a mapping as above. The <code>Path</code> property is required. The <code>Parse</code>
-property indicates whether the <var>PATH</var> is a YAML file that should be parsed
-and macro expanded prior to packaging. The <code>CacheKey</code> property allows the
-user to provide a string which will be used instead of the MD5 hash of the
-package contents when determining the filename in S3.</p></dd>
-<dt><code>!PackageURI</code> <var>PATH-OR-MAPPING</var></dt><dd><p>Returns a URI with the <em>s3://</em> protocol. The <var>MAPPING</var> argument is as above.</p></dd>
-<dt><code>!PackageURL</code> <var>PATH-OR-MAPPING</var></dt><dd><p>Returns the HTTPS URL of the S3 object. The <var>MAPPING</var> argument is as above.</p></dd>
-<dt><code>!PackageTemplateURL</code> <var>PATH-OR-MAPPING</var></dt><dd><p>Like <code>PackageURL</code> above, but parses and expands macros before packaging.
-The <var>MAPPING</var> argument is as above, as well.</p></dd>
+property indicates whether the <var>PATH</var> is a YAML template that should be
+parsed and macroexpanded before packaging. The <code>CacheKey</code> property allows
+the user to provide a string which will be used instead of the MD5 hash of
+the package contents when determining the filename in S3.</p></dd>
+<dt><code>!PackageURI</code> <var>PATH-OR-MAPPING</var></dt><dd><p>Returns the S3 URI (ie. the <em>s3://</em> protocol URI) of the package.</p></dd>
+<dt><code>!PackageURL</code> <var>PATH-OR-MAPPING</var></dt><dd><p>Returns the HTTPS URL (ie. the <em>https://s3.amazonaws.com/...</em> URL) of the
+object.</p></dd>
+<dt><code>!PackageTemplateURL</code> <var>PATH-OR-MAPPING</var></dt><dd><p>Like <code>PackageURL</code> above, with the <code>Parse</code> option set to <code>true</code>.</p></dd>
 </dl>
 
 
@@ -300,8 +308,7 @@ and the <var>BODY</var>.</p>
 <dl>
 <dt><code>!Js</code> <var>BODY</var></dt><dd><p>Evaluates a JavaScript function <var>BODY</var> string, returning the result. The
 working directory is set to the template directory, and the <code>this</code> object
-is set to the <code>CfnTransformer</code> instance (see the <code>TRANSFORMER API</code> section
-below).</p></dd>
+is set to the <code>CfnModule</code> instance (see the <code>MODULE API</code> section below).</p></dd>
 <dt><code>!Js</code> <code>[</code> <var>MAPPING</var>, <var>BODY</var> <code>]</code></dt><dd><p>Evaluates the JavaScript function <var>BODY</var> string as above, with local
 variables set according to the given <var>MAPPING</var>.</p></dd>
 <dt><code>!Shell</code> <var>SCRIPT</var></dt><dd><p>Evaluates a shell <var>SCRIPT</var> string in <code>bash</code>(1), returning its output on
@@ -318,8 +325,8 @@ according to the given <var>MAPPING</var>.</p></dd>
 <p>These macros allow the user to merge objects in various ways, deep or shallow.</p>
 
 <dl>
-<dt><code>!DeepMerge</code> <code>[</code> <var>MAPPING</var>, ... <code>]</code></dt><dd><p>Performs a deep merge of two or more mappings, returning the result.</p></dd>
-<dt><code>!Merge</code> <code>[</code> <var>MAPPING</var>, ... <code>]</code></dt><dd><p>Performs a shallow merge of two or more mappings and returns the result.</p></dd>
+<dt><code>!DeepMerge</code> <code>[</code> <var>MAPPING</var>, ... <code>]</code></dt><dd><p>Performs a deep merge of the <var>MAPPING</var>s and returns the result.</p></dd>
+<dt><code>!Merge</code> <code>[</code> <var>MAPPING</var>, ... <code>]</code></dt><dd><p>Performs a shallow merge of the <var>MAPPING</var>s and returns the result.</p></dd>
 </dl>
 
 
@@ -329,8 +336,8 @@ according to the given <var>MAPPING</var>.</p></dd>
 expansion environment.</p>
 
 <dl>
-<dt><code>!Do</code> <code>[</code> <var>EXPR</var>, ... <code>]</code></dt><dd>Expands each <var>EXPR</var> in the sequence in order (presumably for side-effects),
-returning the expansion of the last one as the result.</dd>
+<dt><code>!Do</code> <code>[</code> <var>EXPR</var>, ... <code>]</code></dt><dd>Expands each <var>EXPR</var> in the sequence (presumably for side-effects) and
+returns the last expansion as the result.</dd>
 </dl>
 
 
@@ -341,64 +348,68 @@ capabilities of the built-in macro system within the scope of the template.</p>
 
 <dl>
 <dt><code>!Require</code> <var>FILE</var></dt><dd><p>Loads the given <var>FILE</var> as a JavaScript module. The default export of this
-module is called with two arguments: the <code>CfnTransformer</code> instance (see the
-<code>TRANSFORMER API</code> section below), and a unique namespace string. The user
-may define custom macros in this module with the transformer instance's
-<code>defmacro()</code> method. The namespace string is provided for inclusion in
-cache keys passed to the instance's <code>withCache()</code> method. The <var>FILE</var> path
-is relative to the template's directory. The <code>!Require</code> macro itself expands
-to <code>null</code> and does not appear in the final document.</p></dd>
+module is called with one argument: the <code>CfnModule</code> instance (see the
+<code>MODULE API</code> section below). The <var>FILE</var>'s path is resolved relative to the
+template's directory. The <code>!Require</code> macro itself expands to <code>null</code> and
+does not appear in the final document.</p></dd>
 <dt><code>!Require</code> <code>[</code> <var>FILE</var>, ... <code>]</code></dt><dd><p>As above, but loads multiple JavaScript files.</p></dd>
 </dl>
 
 
-<h2 id="TRANSFORMER-API">TRANSFORMER API</h2>
+<h2 id="MODULE-API">MODULE API</h2>
 
-<p>JavaScript evaluated during macroexpansion (ie. via <code>!Js</code>, <code>!Require</code>, and by
-custom macro implementations loaded via <code>!Require</code>) are passed a reference to
-the <code>CfnTransformer</code> instance. In the <var>BODY</var> of a <code>!Js</code> macro the instance is
-bound to <code>this</code>, and for <code>!Require</code> it is passed as an argument to the default
-export of the module. The <code>CfnTransformer</code> instance has the following public
-API methods:</p>
+<p>The module API is provided for use by custom JavaScript that is evaluated
+during macro expansion. The API is exposed by an instance of the <code>CfnModule</code>
+class that is passed to the JavaScript environment. In the <var>BODY</var> of a <code>!Js</code>
+macro the API is bound to the <code>this</code> object. In a module loaded by the
+<code>!Require</code> macro the API is passed as an argument to the function exported by
+the module. Note that some of the API methods are only available in modules
+loaded via <code>!Require</code> &mdash; these methods are indicated with an asterisk
+(<code>*</code>).</p>
 
 <dl>
-<dt><code>bindings()</code></dt><dd><p>Returns the current bindings (see <code>Binding Macros</code> above).</p></dd>
-<dt><code>defmacro(</code><var>NAME</var>, <var>FUNCTION</var><code>)</code></dt><dd><p>Defines a new macro. The <var>FUNCTION</var> receives a single argument, the form
+<dt><code>defmacro(</code><var>NAME</var>, [<var>LONG</var>, ]<var>FUNCTION</var><code>)*</code></dt><dd><p>Defines a new macro with short tag <code>!</code><var>NAME</var> and long tag <code>Fn::</code><var>NAME</var>, or
+<var>LONG</var> if specified. The <var>FUNCTION</var> receives a single argument, the form
 to be expanded. The location in the template where the macro was called
 is replaced by the value returned by <var>FUNCTION</var>. The returned value may
 also contain macro calls, which are automatically expanded as required.
 The new macros is immediately available anywhere in the template in which
 it was defined, but not in nested or parent templates.</p></dd>
-<dt><code>info(</code><var>MESSAGE</var>[, <var>BODY</var>]<code>)</code></dt><dd><p>Logs an info level <var>MESSAGE</var>, with an optional <var>BODY</var> string containing
-additional information to be displayed when the user has specified the
-<code>--verbose</code> option.</p></dd>
 <dt><code>macroexpand(</code><var>FORM</var><code>)</code></dt><dd><p>Expands all macros in <var>FORM</var>, recursively and repeatedly, until <var>FORM</var> has
 been completely expanded and is suitable for consumption by CloudFormation.
 This method is used mostly by macros to process their arguments when code
 walking is necessary.</p></dd>
+<dt><code>verbose(</code><var>MESSAGE</var>[, <var>BODY</var>]<code>)</code></dt><dd><p>Logs a verbose level <var>MESSAGE</var>, with an optional <var>BODY</var> string containing
+additional information to be displayed.</p></dd>
+<dt><code>info(</code><var>MESSAGE</var>[, <var>BODY</var>]<code>)</code></dt><dd><p>Logs an info level <var>MESSAGE</var>, with an optional <var>BODY</var> string containing
+additional information to be displayed (the <var>BODY</var> is suppressed except
+when the user has specified the <code>--verbose</code> option).</p></dd>
+<dt><code>warn(</code><var>MESSAGE</var>[, <var>BODY</var>]<code>)</code></dt><dd><p>Logs a warning level <var>MESSAGE</var>, with an optional <var>BODY</var> string containing
+additional information to be displayed.</p></dd>
+<dt><code>error(</code><var>MESSAGE</var>[, <var>BODY</var>]<code>)</code></dt><dd><p>Aborts the program, logging an error level <var>MESSAGE</var> with an optional
+<var>BODY</var> string containing additional information to be displayed.</p></dd>
 <dt><code>options()</code></dt><dd><p>Returns the instance's configuration options. These options include command
 line options set by the user and a few additional flags set internally by
-<code>cfn-tool</code>.</p></dd>
+<code>cfn-tool</code>. Read only.</p></dd>
+<dt><code>state()*</code></dt><dd><p>Returns the module's state object which can be used to store data. This
+object is propagated to nested templates. Changes to the state object are
+not propagated from nested templates back to the parent.</p></dd>
+<dt><code>bindings()</code></dt><dd><p>Returns the current bindings (see <code>Binding Macros</code> above). Read only.</p></dd>
+<dt><code>withBindings(</code><var>BINDINGS</var>, <var>FUNCTION</var><code>)</code></dt><dd><p>Creates a new scope with the <var>BINDINGS</var> and calls <var>FUNCTION</var> with no
+arguments, then restores the previous scope and returns the <var>FUNCTION</var>'s
+result.</p></dd>
+<dt><code>withCache(</code><var>KEY</var>, <var>FUNCTION</var><code>)*</code></dt><dd><p>Each module is provided with its own cache. If <var>KEY</var>, which can be any
+JSONable value, is found in the cache the associated value is returned.
+Otherwise, <var>FUNCTION</var> is called with no arguments and the result is cached
+and returned.</p></dd>
+<dt><code>withCwd(</code><var>DIR</var>, <var>FUNCTION</var><code>)</code></dt><dd><p>Sets the current working directory to <var>DIR</var> and calls the <var>FUNCTION</var> with
+no arguments, then restores the previous working directory and returns the
+<var>FUNCTION</var>'s result.</p></dd>
 <dt><code>tmpPath(</code><var>NAME</var><code>)</code></dt><dd><p>Constructs a path for a file named <var>NAME</var> in the temporary directory
 managed by <code>cfn-tool</code>. This directory is automatically deleted on exit.</p></dd>
 <dt><code>userPath(</code><var>PATH</var><code>)</code></dt><dd><p>Resolves <var>PATH</var> relative to <code>cfn-tool</code>'s working directory. This is the
 path the user expects to see, as the working directory is set to the
 template's directory during macro expansion.</p></dd>
-<dt><code>verbose(</code><var>MESSAGE</var>[, <var>BODY</var>]<code>)</code></dt><dd><p>Logs a verbose level <var>MESSAGE</var>, with an optional <var>BODY</var> string containing
-additional information.</p></dd>
-<dt><code>warn(</code><var>MESSAGE</var>[, <var>BODY</var>]<code>)</code></dt><dd><p>Logs a warning level <var>MESSAGE</var>, with an optional <var>BODY</var> string containing
-additional information to be displayed when the user has specified the
-<code>--verbose</code> option.</p></dd>
-<dt><code>withBindings(</code><var>BINDINGS</var>, <var>FUNCTION</var><code>)</code></dt><dd><p>Creates a new scope with the <var>BINDINGS</var> and calls <var>FUNCTION</var> with no
-arguments, then restores the previous scope and returns the <var>FUNCTION</var>'s
-result.</p></dd>
-<dt><code>withCache(</code><var>KEY</var>, <var>FUNCTION</var><code>)</code></dt><dd><p>Given a <var>KEY</var> which can be any JSON-able data and a <var>FUNCTION</var> of no
-arguments, checks the cache for <var>KEY</var> (as JSON). If <var>KEY</var> is found the
-cached value is returned, otherwise the <var>FUNCTION</var> is called and the
-result is added to the cache and returned.</p></dd>
-<dt><code>withCwd(</code><var>DIR</var>, <var>FUNCTION</var><code>)</code></dt><dd><p>Sets the current working directory to <var>DIR</var> and calls the <var>FUNCTION</var> with
-no arguments, then restores the previous working directory and returns the
-<var>FUNCTION</var>'s result.</p></dd>
 </dl>
 
 
@@ -436,8 +447,8 @@ Foo:
 
 <pre><code># INPUT
 Foo: !Do
-  - !Shell make build
-  - !Package dist/
+  - !Shell make -C project build
+  - !Package project/dist
 
 # RESULT
 Foo:
@@ -528,6 +539,24 @@ Foo:
   Tres: 3
 </code></pre>
 
+<p><code>!Outputs</code></p>
+
+<pre><code># INPUT
+&lt;&lt;: !Outputs
+  Key1: !Ref Val1
+  Key2 Name=key2-${AWS::Region}: !Ref Val2
+
+# RESULT
+Outputs:
+  Key1:
+    Value:
+      Ref: Val1
+  Key2:
+    Value:
+      Ref: Val2
+    Name: !Sub key2-${AWS::Region}
+</code></pre>
+
 <p><code>!Package</code></p>
 
 <pre><code># INPUT
@@ -585,9 +614,9 @@ Parameters:
 <p><code>!Require</code></p>
 
 <pre><code># FILE: ./lib/case-macros.js
-module.exports = (compiler, cacheNamespace) =&gt; {
-  compiler.defmacro('UpperCase', (form) =&gt; form.toUpperCase());
-  compiler.defmacro('LowerCase', (form) =&gt; form.toLowerCase());
+module.exports = (api) =&gt; {
+  api.defmacro('UpperCase', (form) =&gt; form.toUpperCase());
+  api.defmacro('LowerCase', (form) =&gt; form.toLowerCase());
 };
 
 # INPUT
@@ -606,6 +635,7 @@ Bar: asdf
 &lt;&lt;: !Resources
   MyBucket AWS::S3::Bucket Condition=Create DependsOn=[Foo,Bar]:
     BucketName: !Ref Name
+    Tags: !Tags { System: core }
 
 # RESULT
 Resources:
@@ -617,24 +647,9 @@ Resources:
       - Bar
     Properties:
       BucketName: !Ref Name
-</code></pre>
-
-<p><code>!Outputs</code></p>
-
-<pre><code># INPUT
-&lt;&lt;: !Outputs
-  Key1: !Ref Val1
-  Key2 Name=key2-${AWS::Region}: !Ref Val2
-
-# RESULT
-Outputs:
-  Key1:
-    Value:
-      Ref: Val1
-  Key2:
-    Value:
-      Ref: Val2
-    Name: !Sub key2-${AWS::Region}
+      Tags:
+        - Key: System
+          Value: core
 </code></pre>
 
 <p><code>!Shell</code></p>
@@ -741,7 +756,7 @@ Foo:
 the following license:</p>
 
 <ul>
-<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/5.0.2/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/5.0.2/LICENSE</a></li>
+<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/5.0.3/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/5.0.3/LICENSE</a></li>
 </ul>
 
 
@@ -755,7 +770,7 @@ THE SOFTWARE.</p>
 
 
   <ol class='man-decor man-foot man foot'>
-    <li class='tl'>CloudFormation Tools 5.0.2</li>
+    <li class='tl'>CloudFormation Tools 5.0.3</li>
     <li class='tc'>April 2021</li>
     <li class='tr'>cfn-tool-macros(7)</li>
   </ol>

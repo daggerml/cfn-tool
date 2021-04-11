@@ -1,3 +1,3 @@
-module.exports = (compiler) ->
-  compiler.defmacro 'UpperCase', (form) -> form.toUpperCase()
-  compiler.defmacro 'LowerCase', (form) -> form.toLowerCase()
+module.exports = (api) ->
+  api.defmacro 'UpperCase', (form) -> form.toUpperCase()
+  api.defmacro 'LowerCase', (form) -> form.toLowerCase()
