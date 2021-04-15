@@ -183,9 +183,8 @@ class CfnTransformer extends YamlTransformer
       segs    = [ref, ks...] = form.split('.')
       bind    = fn.peek(@bindstack)
       refable = (bind[ref]? or segs.length > 1)
-      walk    = (x) => if fn.isRef(x) then @walk(x) else x
       getin   = (m, ks) =>
-        ret = ks.reduce(((xs, x) -> walk(xs?[x])), m)
+        ret = ks.reduce(((xs, x) => @walk(xs?[x])), m)
         fn.assertOk ret?, "can't resolve: '#{ks.join('.')}'"
         ret
       switch
