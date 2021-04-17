@@ -146,6 +146,11 @@ within a template.
     the <EXPR> to be expanded within the scope of these bindings, and whose
     expansion is returned as the result.
 
+  * `Globals` <MAPPING>:
+    Establishes global bindings for the scope of this template and all nested
+    templates. Globals bound in child templates are not propagated to the
+    parent.
+
 ### References
 
 These macros are used to refer to resources, mappings, attributes, etc.,
@@ -434,6 +439,24 @@ section.
       name=joe
       echo "hello, $name"
 
+`!Globals`
+
+    # FILE: template2.yml
+    Foo: !Ref Foo
+
+    # INPUT
+    <<: !Globals
+      Foo: 4242
+    Thing1:
+      Foo: !Ref Foo
+    Thing2: !TemplateFile template2.yml
+
+    # RESULT
+    Thing1:
+      Foo: 4242
+    Thing2:
+      Foo: 4242
+
 `!Js`
 
     # INPUT
@@ -480,6 +503,33 @@ section.
     # RESULT
     Foop: !If [ Bar, Baz, Baf ]
     Barp: hello, world!
+
+`!Mappings`
+
+    # FILE: template2.yml
+    <<: !Mappings
+      Foo:
+        Bar:
+          Qux: zot
+
+    # INPUT
+    <<: !Mappings
+      Foo:
+        Bar:
+          Baz: baf
+    Template2: !TemplateFile template2.yml
+
+    # RESULT
+    Mappings:
+      Foo:
+        Bar:
+          Baz: baf
+    Template2:
+      Mappings:
+        Foo:
+          Bar:
+            Baz: baf
+            Qux: zot
 
 `!Merge`
 

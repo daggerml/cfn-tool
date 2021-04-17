@@ -1,7 +1,7 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "CFN\-TOOL\-MACROS" "7" "April 2021" "CloudFormation Tools 5.0.4" "CloudFormation Tools"
+.TH "CFN\-TOOL\-MACROS" "7" "April 2021" "CloudFormation Tools 5.1.0" "CloudFormation Tools"
 .
 .SH "NAME"
 \fBcfn\-tool\-macros\fR \- built\-in macros for common use cases
@@ -149,6 +149,10 @@ Establishes bindings for the scope of the template\. Each value of \fIMAPPING\fR
 .TP
 \fB!Let\fR \fB[\fR \fIMAPPING\fR, \fIEXPR\fR \fB]\fR
 Establishes bindings for the scope of a single expression\. The first item in the sequence is the \fIMAPPING\fR of binding pairs, and the second item is the \fIEXPR\fR to be expanded within the scope of these bindings, and whose expansion is returned as the result\.
+.
+.TP
+\fBGlobals\fR \fIMAPPING\fR
+Establishes global bindings for the scope of this template and all nested templates\. Globals bound in child templates are not propagated to the parent\.
 .
 .SS "References"
 These macros are used to refer to resources, mappings, attributes, etc\., including bindings and other constructs introduced by the \fBcfn\-tool\fR macro system\.
@@ -408,6 +412,33 @@ Script: |
 .IP "" 0
 .
 .P
+\fB!Globals\fR
+.
+.IP "" 4
+.
+.nf
+
+# FILE: template2\.yml
+Foo: !Ref Foo
+
+# INPUT
+<<: !Globals
+  Foo: 4242
+Thing1:
+  Foo: !Ref Foo
+Thing2: !TemplateFile template2\.yml
+
+# RESULT
+Thing1:
+  Foo: 4242
+Thing2:
+  Foo: 4242
+.
+.fi
+.
+.IP "" 0
+.
+.P
 \fB!Js\fR
 .
 .IP "" 4
@@ -485,6 +516,42 @@ Barp: !Let
 # RESULT
 Foop: !If [ Bar, Baz, Baf ]
 Barp: hello, world!
+.
+.fi
+.
+.IP "" 0
+.
+.P
+\fB!Mappings\fR
+.
+.IP "" 4
+.
+.nf
+
+# FILE: template2\.yml
+<<: !Mappings
+  Foo:
+    Bar:
+      Qux: zot
+
+# INPUT
+<<: !Mappings
+  Foo:
+    Bar:
+      Baz: baf
+Template2: !TemplateFile template2\.yml
+
+# RESULT
+Mappings:
+  Foo:
+    Bar:
+      Baz: baf
+Template2:
+  Mappings:
+    Foo:
+      Bar:
+        Baz: baf
+        Qux: zot
 .
 .fi
 .
@@ -844,7 +911,7 @@ Man pages for the \fBcfn\-tool\fR commands:
 Copyright © 2021 Micha Niskin \fB<micha\.niskin@gmail\.com>\fR, distributed under the following license:
 .
 .IP "\(bu" 4
-\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/5\.0\.4/LICENSE\fR
+\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/5\.1\.0/LICENSE\fR
 .
 .IP "" 0
 .

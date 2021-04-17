@@ -65,6 +65,24 @@ allows empty object argument to Mappings:
           Bar:
             Baz: baf
 
+binds Globals globally:
+
+  nested:
+    - test/templates/globals.yml
+
+  template:
+    <<: !Globals
+      Foo: 4242
+    Stuff1:
+      Thing: !Ref Foo
+    Stuff2: !TemplateFile templates/globals.yml
+
+  expected:
+    Stuff1:
+      Thing: 4242
+    Stuff2:
+      Thing: 4242
+
 expands Parameters macros:
 
   template:

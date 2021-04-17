@@ -128,7 +128,7 @@ class CfnModule
 #=============================================================================#
 
 class CfnTransformer extends YamlTransformer
-  constructor: ({@ns, @basedir, @cache, @opts, @maps, @state} = {}) ->
+  constructor: ({@ns, @basedir, @cache, @opts, @maps, @globals, @state} = {}) ->
     super()
 
     @ns             ?= uuid.v4()
@@ -139,9 +139,10 @@ class CfnTransformer extends YamlTransformer
     @template       = null
     @needBucket     = false
     @maps           = clone(@maps or {})
+    @globals        = clone(@globals or {})
     @state          = clone(@state or {})
     @resourceMacros = []
-    @bindstack      = []
+    @bindstack      = [@globals]
     @nested         = []
 
     #=========================================================================#
@@ -212,6 +213,11 @@ class CfnTransformer extends YamlTransformer
       else
         fn.merge(fn.peek(@bindstack), fn.assertObject(form))
         null
+
+    @defspecial 'Globals', (form) =>
+      fn.merge(@globals, fn.assertObject(form))
+      fn.merge(fn.peek(@bindstack), fn.assertObject(form))
+      null
 
     @defspecial 'Do', (form) =>
       fn.assertArray(form).reduce(((xs, x) => @walk(x)), null)
@@ -443,7 +449,7 @@ class CfnTransformer extends YamlTransformer
     ret
 
   transformTemplateFile: (file) ->
-    xformer = new @.constructor({@ns, @basedir, @cache, @opts, @maps, @state})
+    xformer = new @.constructor({@ns, @basedir, @cache, @opts, @maps, @globals, @state})
     ret = xformer.transformFile(file)
     @nested = @nested.concat xformer.nested
     ret
