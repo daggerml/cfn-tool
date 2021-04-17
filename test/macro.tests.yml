@@ -279,6 +279,10 @@ expands Sub macros:
     <<: !Let
       Test1: testval1
     Foo: !Sub ${!Literal}${Foo}${%${AWS::Region}.Vpc.CidrBlock}${@Bar.ARN}${Test1}
+    Bar: !Sub
+      - ${Test1} - ${Greet}, ${Name}!
+      - Greet: !If [ Cond1, hello, goodbye ]
+        Name: world
 
   expected:
     Foo:
@@ -294,6 +298,15 @@ expands Sub macros:
               - Bar
               - ARN
           - testval1
+    Bar:
+      Fn::Join:
+        - ''
+        - - 'testval1 - '
+          - Fn::If:
+              - Cond1
+              - hello
+              - goodbye
+          - ', world!'
 
 merges strings in Join:
 

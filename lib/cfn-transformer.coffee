@@ -197,10 +197,12 @@ class CfnTransformer extends YamlTransformer
         else {Ref: form}
 
     @defmacro 'Sub', (form) =>
-      form = if fn.isArray(form) and form.length is 1 then form[0] else form
-      switch fn.typeOf(form)
-        when 'Str' then {'Fn::Join': ['', interpolateSub(form)]}
-        else {'Fn::Sub': form}
+      form = switch
+        when fn.isString(form)                      then [form, {}]
+        when fn.isArray(form) and form.length is 1  then form.concat [{}]
+        when fn.isArray(form) and form.length is 2  then form
+        else throw new CfnError "invalid type: #{JSON.stringify form}"
+      {'Fn::Let': [form[1], {'Fn::Join': ['', interpolateSub(form[0])]}]}
 
     #=========================================================================#
     # Define special forms.                                                   #
