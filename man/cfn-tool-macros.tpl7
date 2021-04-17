@@ -146,7 +146,7 @@ within a template.
     the <EXPR> to be expanded within the scope of these bindings, and whose
     expansion is returned as the result.
 
-  * `Globals` <MAPPING>:
+  * `!Globals` <MAPPING>:
     Establishes global bindings for the scope of this template and all nested
     templates. Globals bound in child templates are not propagated to the
     parent.
