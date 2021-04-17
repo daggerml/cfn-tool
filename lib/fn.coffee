@@ -67,7 +67,7 @@ deepMerge = module.exports.deepMerge = (args...) ->
       ret = Object.assign({}, x)
       ret[k] = dm(x[k], v) for k, v of y
       ret
-  args.reduce(((xs, x) -> dm(xs, x)), {})
+  args.reduce(dm, {})
 
 hashMap = module.exports.hashMap = (args...) ->
   ret = {}

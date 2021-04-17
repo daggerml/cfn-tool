@@ -215,16 +215,16 @@ class CfnTransformer extends YamlTransformer
         null
 
     @defspecial 'Globals', (form) =>
-      fn.merge(@globals, fn.assertObject(form))
-      fn.merge(fn.peek(@bindstack), fn.assertObject(form))
+      @globals = fn.deepMerge @globals, fn.assertObject(form)
+      @bindstack.push(fn.deepMerge(@bindstack.pop(), form))
       null
-
-    @defspecial 'Do', (form) =>
-      fn.assertArray(form).reduce(((xs, x) => @walk(x)), null)
 
     @defspecial 'Mappings', (form = {}) =>
       @maps = fn.deepMerge @maps, form
       {Mappings: @maps}
+
+    @defspecial 'Do', (form) =>
+      fn.assertArray(form).reduce(((xs, x) => @walk(x)), null)
 
     #=========================================================================#
     # Define custom macros.                                                   #
