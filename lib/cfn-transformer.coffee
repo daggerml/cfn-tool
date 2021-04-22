@@ -84,7 +84,6 @@ class CfnModule
     @transformer.state[@id]
 
   defmacro: (name, args...) ->
-    fn.assertOk @id, 'defmacro: only allowed in !Require modules'
     args[args.length - 1] = args[args.length - 1].bind(@)
     @transformer.defmacro.apply @transformer, [name].concat(args)
 
@@ -349,11 +348,13 @@ class CfnTransformer extends YamlTransformer
 
     @defmacro 'File', (form) =>
       form = if fn.isArray(form) then form[0] else form
-      fs.readFileSync(form)
+      @withCache {file: [@ns, path.resolve form]}, () =>
+        fs.readFileSync(form)
 
     @defmacro 'TemplateFile', (form) =>
       form = if fn.isArray(form) then form[0] else form
-      yaml.safeLoad(@transformTemplateFile(form))
+      @withCache {templateFile: [@ns, path.resolve form]}, () =>
+        yaml.safeLoad(@transformTemplateFile(form))
 
     @defmacro 'Merge', (form) =>
       fn.merge.apply(null, form)

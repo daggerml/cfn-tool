@@ -1,0 +1,11 @@
+<<: !Do
+  - !Let
+    - HostName: !If [ IsProd, api, !Sub 'api-${Zone}' ]
+    - !Let
+      - AccountMap:
+          '123456789012':
+            System1:
+              Api:
+                Domain: !Sub ${HostName}.example.com
+        AccountId: !Shell echo 123456789012
+      - !Ref [ !Sub 'AccountMap.${AccountId}' ]

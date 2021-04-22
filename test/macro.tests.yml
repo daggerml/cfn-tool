@@ -151,6 +151,27 @@ resolves indirect Let bindings:
   expected:
     Foo: 100
 
+loads config from file:
+
+  nested:
+    - test/data/config4.yml
+
+  template:
+    <<: !Let
+      Zone: dev
+      Config: !TemplateFile data/config4.yml
+    Foo: !Ref Config.System1.Api.Domain
+
+  expected:
+    Foo:
+      Fn::Join:
+        - ''
+        - - Fn::If:
+              - IsProd
+              - api
+              - api-dev
+          - .example.com
+
 throws when a multi-segment Ref can't be resolved:
 
   template: |
@@ -512,7 +533,7 @@ module API is accessible from Js commands:
 throws when module-only API method called in Js command:
 
   template: |
-    Foo: !Js 'this.defmacro("Foop", (form) => form); return 42'
+    Foo: !Js 'return this.state()'
 
   throws: only allowed in !Require modules
 

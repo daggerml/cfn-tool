@@ -312,7 +312,7 @@ the module. Note that some of the API methods are only available in modules
 loaded via `!Require` &mdash; these methods are indicated with an asterisk
 (`*`).
 
-  * `defmacro(`<NAME>, [<LONG>, ]<FUNCTION>`)*`:
+  * `defmacro(`<NAME>, [<LONG>, ]<FUNCTION>`)`:
     Defines a new macro with short tag `!`<NAME> and long tag `Fn::`<NAME>, or
     <LONG> if specified. The <FUNCTION> receives a single argument, the form
     to be expanded. The location in the template where the macro was called
