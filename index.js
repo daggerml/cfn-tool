@@ -254,7 +254,7 @@ See the manpage:
     }
 
     cli(argv, env) {
-      var bucketarg, cfn, cmdKnown, haveOverride, i, k, len, params, paramsarg, prog, ref, ref1, ref2, ref3, ref4, ref5, res, spec, tagsarg, v, x;
+      var bucketarg, cfn, cmdKnown, haveOverride, i, k, len, params, paramsarg, prog, ref, ref1, ref2, ref3, ref4, res, spec, tagsarg, v, x;
       this.env = env;
       if ((spec = this.optionsSpecs[argv[2]])) {
         this.options.configure(spec);
@@ -329,13 +329,13 @@ See the manpage:
           }, {}) : void 0 : void 0 : void 0 : void 0;
           fn.assertOk(Object.keys(params).length, `stack '${this.opts.stackname}' has no parameters`);
           haveOverride = null;
-          ref5 = ((ref4 = this.opts.parameters) != null ? ref4.split(/ +/) : void 0) || [];
-          for (i = 0, len = ref5.length; i < len; i++) {
-            x = ref5[i];
+          ref4 = sq.parse(this.opts.parameters || '') || [];
+          for (i = 0, len = ref4.length; i < len; i++) {
+            x = ref4[i];
             [k, v] = fn.split(x, '=', 2);
             fn.assertOk(k && v, `parameter: expected <key>=<value>: got '${x}'`);
             fn.assertOk(params[k], `stack '${this.opts.stackname}' has no parameter '${k}'`);
-            haveOverride = params[k] = `ParameterKey=${k},ParameterValue=${v}`;
+            haveOverride = params[k] = `ParameterKey=${sq.quote([k])},ParameterValue=${sq.quote([v])}`;
           }
           fn.assertOk(haveOverride, 'parameter overrides required');
           paramsarg = fn.objVals(params).join(' ');

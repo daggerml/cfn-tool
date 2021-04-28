@@ -279,11 +279,11 @@ class CfnTool
         fn.assertOk Object.keys(params).length, "stack '#{@opts.stackname}' has no parameters"
 
         haveOverride = null
-        for x in (@opts.parameters?.split(/ +/) or [])
+        for x in (sq.parse(@opts.parameters or '') or [])
           [k, v] = fn.split(x, '=', 2)
           fn.assertOk k and v, "parameter: expected <key>=<value>: got '#{x}'"
           fn.assertOk params[k], "stack '#{@opts.stackname}' has no parameter '#{k}'"
-          haveOverride = params[k] = "ParameterKey=#{k},ParameterValue=#{v}"
+          haveOverride = params[k] = "ParameterKey=#{sq.quote [k]},ParameterValue=#{sq.quote [v]}"
 
         fn.assertOk haveOverride, 'parameter overrides required'
 

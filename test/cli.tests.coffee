@@ -101,13 +101,14 @@ describe 'cli tests', ->
     assertShell x, deployCmd(x, TPL, STK)
     assertInfo x, 'done -- no errors'
 
-  testcase "cfn-tool update --parameters \"Foo=omg Bar=lol\" #{STK}", (x) ->
+  testcase "cfn-tool update --parameters \"Foo='omg lol' Bar=lol\" #{STK}", (x) ->
+    console.dir x.sideEffects
     assertExit x, 0
     assertShell x, """
       aws cloudformation update-stack \
       --stack-name #{STK} \
       --parameters \
-      ParameterKey=Foo,ParameterValue=omg \
+      ParameterKey=Foo,ParameterValue='omg lol' \
       ParameterKey=Bar,ParameterValue=lol \
       ParameterKey=Baz,UsePreviousValue=true \
       --capabilities \
