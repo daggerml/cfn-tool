@@ -339,7 +339,7 @@ See the manpage:
           }
           fn.assertOk(haveOverride, 'parameter overrides required');
           paramsarg = fn.objVals(params).join(' ');
-          fn.execShell(`aws cloudformation update-stack --stack-name ${this.opts.stackname} --parameters ${paramsarg} --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND ----use-previous-template`);
+          fn.execShell(`aws cloudformation update-stack --stack-name ${this.opts.stackname} --parameters ${paramsarg} --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --use-previous-template`);
           log.info('done -- no errors');
       }
       return this.quit();
