@@ -382,6 +382,9 @@ loaded via `!Require` &mdash; these methods are indicated with an asterisk
     path the user expects to see, as the working directory is set to the
     template's directory during macro expansion.
 
+  * `md5(`<STRING>`)`:
+    Returns the MD5 hash of the <STRING>.
+
 ## EXAMPLES
 
 The following examples demonstrate how to use the macros described above. Each

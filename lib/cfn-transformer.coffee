@@ -94,6 +94,9 @@ class CfnModule
   macroexpand: (form) ->
     @transformer.walk(form)
 
+  md5: (text) ->
+    fn.md5(text)
+
   tmpPath: (name) ->
     @transformer.tmpPath name
 
