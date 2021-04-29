@@ -438,6 +438,7 @@ expands Outputs macros:
       Foop: !Ref Foo
       Barp: !GetAtt Bar.ARN
       Bazp Name=${$ZONE}-${$REGION}-bazp: 123
+      Quux Name=test2-${Zone}::foo::bar: 456
 
   expected:
     Outputs:
@@ -453,6 +454,15 @@ expands Outputs macros:
         Value: 123
         Export:
           Name: test-us-east-1-bazp
+      Quux:
+        Value: 456
+        Export:
+          Name:
+            Fn::Join:
+              - ''
+              - - test2-
+                - Ref: Zone
+                - ::foo::bar
 
 executes Shell commands:
 

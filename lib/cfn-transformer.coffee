@@ -255,9 +255,7 @@ class CfnTransformer extends YamlTransformer
     @defmacro 'Outputs', (form) =>
       Outputs: fn.reduceKv form, (xs, k, v) =>
         [name, opts...] = k.split(/ +/)
-        xport = if fn.notEmpty(opts = parseKeyOpts(opts))
-          opts.Name = @walk {'Fn::Sub': opts.Name} if opts.Name
-          {Export: opts}
+        xport = if fn.notEmpty(opts = parseKeyOpts(opts)) then {Export: opts}
         fn.merge(xs, fn.hashMap(name, fn.merge({Value: v}, xport)))
 
     @defmacro 'Resources', (form) =>
