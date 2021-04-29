@@ -358,7 +358,7 @@ class CfnTransformer extends YamlTransformer
     @defmacro 'TemplateFile', (form) =>
       form = if fn.isArray(form) then form[0] else form
       @withCache {templateFile: [@ns, path.resolve form]}, () =>
-        yaml.safeLoad(@transformTemplateFile(form))
+        yaml.safeLoad(@transformTemplateFile(form, true))
 
     @defmacro 'Merge', (form) =>
       fn.merge.apply(null, form)
@@ -455,10 +455,10 @@ class CfnTransformer extends YamlTransformer
     fs.writeFileSync(ret.tmpPath, text)
     ret
 
-  transformTemplateFile: (file) ->
+  transformTemplateFile: (file, ignoreNested) ->
     xformer = new @.constructor({@ns, @basedir, @cache, @opts, @maps, @globals, @state})
     ret = xformer.transformFile(file)
-    @nested = @nested.concat xformer.nested
+    @nested = @nested.concat xformer.nested unless ignoreNested
     ret
 
   lint: (file) ->

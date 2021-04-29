@@ -18,9 +18,6 @@ does not expand strings that look like dates implicitly:
 
 binds Mappings globally:
 
-  nested:
-    - test/data/template2.yml
-
   template:
     <<: !Mappings
       Foo:
@@ -44,9 +41,6 @@ binds Mappings globally:
 
 allows empty object argument to Mappings:
 
-  nested:
-    - test/data/template3.yml
-
   template:
     <<: !Mappings
       Foo:
@@ -66,9 +60,6 @@ allows empty object argument to Mappings:
             Baz: baf
 
 binds Globals globally:
-
-  nested:
-    - test/templates/globals.yml
 
   template:
     <<: !Globals
@@ -152,9 +143,6 @@ resolves indirect Let bindings:
     Foo: 100
 
 loads config from file:
-
-  nested:
-    - test/data/config4.yml
 
   template:
     <<: !Let
@@ -641,11 +629,6 @@ deep merges objects with DeepMerge:
 
 loads template files with TemplateFile:
 
-  nested:
-    - test/data/config1.yml
-    - test/data/config2.yml
-    - test/data/config3.yml
-
   template:
     <<: !Let
       Dir: data
@@ -684,9 +667,6 @@ adds macros with Require:
     Bar: asdf
 
 propagates module state to nested templates:
-
-  nested:
-    - test/data/template4.yml
 
   template:
     <<: !Require lib/state-macros
