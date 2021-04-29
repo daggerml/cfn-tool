@@ -26,7 +26,8 @@ topLevelResourceProperties = [
 ]
 
 parseKeyOpt = (opt) ->
-  if (multi = opt.match(/^\[(.*)\]$/)) then multi[1].split(',') else opt
+  ret = if (multi = opt.match(/^\[(.*)\]$/)) then multi[1].split(',') else opt
+  if fn.isArray(ret) then ret.map((x) -> {'Fn::Sub': x}) else {'Fn::Sub': ret}
 
 parseKeyOpts = (opts) ->
   opts.reduce(((xs, x) ->

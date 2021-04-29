@@ -349,6 +349,7 @@ expands Resources macros:
         Type: AWS::S3::Bucket
         Properties:
           BucketName: !Ref Name
+      Cond1: !If [ Foo, Bar, !Ref 'AWS::NoValue' ]
     <<: !Resources
       MyBucket${Nonce} AWS::S3::Bucket Condition=Prod DependsOn=[X,Y,Z]:
         BucketName: mybucket
@@ -360,6 +361,8 @@ expands Resources macros:
       TemplateBucket: !Let
         - Name: templatebucket
         - !Ref BucketTpl
+      CondRefBucket AWS::S3::Bucket Condition=${Cond1}:
+        BucketName: condrefbucket
 
   expected:
     Resources:
@@ -381,6 +384,15 @@ expands Resources macros:
         Type: AWS::S3::Bucket
         Properties:
           BucketName: templatebucket
+      CondRefBucket:
+        Type: AWS::S3::Bucket
+        Condition:
+          Fn::If:
+            - Foo
+            - Bar
+            - Ref: AWS::NoValue
+        Properties:
+          BucketName: condrefbucket
 
 expands Stack resource macros:
 
