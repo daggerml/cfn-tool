@@ -167,6 +167,20 @@ throws when a multi-segment Ref can't be resolved:
 
   throws: can't resolve
 
+applies default value when Ref can't be resolved:
+
+  template:
+    <<: !Let
+      Baz:
+        Baf: 456
+    Foo: !Ref [ Asdf.Qwer, { Zxcv: 123 } ]
+    Bar: !Ref [ Baz.Baf, 123 ]
+
+  expected:
+    Foo:
+      Zxcv: 123
+    Bar: 456
+
 substitites bindings in Refs and Subs:
 
   template:

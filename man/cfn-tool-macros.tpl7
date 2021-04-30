@@ -171,6 +171,11 @@ system.
     `!FindInMap` AWS CloudFormation intrinsic function. An exception is thrown
     if the reference can not be resolved.
 
+  * `!Ref` `[` <NAME>`.`<NAME>[`.`<NAME>...], <NOTFOUND> `]`:
+    Resolves multiple <NAME>s separated by dots as above, however if the
+    reference can not be resolved the <NOTFOUND> value is returned. The
+    <NOTFOUND> can be any value and it may contain macros.
+
   * `!Sub` <TEMPLATE>:
     References inside the curly-brace `${`...`}` in the <TEMPLATE> may be any
     name understood by `!Ref`. For example, `${$FOO}` in the <TEMPLATE> would

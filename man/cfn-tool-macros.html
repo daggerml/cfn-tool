@@ -242,6 +242,9 @@ Bound names (see <code>Binding Macros</code> above) are referenced with no prefi
 a complex data structure bound by a <code>!Let</code> binding, similar to the
 <code>!FindInMap</code> AWS CloudFormation intrinsic function. An exception is thrown
 if the reference can not be resolved.</p></dd>
+<dt><code>!Ref</code> <code>[</code> <var>NAME</var><code>.</code><var>NAME</var>[<code>.</code><var>NAME</var>...], <var>NOTFOUND</var> <code>]</code></dt><dd><p>Resolves multiple <var>NAME</var>s separated by dots as above, however if the
+reference can not be resolved the <var>NOTFOUND</var> value is returned. The
+<var>NOTFOUND</var> can be any value and it may contain macros.</p></dd>
 <dt><code>!Sub</code> <var>TEMPLATE</var></dt><dd><p>References inside the curly-brace <code>${</code>...<code>}</code> in the <var>TEMPLATE</var> may be any
 name understood by <code>!Ref</code>. For example, <code>${$FOO}</code> in the <var>TEMPLATE</var> would
 be substituted with the value of the <code>FOO</code> environment variable and
@@ -807,7 +810,7 @@ Foo:
 the following license:</p>
 
 <ul>
-<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/5.4.2/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/5.4.2/LICENSE</a></li>
+<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/5.5.0/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/5.5.0/LICENSE</a></li>
 </ul>
 
 
@@ -821,7 +824,7 @@ THE SOFTWARE.</p>
 
 
   <ol class='man-decor man-foot man foot'>
-    <li class='tl'>CloudFormation Tools 5.4.2</li>
+    <li class='tl'>CloudFormation Tools 5.5.0</li>
     <li class='tc'>April 2021</li>
     <li class='tr'>cfn-tool-macros(7)</li>
   </ol>

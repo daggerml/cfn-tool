@@ -183,14 +183,15 @@ class CfnTransformer extends YamlTransformer
       {Condition: if fn.isArray(form) then form[0] else form}
 
     @defmacro 'Ref', 'Ref', (form) =>
+      dfl     = form[1] if fn.isArray(form)
       form    = fn.assertString(if fn.isArray(form) then form[0] else form)
       segs    = [ref, ks...] = form.split('.')
       bind    = fn.peek(@bindstack)
       refable = (bind[ref]? or segs.length > 1)
       getin   = (m, ks) =>
         ret = ks.reduce(((xs, x) => @walk(xs?[x])), m)
-        fn.assertOk ret?, "can't resolve: '#{ks.join('.')}'"
-        ret
+        fn.assertOk ret? or dfl?, "can't resolve: '#{ks.join('.')}'"
+        ret ? dfl
       switch
         when form.startsWith('$') then {'Fn::Env': form[1..]}
         when form.startsWith('%') then {'Fn::Get': form[1..]}
