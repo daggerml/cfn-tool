@@ -28,8 +28,8 @@ validateCmd = (tool, tpl) ->
 deployCmd = (tool, tpl, stack) ->
   """
     aws cloudformation deploy \
-    --template-file '#{tool.opts.tmpdir}/#{fn.md5File tpl}.yml' \
-    --stack-name '#{stack}' \
+    --template-file #{tool.opts.tmpdir}/#{fn.md5File tpl}.yml \
+    --stack-name #{stack} \
     --capabilities CAPABILITY_NAMED_IAM CAPABILITY_IAM CAPABILITY_AUTO_EXPAND
   """
 
@@ -102,15 +102,11 @@ describe 'cli tests', ->
     assertInfo x, 'done -- no errors'
 
   testcase "cfn-tool update --parameters \"Foo='{omg \\\"lol\\\"}' Bar=lol\" #{STK}", (x) ->
-    console.dir x.sideEffects
     assertExit x, 0
     assertShell x, """
       aws cloudformation update-stack \
       --stack-name #{STK} \
-      --parameters \
-      ParameterKey=Foo,ParameterValue='{omg "lol"}' \
-      ParameterKey=Bar,ParameterValue=lol \
-      ParameterKey=Baz,UsePreviousValue=true \
+      --parameters file\\://#{x.opts.tmpdir}/79a4676f815b9d07615deb937dd1f9b4-params.json \
       --capabilities \
       CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
       --use-previous-template

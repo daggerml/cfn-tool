@@ -185,8 +185,6 @@ class CfnTool
     words   = sq.parse([left, right].filter((x) -> x).join(' ')).slice(1)
     command = words[0]
 
-    fs.writeFileSync '/tmp/t', JSON.stringify {$0, prefix, prev, words}, 2
-
     if $0 is prev and words.length < 2
       @options.configure @defaultOptionsSpec, @env, false
       @quit completions.list prefix, @allCmds.concat(@options.completeOpt(words))
@@ -249,20 +247,29 @@ class CfnTool
         if res.nested.length > 1
           throw new CfnError('bucket required for nested stacks') unless @opts.bucket
           log.info 'uploading templates to S3'
-          fn.execShell "aws s3 sync --size-only '#{@opts.tmpdir}' 's3://#{@opts.bucket}/'"
+          fn.execShell fn.shprintf """
+            aws s3 sync --size-only %{%S} %{%S}
+          """, @opts.tmpdir, "s3://#{@opts.bucket}"
 
-        bucketarg = "--s3-bucket '#{@opts.bucket}' --s3-prefix aws/" if @opts.bucket
-        paramsarg = "--parameter-overrides #{@opts.parameters}"      if @opts.parameters
-        tagsarg   = "--tags #{@opts.tags}"                           if @opts.tags
+        mkparams = (x) =>
+          if x
+            p = JSON.stringify sq.parse(x).map (x) ->
+              [k, v] = fn.split x, '=', 2
+              {ParameterKey: k, ParameterValue: v}
+            f = "#{path.join @opts.tmpdir, fn.md5(p)}-params.json"
+            fs.writeFileSync(f, p)
+            "file://#{f}"
 
         log.info 'deploying stack'
-        fn.execShell """
+        fn.execShell fn.shprintf """
           aws cloudformation deploy \
-            --template-file '#{res.tmpPath}' \
-            --stack-name '#{@opts.stackname}' \
+            --template-file %{%S} \
+            --stack-name %{%S} \
             --capabilities CAPABILITY_NAMED_IAM CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
-            #{bucketarg or ''} #{paramsarg or ''} #{tagsarg or ''}
-        """
+            %{--bucket %S }\
+            %{--parameter-overrides %S }\
+            %{--tags %A}
+        """, res.tmpPath, @opts.stackname, @opts.bucket, mkparams(@opts.parameters), @opts.tags
 
         log.info 'done -- no errors'
       when 'update'
@@ -273,29 +280,33 @@ class CfnTool
         params = res?.Stacks?[0]?.Parameters?.reduce(
           (xs, x) ->
             k = x.ParameterKey
-            fn.assoc xs, k, "ParameterKey=#{k},UsePreviousValue=true"
+            fn.assoc xs, k, {ParameterKey: k, UsePreviousValue: true}
           {}
         )
         fn.assertOk Object.keys(params).length, "stack '#{@opts.stackname}' has no parameters"
 
         haveOverride = null
-        for x in (sq.parse(@opts.parameters or '') or [])
-          [k, v] = fn.split(x, '=', 2)
-          fn.assertOk k and v, "parameter: expected <key>=<value>: got '#{x}'"
-          fn.assertOk params[k], "stack '#{@opts.stackname}' has no parameter '#{k}'"
-          haveOverride = params[k] = "ParameterKey=#{sq.quote [k]},ParameterValue=#{sq.quote [v]}"
+        if @opts.parameters
+          for x in (sq.parse(@opts.parameters) or [])
+            [k, v] = fn.split(x, '=', 2)
+            fn.assertOk k and v, "parameter: expected <key>=<value>: got '#{x}'"
+            fn.assertOk params[k], "stack '#{@opts.stackname}' has no parameter '#{k}'"
+            haveOverride = params[k] = {ParameterKey: k, ParameterValue: v}
 
         fn.assertOk haveOverride, 'parameter overrides required'
 
-        paramsarg = fn.objVals(params).join(' ')
+        params      = JSON.stringify fn.objVals params
+        paramsfile  = "#{path.join @opts.tmpdir, fn.md5(params)}-params.json"
+        fs.writeFileSync paramsfile, params
+        paramsfile  = "file://#{paramsfile}"
 
-        fn.execShell """
+        fn.execShell fn.shprintf """
           aws cloudformation update-stack \
-            --stack-name #{@opts.stackname} \
-            --parameters #{paramsarg} \
+            --stack-name %{%S} \
+            --parameters %{%S} \
             --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
             --use-previous-template
-        """
+        """, @opts.stackname, paramsfile
 
         log.info 'done -- no errors'
 

@@ -220,7 +220,6 @@ See the manpage:
         return x;
       }).join(' ')).slice(1);
       command = words[0];
-      fs.writeFileSync('/tmp/t', JSON.stringify({$0, prefix, prev, words}, 2));
       if ($0 === prev && words.length < 2) {
         this.options.configure(this.defaultOptionsSpec, this.env, false);
         this.quit(completions.list(prefix, this.allCmds.concat(this.options.completeOpt(words))));
@@ -254,7 +253,7 @@ See the manpage:
     }
 
     cli(argv, env) {
-      var bucketarg, cfn, cmdKnown, haveOverride, i, k, len, params, paramsarg, prog, ref, ref1, ref2, ref3, ref4, res, spec, tagsarg, v, x;
+      var cfn, cmdKnown, haveOverride, i, k, len, mkparams, params, paramsfile, prog, ref, ref1, ref2, ref3, ref4, res, spec, v, x;
       this.env = env;
       if ((spec = this.optionsSpecs[argv[2]])) {
         this.options.configure(spec);
@@ -305,19 +304,26 @@ See the manpage:
               throw new CfnError('bucket required for nested stacks');
             }
             log.info('uploading templates to S3');
-            fn.execShell(`aws s3 sync --size-only '${this.opts.tmpdir}' 's3://${this.opts.bucket}/'`);
+            fn.execShell(fn.shprintf(`aws s3 sync --size-only %{%S} %{%S}`, this.opts.tmpdir, `s3://${this.opts.bucket}`));
           }
-          if (this.opts.bucket) {
-            bucketarg = `--s3-bucket '${this.opts.bucket}' --s3-prefix aws/`;
-          }
-          if (this.opts.parameters) {
-            paramsarg = `--parameter-overrides ${this.opts.parameters}`;
-          }
-          if (this.opts.tags) {
-            tagsarg = `--tags ${this.opts.tags}`;
-          }
+          mkparams = (x) => {
+            var f, p;
+            if (x) {
+              p = JSON.stringify(sq.parse(x).map(function(x) {
+                var k, v;
+                [k, v] = fn.split(x, '=', 2);
+                return {
+                  ParameterKey: k,
+                  ParameterValue: v
+                };
+              }));
+              f = `${path.join(this.opts.tmpdir, fn.md5(p))}-params.json`;
+              fs.writeFileSync(f, p);
+              return `file://${f}`;
+            }
+          };
           log.info('deploying stack');
-          fn.execShell(`aws cloudformation deploy --template-file '${res.tmpPath}' --stack-name '${this.opts.stackname}' --capabilities CAPABILITY_NAMED_IAM CAPABILITY_IAM CAPABILITY_AUTO_EXPAND ${bucketarg || ''} ${paramsarg || ''} ${tagsarg || ''}`);
+          fn.execShell(fn.shprintf(`aws cloudformation deploy --template-file %{%S} --stack-name %{%S} --capabilities CAPABILITY_NAMED_IAM CAPABILITY_IAM CAPABILITY_AUTO_EXPAND %{--bucket %S }%{--parameter-overrides %S }%{--tags %A}`, res.tmpPath, this.opts.stackname, this.opts.bucket, mkparams(this.opts.parameters), this.opts.tags));
           log.info('done -- no errors');
           break;
         case 'update':
@@ -325,21 +331,32 @@ See the manpage:
           params = res != null ? (ref1 = res.Stacks) != null ? (ref2 = ref1[0]) != null ? (ref3 = ref2.Parameters) != null ? ref3.reduce(function(xs, x) {
             var k;
             k = x.ParameterKey;
-            return fn.assoc(xs, k, `ParameterKey=${k},UsePreviousValue=true`);
+            return fn.assoc(xs, k, {
+              ParameterKey: k,
+              UsePreviousValue: true
+            });
           }, {}) : void 0 : void 0 : void 0 : void 0;
           fn.assertOk(Object.keys(params).length, `stack '${this.opts.stackname}' has no parameters`);
           haveOverride = null;
-          ref4 = sq.parse(this.opts.parameters || '') || [];
-          for (i = 0, len = ref4.length; i < len; i++) {
-            x = ref4[i];
-            [k, v] = fn.split(x, '=', 2);
-            fn.assertOk(k && v, `parameter: expected <key>=<value>: got '${x}'`);
-            fn.assertOk(params[k], `stack '${this.opts.stackname}' has no parameter '${k}'`);
-            haveOverride = params[k] = `ParameterKey=${sq.quote([k])},ParameterValue=${sq.quote([v])}`;
+          if (this.opts.parameters) {
+            ref4 = sq.parse(this.opts.parameters) || [];
+            for (i = 0, len = ref4.length; i < len; i++) {
+              x = ref4[i];
+              [k, v] = fn.split(x, '=', 2);
+              fn.assertOk(k && v, `parameter: expected <key>=<value>: got '${x}'`);
+              fn.assertOk(params[k], `stack '${this.opts.stackname}' has no parameter '${k}'`);
+              haveOverride = params[k] = {
+                ParameterKey: k,
+                ParameterValue: v
+              };
+            }
           }
           fn.assertOk(haveOverride, 'parameter overrides required');
-          paramsarg = fn.objVals(params).join(' ');
-          fn.execShell(`aws cloudformation update-stack --stack-name ${this.opts.stackname} --parameters ${paramsarg} --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --use-previous-template`);
+          params = JSON.stringify(fn.objVals(params));
+          paramsfile = `${path.join(this.opts.tmpdir, fn.md5(params))}-params.json`;
+          fs.writeFileSync(paramsfile, params);
+          paramsfile = `file://${paramsfile}`;
+          fn.execShell(fn.shprintf(`aws cloudformation update-stack --stack-name %{%S} --parameters %{%S} --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --use-previous-template`, this.opts.stackname, paramsfile));
           log.info('done -- no errors');
       }
       return this.quit();

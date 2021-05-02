@@ -4,8 +4,33 @@ crypto      = require 'crypto'
 fs          = require 'fs'
 os          = require 'os'
 path        = require 'path'
+sq          = require 'shell-quote'
 log         = require './log'
 CfnError    = require './CfnError'
+
+quote = (type, x) ->
+  throw new Error('missing required value') if type.slice(2) is '!' and not x?
+  sq.quote(if type.slice(0, 2) is '%S' then [x] else sq.parse x) if x
+
+splitfmt = (x) ->
+  re = /(%{([^%]+)?(%[AS]!?)([^}]+)?})/g
+  xs = [x.matchAll(re)...].map (x) ->
+    x.slice(2,5).map((x) -> x or '').concat([x.index, x[0].length])
+  ix = 0
+  ys = []
+  for [pre, type, post, i, l] in xs.concat([[]])
+    ys.push s if (s = x.substring(ix, i ? x.length))
+    ys.push {type, pre, post} if type
+    ix = i + l if i?
+  ys
+
+fillfmt = ({pre, post, type}, y) ->
+  word = quote type, y
+  if word then "#{pre}#{word}#{post}"
+
+shprintf = module.exports.shprintf = (fmt, args...) ->
+  doseg = (x, i) -> if isString(x) then x else fillfmt(x, args.shift())
+  splitfmt(fmt).map(doseg).filter((x) -> x).join('').trim()
 
 #------------------------------------------------------------------------------
 # debugging functions
