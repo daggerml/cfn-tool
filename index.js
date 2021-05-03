@@ -357,6 +357,7 @@ See the manpage:
           fs.writeFileSync(paramsfile, params);
           paramsfile = `file://${paramsfile}`;
           fn.execShell(fn.shprintf(`aws cloudformation update-stack --stack-name %{%S} --parameters %{%S} --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --use-previous-template`, this.opts.stackname, paramsfile));
+          fn.execShell(fn.shprintf(`aws cloudformation wait stack-update-complete --stack-name %{%S}`, this.opts.stackname));
           log.info('done -- no errors');
       }
       return this.quit();

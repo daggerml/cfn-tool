@@ -308,6 +308,11 @@ class CfnTool
             --use-previous-template
         """, @opts.stackname, paramsfile
 
+        fn.execShell fn.shprintf """
+          aws cloudformation wait stack-update-complete \
+            --stack-name %{%S}
+        """, @opts.stackname
+
         log.info 'done -- no errors'
 
     @quit()
