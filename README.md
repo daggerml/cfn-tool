@@ -6,7 +6,7 @@
 # INSTALL
 
 ```bash
-sudo npm install -g 'daggerml/cfn-tool#5.5.1'
+sudo npm install -g 'daggerml/cfn-tool#5.5.2'
 ```
 
 ```bash
@@ -63,9 +63,9 @@ And the built-in macros reference manual page:
 
 * [cfn-tool-macros(1)][5]
 
-[1]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/5.5.1/man/cfn-tool.html
-[2]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/5.5.1/man/cfn-tool-deploy.html
-[3]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/5.5.1/man/cfn-tool-transform.html
-[4]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/5.5.1/man/cfn-tool-update.html
-[5]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/5.5.1/man/cfn-tool-macros.html
-[6]: https://github.com/daggerml/cfn-tool/blob/5.5.1/test/macro.tests.yml
+[1]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/5.5.2/man/cfn-tool.html
+[2]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/5.5.2/man/cfn-tool-deploy.html
+[3]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/5.5.2/man/cfn-tool-transform.html
+[4]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/5.5.2/man/cfn-tool-update.html
+[5]: http://htmlpreview.github.io/?https://github.com/daggerml/cfn-tool/blob/5.5.2/man/cfn-tool-macros.html
+[6]: https://github.com/daggerml/cfn-tool/blob/5.5.2/test/macro.tests.yml

@@ -323,7 +323,7 @@ See the manpage:
             }
           };
           log.info('deploying stack');
-          fn.execShell(fn.shprintf(`aws cloudformation deploy --template-file %{%S} --stack-name %{%S} --capabilities CAPABILITY_NAMED_IAM CAPABILITY_IAM CAPABILITY_AUTO_EXPAND %{--bucket %S }%{--parameter-overrides %S }%{--tags %A}`, res.tmpPath, this.opts.stackname, this.opts.bucket, mkparams(this.opts.parameters), this.opts.tags));
+          fn.execShell(fn.shprintf(`aws cloudformation deploy --template-file %{%S} --stack-name %{%S} --capabilities CAPABILITY_NAMED_IAM CAPABILITY_IAM CAPABILITY_AUTO_EXPAND %{--s3-bucket %S }%{--parameter-overrides %S }%{--tags %A}`, res.tmpPath, this.opts.stackname, this.opts.bucket, mkparams(this.opts.parameters), this.opts.tags));
           log.info('done -- no errors');
           break;
         case 'update':

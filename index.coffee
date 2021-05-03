@@ -266,7 +266,7 @@ class CfnTool
             --template-file %{%S} \
             --stack-name %{%S} \
             --capabilities CAPABILITY_NAMED_IAM CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
-            %{--bucket %S }\
+            %{--s3-bucket %S }\
             %{--parameter-overrides %S }\
             %{--tags %A}
         """, res.tmpPath, @opts.stackname, @opts.bucket, mkparams(@opts.parameters), @opts.tags
