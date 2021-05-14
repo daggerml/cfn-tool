@@ -561,6 +561,15 @@ throws when module-only API method called in Js command:
 
   throws: only allowed in !Require modules
 
+reads files and emits contents as string:
+
+  template:
+    Foo: !File data/data1.txt
+
+  expected:
+    Foo: |
+      hello world
+
 packages regular files:
 
   template:

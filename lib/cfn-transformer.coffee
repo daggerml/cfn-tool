@@ -352,7 +352,7 @@ class CfnTransformer extends YamlTransformer
     @defmacro 'File', (form) =>
       form = if fn.isArray(form) then form[0] else form
       @withCache {file: [@ns, path.resolve form]}, () =>
-        fs.readFileSync(form)
+        fs.readFileSync(form).toString('utf-8')
 
     @defmacro 'TemplateFile', (form) =>
       form = if fn.isArray(form) then form[0] else form
