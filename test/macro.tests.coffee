@@ -38,7 +38,7 @@ testCase = (file) ->
         else
           assert(v.template and v.expected, JSON.stringify(v))
           assert.deepEqual(v.template, v.expected)
-          assert.deepEqual(v.nested or [], xf.nested.slice(1))
+          assert.deepEqual(xf.nested.slice(1), v.nested or [])
 
 for f in fs.readdirSync(__dirname, {withFileTypes: true})
   if f.isFile() and f.name.match(/\.(yml|yaml)$/)

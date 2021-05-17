@@ -140,7 +140,6 @@ class CfnTransformer extends YamlTransformer
     @cache          ?= {}
     @basedir        ?= process.cwd()
     @template       = null
-    @needBucket     = false
     @maps           = clone(@maps or {})
     @globals        = clone(@globals or {})
     @state          = clone(@state or {})
@@ -381,13 +380,20 @@ class CfnTransformer extends YamlTransformer
     key = JSON.stringify key
     (@cache[key] or (@cache[key] = [f()]))[0]
 
+  addNested: (x) ->
+    x = [x] if fn.isString(x)
+    @nested = x.reduce(
+      (xs, x) -> if x in xs then xs else xs.concat [x]
+      @nested
+    )
+
   packageMacro: (form, opts) ->
     form = if fn.isArray(form) then form[0] else form
     form = {Path: form} if fn.isString(form)
     form = Object.assign(form, opts)
     {Path, CacheKey, Parse} = form
     if @opts.dopackage
-      @needBucket = true
+      @addNested @userPath Path
       @withCache {package: [@ns, @userPath(Path), CacheKey, Parse]}, () =>
         (
           switch
@@ -441,8 +447,6 @@ class CfnTransformer extends YamlTransformer
     if key then fn.md5(JSON.stringify([@canonicalKeyPath(),key])) else fn.md5Path(fileOrDir)
 
   writePaths: (fileName, ext = '') ->
-    if @needBucket and not @opts.s3bucket
-      throw new CfnError("can't generate S3 URL: no S3 bucket configured")
     fileName = "#{fileName}#{ext}"
     nested:   @nested
     tmpPath:  @tmpPath(fileName),
@@ -457,7 +461,7 @@ class CfnTransformer extends YamlTransformer
   transformTemplateFile: (file, ignoreNested) ->
     xformer = new @.constructor({@ns, @basedir, @cache, @opts, @maps, @globals, @state})
     ret = xformer.transformFile(file)
-    @nested = @nested.concat xformer.nested unless ignoreNested
+    @addNested xformer.nested unless ignoreNested
     ret
 
   lint: (file) ->
@@ -506,7 +510,7 @@ class CfnTransformer extends YamlTransformer
     path.join(@opts.tmpdir, name)
 
   pushFile: (file, f) ->
-    @nested.push(@userPath file)
+    @addNested @userPath file
     [old, @template] = [@template, @userPath(file)]
     log.verbose("transforming '#{@template}'")
     ret = @withCwd path.dirname(file), (() -> f(path.basename(file)))
