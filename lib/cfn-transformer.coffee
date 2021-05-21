@@ -441,6 +441,13 @@ class CfnTransformer extends YamlTransformer
     @bindstack.pop()
     ret
 
+  withRetry: (attempts, f) ->
+    while 0 < attempts--
+      try return f() catch e
+        throw e unless attempts > 0
+        log.warn e.message, {body: e.body}
+        log.info 'Retrying...'
+
   canonicalKeyPath: () -> [@template].concat(@keystack)
 
   canonicalHash: (fileOrDir, key) ->
@@ -470,12 +477,13 @@ class CfnTransformer extends YamlTransformer
     @withCwd @basedir, (() => fn.tryExecRaw(cmd, 'lint error'))
 
   validate: (file) ->
-    log.verbose "validating '#{@template}'"
-    cmd = """
-      aws cloudformation validate-template \
-        --template-body "$(cat '#{file}')"
-    """
-    fn.tryExecRaw cmd, 'aws cloudformation validation error'
+    @withRetry 3, () =>
+      log.verbose "validating '#{@template}'"
+      cmd = """
+        aws cloudformation validate-template \
+          --template-body "$(cat '#{file}')"
+      """
+      fn.tryExecRaw cmd, 'aws cloudformation validation error'
 
   writeTemplate: (file, key) ->
     try
