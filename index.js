@@ -40,6 +40,7 @@
       this.options = new GetOpts({
         alias: {
           bucket: 'b',
+          continue: 'c',
           help: 'h',
           keep: 'k',
           linter: 'l',
@@ -51,7 +52,7 @@
           verbose: 'v',
           version: 'V'
         },
-        boolean: ['help', 'keep', 'quiet', 'verbose', 'version'],
+        boolean: ['continue', 'help', 'keep', 'quiet', 'verbose', 'version'],
         string: {
           bucket: '<name>',
           linter: '<command>',
@@ -67,6 +68,7 @@
         },
         complete: {
           bucket: completions.none,
+          continue: completions.none,
           linter: completions.none,
           parameters: completions.none,
           profile: completions.profile,
@@ -81,7 +83,7 @@
       });
       this.defaultOptionsSpec = ['help', 'version', 'command'];
       this.optionsSpecs = {
-        deploy: ['bucket', 'help', 'keep', 'linter', 'parameters', 'profile', 'quiet', 'region', 'tags', 'verbose', 'command', 'template', 'stackname'],
+        deploy: ['bucket', 'continue', 'help', 'keep', 'linter', 'parameters', 'profile', 'quiet', 'region', 'tags', 'verbose', 'command', 'template', 'stackname'],
         transform: ['help', 'linter', 'profile', 'quiet', 'region', 'verbose', 'command', 'template'],
         update: ['help', 'parameters', 'profile', 'quiet', 'region', 'verbose', 'command', 'stackname']
       };

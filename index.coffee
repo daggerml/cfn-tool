@@ -19,6 +19,7 @@ class CfnTool
     @options = new GetOpts(
       alias:
         bucket:     'b'
+        continue:   'c'
         help:       'h'
         keep:       'k'
         linter:     'l'
@@ -30,6 +31,7 @@ class CfnTool
         verbose:    'v'
         version:    'V'
       boolean: [
+        'continue'
         'help'
         'keep'
         'quiet'
@@ -49,6 +51,7 @@ class CfnTool
         stackname:  '<stack-name>'
       complete:
         bucket:     completions.none
+        continue:   completions.none
         linter:     completions.none
         parameters: completions.none
         profile:    completions.profile
@@ -68,6 +71,7 @@ class CfnTool
     @optionsSpecs =
       deploy: [
         'bucket'
+        'continue'
         'help'
         'keep'
         'linter'

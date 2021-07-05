@@ -60,6 +60,7 @@ describe 'completion tests', ->
 
   testcase 'cfn-tool deploy --░', """
     --bucket
+    --continue
     --help
     --keep
     --linter
@@ -72,6 +73,7 @@ describe 'completion tests', ->
   """
 
   testcase 'cfn-tool deploy --bucket mybucket --░ foo.yml mystack', """
+    --continue
     --help
     --keep
     --linter
