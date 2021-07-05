@@ -105,6 +105,7 @@ uploaded to S3 with their associated packages and the stack is deployed.</p>
 <dt><code>-b</code>, <code>--bucket</code>=<var>NAME</var></dt><dd><p>Upload templates to the S3 bucket given by <var>NAME</var>. A bucket must be
 specified when nested stacks are used, or when the template specified by
 <var>TEMPLATE-FILE</var> is more than 51KiB in size.</p></dd>
+<dt><code>-c</code>, <code>--continue</code></dt><dd><p>Warn on template validation errors instead of exiting.</p></dd>
 <dt><code>-k</code>, <code>--keep</code></dt><dd><p>Don't delete the temporary directory containing processed templates when
 <code>cfn-tool</code> exits. This can be useful for debugging.</p></dd>
 <dt><code>-l</code>, <code>--linter</code>=<var>COMMAND</var></dt><dd><p>Run <var>COMMAND</var> on each processed template file, aborting if the <var>COMMAND</var>
@@ -176,7 +177,7 @@ $ cfn-tool deploy --parameters "Foo=bar Baz=baf" my-template.yml my-stack
 the following license:</p>
 
 <ul>
-<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/5.6.4/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/5.6.4/LICENSE</a></li>
+<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/5.7.0/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/5.7.0/LICENSE</a></li>
 </ul>
 
 
@@ -190,8 +191,8 @@ THE SOFTWARE.</p>
 
 
   <ol class='man-decor man-foot man foot'>
-    <li class='tl'>CloudFormation Tools 5.6.4</li>
-    <li class='tc'>May 2021</li>
+    <li class='tl'>CloudFormation Tools 5.7.0</li>
+    <li class='tc'>July 2021</li>
     <li class='tr'>cfn-tool-deploy(1)</li>
   </ol>
 

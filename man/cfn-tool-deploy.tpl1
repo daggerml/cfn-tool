@@ -29,6 +29,9 @@ The `deploy` command accepts the following options:
     specified when nested stacks are used, or when the template specified by
     <TEMPLATE-FILE> is more than 51KiB in size.
 
+  * `-c`, `--continue`:
+    Warn on template validation errors instead of exiting.
+
   * `-k`, `--keep`:
     Don't delete the temporary directory containing processed templates when
     `cfn-tool` exits. This can be useful for debugging.

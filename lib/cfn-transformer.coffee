@@ -475,7 +475,13 @@ class CfnTransformer extends YamlTransformer
       aws cloudformation validate-template \
         --template-body "$(cat '#{file}')"
     """
-    fn.tryExecRaw cmd, 'aws cloudformation validation error'
+    try
+      fn.tryExecRaw cmd, 'aws cloudformation validation error'
+    catch e
+      if @opts.continue
+        body = if e instanceof CfnError then e.body else e.body or e.stack
+        log.warn(e.message, body)
+      else throw e
 
   writeTemplate: (file, key) ->
     try
