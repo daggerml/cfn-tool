@@ -480,7 +480,7 @@ class CfnTransformer extends YamlTransformer
     catch e
       if @opts.continue
         body = if e instanceof CfnError then e.body else e.body or e.stack
-        log.warn(e.message, {body})
+        log.error(e.message, {body})
       else throw e
 
   writeTemplate: (file, key) ->
