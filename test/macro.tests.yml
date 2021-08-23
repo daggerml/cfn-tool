@@ -655,7 +655,7 @@ recursively packages templates:
 
   expected:
     Foo:
-      Bar: https://s3.amazonaws.com/foop/6b5734f3c0d327082b58b60d79a639bb.yml
+      Bar: https://s3.amazonaws.com/foop/f777424b0b0274b67af65e291819a588.yml
 
 deep merges objects with DeepMerge:
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+require('coffeescript/register');
 require('source-map-support').install();
 const CfnTool = require('../');
 const t = new CfnTool();
