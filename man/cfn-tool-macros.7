@@ -1,7 +1,7 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "CFN\-TOOL\-MACROS" "7" "August 2021" "CloudFormation Tools 5.7.6" "CloudFormation Tools"
+.TH "CFN\-TOOL\-MACROS" "7" "August 2021" "CloudFormation Tools 5.7.8" "CloudFormation Tools"
 .
 .SH "NAME"
 \fBcfn\-tool\-macros\fR \- built\-in macros for common use cases
@@ -115,6 +115,13 @@ This syntax is also valid for top level forms in a template, of course\.
 .
 .SH "MACRO REFERENCE"
 The following are the macros provided by \fBcfn\-tool\fR, and extensions to some of the macros provided by AWS CloudFormation\. CloudFormation\-provided macros which are not extended by \fBcfn\-tool\fR are not described here\. See the \fBEXAMPLES\fR section below for a demonstration of how to use each macro\.
+.
+.SS "CfnTool Version Macros"
+These macros provide a way of declaring which version of \fBcfn\-tool\fR is required to process the template\.
+.
+.TP
+\fB!CfnToolVersion\fR \fIVERSION\fR
+Asserts that the version of \fBcfn\-tool\fR processing the template is at least \fIVERSION\fR in the semver sense, and less than the next major version\. In other words, this macro asserts that the version of \fBcfn\-tool\fR is compatible with \fIVERSION\fR and raises an exception if this is not the case\.
 .
 .SS "CloudFormation Boilerplate Macros"
 These macros are an attempt to reduce the amount of boilerplate required to accomplish various common CloudFormation template patterns\.
@@ -296,6 +303,10 @@ The absolute path of the directory in which \fBcfn\-tool\fR was executed\. Note 
 .TP
 \fBCfnTool\fR\.\fBTemplateFile\fR
 The absolute path of the current template file\.
+.
+.TP
+\fBCfnTool\fR\.\fBVersion\fR
+The version of \fBcfn\-tool\fR currently processing the template\.
 .
 .SH "MODULE API"
 The module API is provided for use by custom JavaScript that is evaluated during macro expansion\. The API is exposed by an instance of the \fBCfnModule\fR class that is passed to the JavaScript environment\. In the \fIBODY\fR of a \fB!Js\fR macro the API is bound to the \fBthis\fR object\. In a module loaded by the \fB!Require\fR macro the API is passed as an argument to the function exported by the module\. Note that some of the API methods are only available in modules loaded via \fB!Require\fR \(em these methods are indicated with an asterisk (\fB*\fR)\.
@@ -938,7 +949,7 @@ Man pages for the \fBcfn\-tool\fR commands:
 Copyright © 2021 Micha Niskin \fB<micha\.niskin@gmail\.com>\fR, distributed under the following license:
 .
 .IP "\(bu" 4
-\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/5\.7\.6/LICENSE\fR
+\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/5\.7\.8/LICENSE\fR
 .
 .IP "" 0
 .

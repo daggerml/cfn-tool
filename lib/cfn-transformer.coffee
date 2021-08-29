@@ -1,14 +1,15 @@
-yaml            = require 'js-yaml'
-fs              = require 'fs'
-os              = require 'os'
-path            = require 'path'
-assert          = require 'assert'
-uuid            = require 'uuid'
-fn              = require './fn'
-log             = require './log'
-CfnError        = require './CfnError'
-YamlTransformer = require './yaml-transformer'
-{ResourceTypes} = require './schema/CloudFormationResourceSpecification.json'
+yaml                = require 'js-yaml'
+fs                  = require 'fs'
+os                  = require 'os'
+path                = require 'path'
+assert              = require 'assert'
+uuid                = require 'uuid'
+fn                  = require './fn'
+log                 = require './log'
+CfnError            = require './CfnError'
+YamlTransformer     = require './yaml-transformer'
+{ResourceTypes}     = require './schema/CloudFormationResourceSpecification.json'
+{version: VERSION}  = require '../package.json'
 
 #=============================================================================#
 # Helper functions.                                                           #
@@ -234,6 +235,15 @@ class CfnTransformer extends YamlTransformer
     #=========================================================================#
     # Define custom macros.                                                   #
     #=========================================================================#
+
+    @defmacro 'CfnToolVersion', (form) =>
+      form = if fn.isArray(form) then form[0] else form
+      assert(
+        fn.compareSemver(form, VERSION)
+        "template requires cfn-tool version compatible with '#{form}'"
+      )
+      null
+
 
     @defmacro 'Require', (form) =>
       for v in (if fn.isArray(form) then form else [form])
@@ -549,6 +559,7 @@ class CfnTransformer extends YamlTransformer
           CfnTool: {
             BaseDir:      @basedir
             TemplateFile: templateFile
+            Version:      VERSION
           }
         }]
     catch e then @abort e

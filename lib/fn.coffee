@@ -32,6 +32,11 @@ shprintf = module.exports.shprintf = (fmt, args...) ->
   doseg = (x, i) -> if isString(x) then x else fillfmt(x, args.shift())
   splitfmt(fmt).map(doseg).filter((x) -> x).join('').trim()
 
+compareSemver = module.exports.compareSemver = (a, b) ->
+  a = a.split('.').map (x) -> Number(x)
+  b = b.split('.').map (x) -> Number(x)
+  return !(b[0] isnt a[0] or b[1] < a[1] or (b[1] is a[1] and b[2] < a[2]))
+
 #------------------------------------------------------------------------------
 # debugging functions
 #------------------------------------------------------------------------------

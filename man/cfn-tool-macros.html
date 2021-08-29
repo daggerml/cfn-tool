@@ -175,6 +175,19 @@ the macros provided by AWS CloudFormation. CloudFormation-provided macros which
 are not extended by <code>cfn-tool</code> are not described here. See the <code>EXAMPLES</code>
 section below for a demonstration of how to use each macro.</p>
 
+<h3 id="CfnTool-Version-Macros">CfnTool Version Macros</h3>
+
+<p>These macros provide a way of declaring which version of <code>cfn-tool</code> is required
+to process the template.</p>
+
+<dl>
+<dt><code>!CfnToolVersion</code> <var>VERSION</var></dt><dd>Asserts that the version of <code>cfn-tool</code> processing the template is at least
+<var>VERSION</var> in the semver sense, and less than the next major version. In
+other words, this macro asserts that the version of <code>cfn-tool</code> is
+compatible with <var>VERSION</var> and raises an exception if this is not the case.</dd>
+</dl>
+
+
 <h3 id="CloudFormation-Boilerplate-Macros">CloudFormation Boilerplate Macros</h3>
 
 <p>These macros are an attempt to reduce the amount of boilerplate required to
@@ -376,6 +389,7 @@ does not appear in the final document.</p></dd>
 that this is not necessarily the same as the current working directory,
 which is usually the directory containing the current template file.</p></dd>
 <dt><code>CfnTool</code>.<code>TemplateFile</code></dt><dd><p>The absolute path of the current template file.</p></dd>
+<dt><code>CfnTool</code>.<code>Version</code></dt><dd><p>The version of <code>cfn-tool</code> currently processing the template.</p></dd>
 </dl>
 
 
@@ -827,7 +841,7 @@ Foo:
 the following license:</p>
 
 <ul>
-<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/5.7.6/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/5.7.6/LICENSE</a></li>
+<li><a href="https://raw.githubusercontent.com/daggerml/cfn-tool/5.7.8/LICENSE" data-bare-link="true">https://raw.githubusercontent.com/daggerml/cfn-tool/5.7.8/LICENSE</a></li>
 </ul>
 
 
@@ -841,7 +855,7 @@ THE SOFTWARE.</p>
 
 
   <ol class='man-decor man-foot man foot'>
-    <li class='tl'>CloudFormation Tools 5.7.6</li>
+    <li class='tl'>CloudFormation Tools 5.7.8</li>
     <li class='tc'>August 2021</li>
     <li class='tr'>cfn-tool-macros(7)</li>
   </ol>

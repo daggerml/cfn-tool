@@ -92,6 +92,17 @@ the macros provided by AWS CloudFormation. CloudFormation-provided macros which
 are not extended by `cfn-tool` are not described here. See the `EXAMPLES`
 section below for a demonstration of how to use each macro.
 
+### CfnTool Version Macros
+
+These macros provide a way of declaring which version of `cfn-tool` is required
+to process the template.
+
+  * `!CfnToolVersion` <VERSION>:
+    Asserts that the version of `cfn-tool` processing the template is at least
+    <VERSION> in the semver sense, and less than the next major version. In
+    other words, this macro asserts that the version of `cfn-tool` is
+    compatible with <VERSION> and raises an exception if this is not the case.
+
 ### CloudFormation Boilerplate Macros
 
 These macros are an attempt to reduce the amount of boilerplate required to
@@ -325,6 +336,9 @@ These bindings are set by `cfn-tool` and are referenced in a template via the
 
   * `CfnTool`.`TemplateFile`:
     The absolute path of the current template file.
+
+  * `CfnTool`.`Version`:
+    The version of `cfn-tool` currently processing the template.
 
 ## MODULE API
 

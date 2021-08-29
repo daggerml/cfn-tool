@@ -735,6 +735,23 @@ propagates module state to nested templates:
     Bar: 4242
     Baz: not-found
 
+cfn-tool version assertion:
+
+  template:
+    <<: !CfnToolVersion 5.2.3
+    Foo: bar
+
+  expected:
+    Foo: bar
+
+throws on cfn-tool version mismatch:
+
+  template: |
+    <<: !CfnToolVersion 6.2.3
+    Foo: bar
+
+  throws: template requires cfn-tool version compatible with
+
 built-in references:
 
   template:
