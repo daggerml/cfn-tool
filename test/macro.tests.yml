@@ -16,6 +16,16 @@ does not expand strings that look like dates implicitly:
   expected:
     Foo: 2021-03-29
 
+MD5 digest:
+
+  template:
+    Foo: !Md5 'hello world'
+    Bar: !Md5File data/template.yml
+
+  expected:
+    Foo: 5eb63bbbe01eeed093cb22bb8f5acdc3
+    Bar: 1153878b7ce0922f56354fb77871ad3d
+
 binds Mappings globally:
 
   template:
@@ -655,7 +665,7 @@ recursively packages templates:
 
   expected:
     Foo:
-      Bar: https://s3.amazonaws.com/foop/6b5734f3c0d327082b58b60d79a639bb.yml
+      Bar: https://s3.amazonaws.com/foop/f777424b0b0274b67af65e291819a588.yml
 
 deep merges objects with DeepMerge:
 
@@ -724,3 +734,11 @@ propagates module state to nested templates:
     Foo: 4242
     Bar: 4242
     Baz: not-found
+
+built-in references:
+
+  template:
+    Foo: !Ref CfnTool.TemplateFile
+
+  expected:
+    Foo: !Sub ${CfnTool.BaseDir}/test/macro.tests.yml

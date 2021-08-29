@@ -358,6 +358,14 @@ class CfnTransformer extends YamlTransformer
       @withCache {templateFile: [@ns, path.resolve form]}, () =>
         yaml.safeLoad(@transformTemplateFile(form, true))
 
+    @defmacro 'Md5', (form) =>
+      form = if fn.isArray(form) then form[0] else form
+      fn.md5(form)
+
+    @defmacro 'Md5File', (form) =>
+      form = if fn.isArray(form) then form[0] else form
+      fn.md5Path(form)
+
     @defmacro 'Merge', (form) =>
       fn.merge.apply(null, form)
 
@@ -530,14 +538,19 @@ class CfnTransformer extends YamlTransformer
     @resourceMacros[type] = emit
     @
 
-  transform: (text) ->
-    @bindstack  = [{}]
+  transform: (text, @bindstack = [{}]) ->
     super(text)
 
   transformFile: (templateFile, doc) ->
     try
       doc = doc or fs.readFileSync(templateFile).toString('utf-8')
-      @pushFileCaching templateFile, (file) => @transform(doc)
+      @pushFileCaching templateFile, (file) =>
+        @transform doc, [{
+          CfnTool: {
+            BaseDir:      @basedir
+            TemplateFile: templateFile
+          }
+        }]
     catch e then @abort e
 
 module.exports = CfnTransformer

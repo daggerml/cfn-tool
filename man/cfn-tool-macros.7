@@ -1,7 +1,7 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "CFN\-TOOL\-MACROS" "7" "July 2021" "CloudFormation Tools 5.7.3" "CloudFormation Tools"
+.TH "CFN\-TOOL\-MACROS" "7" "August 2021" "CloudFormation Tools 5.7.6" "CloudFormation Tools"
 .
 .SH "NAME"
 \fBcfn\-tool\-macros\fR \- built\-in macros for common use cases
@@ -208,6 +208,10 @@ These macros allow the user to read files from the local filesystem and incorpor
 Reads a local file and returns its contents as a string\. The path is resolved relative to the directory containing the template\.
 .
 .TP
+\fB!Md5File\fR \fIFILE\fR
+Computes the MD5 digest of the \fIFILE\fR, returning a string\. The path is resolved relative to the directory containing the template\.
+.
+.TP
 \fB!TemplateFile\fR \fIFILE\fR
 Reads a local YAML file, parses it, expands macros, and merges the result into the document\. The path is relative to the directory containing the template in which the \fB!TemplateFile\fR macro is expanded\.
 .
@@ -221,6 +225,10 @@ Returns a JSON string representing the given \fIDATA\fR\.
 .TP
 \fB!JsonParse\fR \fIJSON\fR
 Parses the \fIJSON\fR string, returning the result as data\.
+.
+.TP
+\fB!Md5\fR \fITEXT\fR
+Computes the MD5 digest of the \fITEXT\fR, returning a string\.
 .
 .TP
 \fB!YamlDump\fR \fIDATA\fR
@@ -277,6 +285,17 @@ Loads the given \fIFILE\fR as a JavaScript module\. The default export of this m
 .TP
 \fB!Require\fR \fB[\fR \fIFILE\fR, \.\.\. \fB]\fR
 As above, but loads multiple JavaScript files\.
+.
+.SH "BUILT\-IN BINDINGS"
+These bindings are set by \fBcfn\-tool\fR and are referenced in a template via the \fB!Ref\fR macro: eg\. \fB!Ref\fR CfnTool\.TemplateFile\.
+.
+.TP
+\fBCfnTool\fR\.\fBBaseDir\fR
+The absolute path of the directory in which \fBcfn\-tool\fR was executed\. Note that this is not necessarily the same as the current working directory, which is usually the directory containing the current template file\.
+.
+.TP
+\fBCfnTool\fR\.\fBTemplateFile\fR
+The absolute path of the current template file\.
 .
 .SH "MODULE API"
 The module API is provided for use by custom JavaScript that is evaluated during macro expansion\. The API is exposed by an instance of the \fBCfnModule\fR class that is passed to the JavaScript environment\. In the \fIBODY\fR of a \fB!Js\fR macro the API is bound to the \fBthis\fR object\. In a module loaded by the \fB!Require\fR macro the API is passed as an argument to the function exported by the module\. Note that some of the API methods are only available in modules loaded via \fB!Require\fR \(em these methods are indicated with an asterisk (\fB*\fR)\.
@@ -919,7 +938,7 @@ Man pages for the \fBcfn\-tool\fR commands:
 Copyright © 2021 Micha Niskin \fB<micha\.niskin@gmail\.com>\fR, distributed under the following license:
 .
 .IP "\(bu" 4
-\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/5\.7\.3/LICENSE\fR
+\fIhttps://raw\.githubusercontent\.com/daggerml/cfn\-tool/5\.7\.6/LICENSE\fR
 .
 .IP "" 0
 .

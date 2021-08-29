@@ -223,6 +223,10 @@ incorporate the data into the template.
     Reads a local file and returns its contents as a string. The path is
     resolved relative to the directory containing the template.
 
+  * `!Md5File` <FILE>:
+    Computes the MD5 digest of the <FILE>, returning a string. The path is
+    resolved relative to the directory containing the template.
+
   * `!TemplateFile` <FILE>:
     Reads a local YAML file, parses it, expands macros, and merges the result
     into the document. The path is relative to the directory containing the
@@ -239,6 +243,9 @@ out in YAML when writing the template).
 
   * `!JsonParse` <JSON>:
     Parses the <JSON> string, returning the result as data.
+
+  * `!Md5` <TEXT>:
+    Computes the MD5 digest of the <TEXT>, returning a string.
 
   * `!YamlDump` <DATA>:
     Returns a YAML string representing the given <DATA>.
@@ -305,6 +312,19 @@ capabilities of the built-in macro system within the scope of the template.
 
   * `!Require` `[` <FILE>, ... `]`:
     As above, but loads multiple JavaScript files.
+
+## BUILT-IN BINDINGS
+
+These bindings are set by `cfn-tool` and are referenced in a template via the
+`!Ref` macro: eg. `!Ref` CfnTool.TemplateFile.
+
+  * `CfnTool`.`BaseDir`:
+    The absolute path of the directory in which `cfn-tool` was executed. Note
+    that this is not necessarily the same as the current working directory,
+    which is usually the directory containing the current template file.
+
+  * `CfnTool`.`TemplateFile`:
+    The absolute path of the current template file.
 
 ## MODULE API
 

@@ -16,6 +16,9 @@ all: compile docs test
 compile: $(OBJS)
 
 docs: README.md $(MAN1S) $(MAN7S) $(HTMLS)
+	mkdir -p man/man1 man/man7
+	find man/ -maxdepth 1 -name '*.1' -exec cp -f {} man/man1 \;
+	find man/ -maxdepth 1 -name '*.7' -exec cp -f {} man/man7 \;
 
 test:
 	npm test
@@ -25,6 +28,7 @@ clean:
 
 distclean: clean
 	rm -f $(MAN1S) $(MAN7S) $(HTMLS)
+	find man -mindepth 2 -type f -exec rm -f {} \;
 
 push: all
 	[ -n "$(VERSION)" ]
