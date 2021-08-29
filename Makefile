@@ -11,7 +11,7 @@ YEAR       = $(shell date +%Y)
 
 .PHONY: all clean distclean compile docs test push
 
-all: docs test
+all: compile docs test
 
 compile: $(OBJS)
 
