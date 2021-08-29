@@ -558,7 +558,7 @@ class CfnTransformer extends YamlTransformer
         @transform doc, [{
           CfnTool: {
             BaseDir:      @basedir
-            TemplateFile: templateFile
+            TemplateFile: @template
             Version:      VERSION
           }
         }]

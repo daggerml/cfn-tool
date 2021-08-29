@@ -335,7 +335,7 @@ These bindings are set by `cfn-tool` and are referenced in a template via the
     which is usually the directory containing the current template file.
 
   * `CfnTool`.`TemplateFile`:
-    The absolute path of the current template file.
+    The path of the current template file relative to the `BaseDir` above.
 
   * `CfnTool`.`Version`:
     The version of `cfn-tool` currently processing the template.

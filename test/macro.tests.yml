@@ -747,7 +747,7 @@ cfn-tool version assertion:
 throws on cfn-tool version mismatch:
 
   template: |
-    <<: !CfnToolVersion 6.2.3
+    <<: !CfnToolVersion 99.2.3
     Foo: bar
 
   throws: template requires cfn-tool version compatible with
@@ -756,6 +756,12 @@ built-in references:
 
   template:
     Foo: !Ref CfnTool.TemplateFile
+    Bar: !Ref CfnTool.BaseDir
+    Baz: !Ref CfnTool.Version
 
   expected:
-    Foo: !Sub ${CfnTool.BaseDir}/test/macro.tests.yml
+    Foo: test/macro.tests.yml
+    Bar: !Shell 'dirname "$(pwd)"'
+    Baz: !Shell
+      - DIR: !Ref CfnTool.BaseDir
+      - 'cd "$DIR"; node version.js'
